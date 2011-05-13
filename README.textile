@@ -2,6 +2,8 @@ h1. brocephalus
 
 Brocephalus is a fabric for routing metrics and facts through your organization.
 
+Simple enough to use in a shell script, performant enough to use everywhere, reliable and powerful enough that why the hell *wouldn't* you bro.send() that?
+
 * *Metrics*: Any system anywhere can throw a namespaced, timestamped numeric quantity at Brocephalus. These metrics can report on status ('there are 3 cups of coffee remaining'), timing ('this response took 100ms'), or counting ('I just served a 404 response code').
 
 * *Facts*: Any system anywhere can throw an arbitrary namespaced, timestamped JSON hash at Brocephalus. (We call this 'facts' in contrast to 'logging' to emphasize that this is _structured_ data with _unstructured_ semantics).
@@ -23,29 +25,108 @@ Not design goals:
 * *Graphing*:           ditto.
 
 
+h2. Clients
+
+
+* Periodic fetch        Chef
+* Periodic fetch        Fog (cloud machines)
+* Periodic fetch        google analytics
+* hadoop script completed, sends { script_name started_at run_time completion_status run_params cluster_config }
+* simple dashboard form
+* notify        cluster appears
+* I am A foo-bar, assign me uniquely the NEXT foo-bar
+* get 
+
 h2. API
 
-* What grammar does zookeeper expose?
-* What grammar does doozer expose?
+* path components must be UTF-8 character strings that contain only ASCII letters, numbers, _, or -.
 
-h4. add
+* Brocephalus reserves the right to read and write paths in /bro, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
 
-GET  http://brocephalus:9099/f/{clxn}/{arbitrary/name/space}.{ext}
+* tree_merge rules:
+
+  - hsh1 + hsh2  = hsh1.merge(hsh2)
+  - arr1 + arr2  = arr1 + arr2
+  - val1 + val2  = val2
+  
+  - hsh1 + nil   = hsh1
+  - arr1 + nil   = arr1
+  - val1 + nil   = val1
+  
+  - nil  + hsh2  = hsh2
+  - nil  + arr2  = arr2
+  - nil  + val2  = val2
+
+  - otherwise, exception
+
+  types: Hash, Array, String, Time, Integer, Float, Nil
+
+h4. add (set? send?)
+
+GET  http://brocephalus:9099/f/{clxn}/{arbitrary/name/space}.{ext}?auth=token&query=predicate
 
   db.collection(collection).save
 
+
+*   
+  
+
+get 
+
+  
 h4. get
 
 POST http://brocephalus:9099/f/arbitrary/name/space  with JSON body
 
+
 h4. increment
 
-h4. NOT serving
+h4. add to set
 
-* WATCH
+what do we need to provide the 'I got next' feature of old_broham?
 
+h2. Others
 
-h2. 
+GET latest
+GET all
+GET next
+
+h4. Doozerd
+
+"Doozerd":https://github.com/ha/doozerd 
+
+* DEL path, rev
+* GET path, rev => value, rev
+* SET path, rev, value => rev
+* WAIT path, rev => path, rev, value, flags
+* WALK path, rev, offset => path, rev, value
+* REV => rev
+
+* WATCH 
+* globbing on path sequences. doozerd allows ?, * and **.
+
+h4. Noah
+
+"Noah":https://github.com/lusis/Noah has a few basic design goals:
+
+The system MUST support RESTful interaction for operations where REST maps properly
+The system MUST support basic concepts of hosts, services, applications and configurations
+The system MUST support horizontal scaling.
+
+Additionally:
+
+The system SHOULD be flexible in deployment options.
+The system SHOULD support watches similar to ZooKeeper
+The system SHOULD support pluggable callbacks for watches.
+The system SHOULD support being a client of itself.
+
+h3. Zookeeper
+
+* "Zookeeper":http://zookeeper.apache.org/
+
+h3. Chubby
+
+* "Chubby":http://labs.google.com/papers/chubby.html
 
 
 
@@ -75,11 +156,16 @@ h3. Aggregator / Router
 * drops packets but doesn't fail if MongoDB is missing
 
 
+h3. Watches
+
+zeromq pubsub?
+pubsubhubbub?
+
+h3. Statsd
 
 * PUT /_stats/meter?name={name.of.stat}&incr={num}
 * PUT /_stats/counter?name={name.of.stat}&incr={num}
-
-h4. GET /_stats/instrument?name.of.stat=value
+* GET /_stats/instrument?name.of.stat=value
 
 
 
