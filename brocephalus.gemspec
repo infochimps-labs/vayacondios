@@ -17,18 +17,20 @@ Gem::Specification.new do |s|
     "README.textile"
   ]
   s.files = [
-    ".document",
+    ".gitignore",
     ".rspec",
-    ".watchr",
     "Gemfile",
+    "Gemfile.lock",
     "LICENSE.textile",
     "README.textile",
     "Rakefile",
     "VERSION",
+    "brocephalus.gemspec",
     "config/app.rb",
     "config/bootstrap.rb",
     "lib/boot.rb",
     "lib/brocephalus.rb",
+    "lib/tasks/spec.rake",
     "spec/brocephalus_spec.rb",
     "spec/spec_helper.rb",
     "spec/support/direct_mongo_db.rb",
@@ -52,24 +54,108 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_development_dependency(%q<rspec>, ["~> 2.3.0"])
-      s.add_development_dependency(%q<yard>, ["~> 0.6.0"])
-      s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
+      s.add_runtime_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+      s.add_runtime_dependency(%q<gorillib>, ["~> 0.0.4"])
+      s.add_runtime_dependency(%q<goliath>, [">= 0"])
+      s.add_runtime_dependency(%q<icss>, [">= 0"])
+      s.add_runtime_dependency(%q<eventmachine>, [">= 0"])
+      s.add_runtime_dependency(%q<em-synchrony>, [">= 0"])
+      s.add_runtime_dependency(%q<em-http-request>, [">= 0"])
+      s.add_runtime_dependency(%q<em-mongo>, ["~> 0.3.5"])
+      s.add_development_dependency(%q<bundler>, ["~> 1.0.12"])
+      s.add_development_dependency(%q<yard>, ["~> 0.6.7"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.5.2"])
-      s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_development_dependency(%q<rspec>, ["~> 2.5.0"])
+      s.add_development_dependency(%q<rcov>, [">= 0.9.9"])
+      s.add_runtime_dependency(%q<goliath>, [">= 0.9.1"])
+      s.add_runtime_dependency(%q<eventmachine>, [">= 1.0.0.beta.3"])
+      s.add_runtime_dependency(%q<em-synchrony>, [">= 0.3.0.beta.1"])
+      s.add_runtime_dependency(%q<em-http-request>, [">= 1.0.0.beta.3"])
+      s.add_runtime_dependency(%q<em-mongo>, ["~> 0.3.5"])
+      s.add_runtime_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+      s.add_runtime_dependency(%q<gorillib>, ["~> 0.0.4"])
+      s.add_runtime_dependency(%q<icss>, ["~> 0.0.2"])
+      s.add_runtime_dependency(%q<rack>, [">= 1.2.2"])
+      s.add_runtime_dependency(%q<rack-contrib>, [">= 0"])
+      s.add_runtime_dependency(%q<rack-respond_to>, [">= 0"])
+      s.add_runtime_dependency(%q<async-rack>, [">= 0"])
+      s.add_runtime_dependency(%q<multi_json>, [">= 0"])
+      s.add_development_dependency(%q<bundler>, ["~> 1.0.12"])
+      s.add_development_dependency(%q<yard>, ["~> 0.6.7"])
+      s.add_development_dependency(%q<jeweler>, ["~> 1.5.2"])
+      s.add_development_dependency(%q<rspec>, ["~> 2.5.0"])
+      s.add_development_dependency(%q<rcov>, [">= 0.9.9"])
+      s.add_development_dependency(%q<spork>, ["~> 0.9.0.rc5"])
+      s.add_development_dependency(%q<watchr>, [">= 0"])
     else
-      s.add_dependency(%q<rspec>, ["~> 2.3.0"])
-      s.add_dependency(%q<yard>, ["~> 0.6.0"])
-      s.add_dependency(%q<bundler>, ["~> 1.0.0"])
+      s.add_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+      s.add_dependency(%q<gorillib>, ["~> 0.0.4"])
+      s.add_dependency(%q<goliath>, [">= 0"])
+      s.add_dependency(%q<icss>, [">= 0"])
+      s.add_dependency(%q<eventmachine>, [">= 0"])
+      s.add_dependency(%q<em-synchrony>, [">= 0"])
+      s.add_dependency(%q<em-http-request>, [">= 0"])
+      s.add_dependency(%q<em-mongo>, ["~> 0.3.5"])
+      s.add_dependency(%q<bundler>, ["~> 1.0.12"])
+      s.add_dependency(%q<yard>, ["~> 0.6.7"])
       s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
-      s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<rspec>, ["~> 2.5.0"])
+      s.add_dependency(%q<rcov>, [">= 0.9.9"])
+      s.add_dependency(%q<goliath>, [">= 0.9.1"])
+      s.add_dependency(%q<eventmachine>, [">= 1.0.0.beta.3"])
+      s.add_dependency(%q<em-synchrony>, [">= 0.3.0.beta.1"])
+      s.add_dependency(%q<em-http-request>, [">= 1.0.0.beta.3"])
+      s.add_dependency(%q<em-mongo>, ["~> 0.3.5"])
+      s.add_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+      s.add_dependency(%q<gorillib>, ["~> 0.0.4"])
+      s.add_dependency(%q<icss>, ["~> 0.0.2"])
+      s.add_dependency(%q<rack>, [">= 1.2.2"])
+      s.add_dependency(%q<rack-contrib>, [">= 0"])
+      s.add_dependency(%q<rack-respond_to>, [">= 0"])
+      s.add_dependency(%q<async-rack>, [">= 0"])
+      s.add_dependency(%q<multi_json>, [">= 0"])
+      s.add_dependency(%q<bundler>, ["~> 1.0.12"])
+      s.add_dependency(%q<yard>, ["~> 0.6.7"])
+      s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
+      s.add_dependency(%q<rspec>, ["~> 2.5.0"])
+      s.add_dependency(%q<rcov>, [">= 0.9.9"])
+      s.add_dependency(%q<spork>, ["~> 0.9.0.rc5"])
+      s.add_dependency(%q<watchr>, [">= 0"])
     end
   else
-    s.add_dependency(%q<rspec>, ["~> 2.3.0"])
-    s.add_dependency(%q<yard>, ["~> 0.6.0"])
-    s.add_dependency(%q<bundler>, ["~> 1.0.0"])
+    s.add_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+    s.add_dependency(%q<gorillib>, ["~> 0.0.4"])
+    s.add_dependency(%q<goliath>, [">= 0"])
+    s.add_dependency(%q<icss>, [">= 0"])
+    s.add_dependency(%q<eventmachine>, [">= 0"])
+    s.add_dependency(%q<em-synchrony>, [">= 0"])
+    s.add_dependency(%q<em-http-request>, [">= 0"])
+    s.add_dependency(%q<em-mongo>, ["~> 0.3.5"])
+    s.add_dependency(%q<bundler>, ["~> 1.0.12"])
+    s.add_dependency(%q<yard>, ["~> 0.6.7"])
     s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
-    s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<rspec>, ["~> 2.5.0"])
+    s.add_dependency(%q<rcov>, [">= 0.9.9"])
+    s.add_dependency(%q<goliath>, [">= 0.9.1"])
+    s.add_dependency(%q<eventmachine>, [">= 1.0.0.beta.3"])
+    s.add_dependency(%q<em-synchrony>, [">= 0.3.0.beta.1"])
+    s.add_dependency(%q<em-http-request>, [">= 1.0.0.beta.3"])
+    s.add_dependency(%q<em-mongo>, ["~> 0.3.5"])
+    s.add_dependency(%q<yajl-ruby>, ["~> 0.8.2"])
+    s.add_dependency(%q<gorillib>, ["~> 0.0.4"])
+    s.add_dependency(%q<icss>, ["~> 0.0.2"])
+    s.add_dependency(%q<rack>, [">= 1.2.2"])
+    s.add_dependency(%q<rack-contrib>, [">= 0"])
+    s.add_dependency(%q<rack-respond_to>, [">= 0"])
+    s.add_dependency(%q<async-rack>, [">= 0"])
+    s.add_dependency(%q<multi_json>, [">= 0"])
+    s.add_dependency(%q<bundler>, ["~> 1.0.12"])
+    s.add_dependency(%q<yard>, ["~> 0.6.7"])
+    s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
+    s.add_dependency(%q<rspec>, ["~> 2.5.0"])
+    s.add_dependency(%q<rcov>, [">= 0.9.9"])
+    s.add_dependency(%q<spork>, ["~> 0.9.0.rc5"])
+    s.add_dependency(%q<watchr>, [">= 0"])
   end
 end
 
