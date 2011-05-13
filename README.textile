@@ -29,17 +29,37 @@ h2. Clients
 
 
 * Periodic fetch        Chef
+  /chef/nodes/
 * Periodic fetch        Fog (cloud machines)
+  /fog/compute/servers/:id { cloud id created_at state ip_address private_ip_address dns_name nodename ... }
 * Periodic fetch        google analytics
 * hadoop script completed, sends { script_name started_at run_time completion_status run_params cluster_config }
 * simple dashboard form
 * notify        cluster appears
 * I am A foo-bar, assign me uniquely the NEXT foo-bar
-* get 
+* Tell me where ALL clusters/magilla/cassandra_datanode_seed are
+* Tell me where THE MOST RECENT clusters/gibbon/hadoop_namenode is
+
+* *metric*
+  - value    /metric/scope/of/metric?ts=:time&val=:val
+  - timing
+  - counting
+  - 
+
+* Tweet by us  /community/twitter/users/infochimps/198734234 -- { tweet_id text created_at geo{ lat lng } ... }
+
+path  => _id handle
+query => payload
+
+posts against path is idempotent
+can specify _next
+
+how do we handle tree leaves vs. branches (files vs dirs)
 
 h2. API
 
-* path components must be UTF-8 character strings that contain only ASCII letters, numbers, _, or -.
+* path components must be ASCII strings that start with [a-z] and contain only lowercase alphanum, _, or -.
+  components starting with a '_' have reserved meanings
 
 * Brocephalus reserves the right to read and write paths in /bro, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
 
@@ -66,9 +86,6 @@ h4. add (set? send?)
 GET  http://brocephalus:9099/f/{clxn}/{arbitrary/name/space}.{ext}?auth=token&query=predicate
 
   db.collection(collection).save
-
-
-*   
   
 
 get 
@@ -123,6 +140,55 @@ The system SHOULD support being a client of itself.
 h3. Zookeeper
 
 * "Zookeeper":http://zookeeper.apache.org/
+
+h3. Cfmap
+
+"Cfmap":http://code.google.com/p/cfmap/
+
+Indexed (searchable)
+* Required columns - These three columns are required for all new records. Its used to create the record key.
+  - "host" - Should be set to whatever hostname thinks it is
+  - "port" - Should be set to the port of whatever app/service the info is about
+  - "appname" - Should be set to the name of the app or service the info is about
+* Optional columns
+  - "ip" - This is set by cfmap to the IP of the client at time of connection. For security reasons, this value can never be set using APIs.
+  - "status" - The current status of this resource.
+  - "checked" - The time when last status was updated.
+  - "deployed_date" - The time when the resource was deployed.
+  - "type" - By default its set to "apps". But you can change it to anything. We recommend the following
+    app - for services/applications
+    host - for servers/hardware
+    disk - for any kind of storage divice
+    process - for any kind of process
+Non-indexed (not searchable)   
+* "stats_*" - These columns must have numeric values and is generally used for graphing system state. Reverse indexes for these columns are not created.
+* "info_*" - These columns have informational values which are not something one would search by. Reverse indexes for these columns are not created. Stack traces, for example, could be embedded inside these columns
+* example
+  - /cfmap/browse/create.jsp?host=myserver&port=0&appname=apache&status=running - Simple REST API to set status of "apache" app to "running"
+  
+<pre>
+        sub prepareMpstat()      {$mpstat=&getExec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH; mpstat | grep all | tail -1 | sed -e\'s/  / /g\' | sed -e\'s/  / /g\'| sed -e\'s/  / /g\'");}
+        sub getCpuUser()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[3];}}
+        sub getCpuIdle()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[10];}}
+        sub getCpuSys()          {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[5];}}
+        sub getCpuIowait()       {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[6];}}
+        sub getCpuIntrS()        {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[11];}}
+        sub getHostName()        { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH;hostname"); }
+        sub getKernelVersion()   { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin;uname --kernel-release"); }
+        sub getTotalMem()        { exec('cat /proc/meminfo | grep ^MemTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getFreeMem()         { exec('cat /proc/meminfo | grep ^MemFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getTotalSwap()       { exec('cat /proc/meminfo | grep ^SwapTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getFreeSwap()        { exec('cat /proc/meminfo | grep ^SwapFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getLoadAvg1m()       { exec('cat /proc/loadavg | awk \'{print $1 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvg5m()       { exec('cat /proc/loadavg | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvg15m()      { exec('cat /proc/loadavg | awk \'{print $3 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvgEntities() { exec('cat /proc/loadavg | awk \'{print $4 }\' | cut -d\'/\' -f2 | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getCpuBusy()         { exec('cat /proc/uptime | perl -e\'while(<STDIN>){$_=~s/\n//g;@a=split(/ /,$_);print 100*($a[0]-$a[1])/$a[0];}\' | cut -d\'.\' -f1');}
+        sub getStartDate()       { exec('A=`cat /proc/uptime | cut -d\' \' -f1 | cut -d\'.\' -f1`;B=`date +\'%s\'`;C=$((B-A));echo $C'); $_dd=floor($_d/10)*10;  return $_dd;}
+        sub getESTCount()        { exec('netstat -na | grep -i established | wc -l');}
+        sub getPSCount()         { exec('ps -aef | wc -l');}
+        sub getIOWait()          { exec('sar 1 3 2> /dev/null | tail -1 | awk \'{print $6}\'');}
+</pre>
 
 h3. Chubby
 
@@ -238,3 +304,6 @@ h3. Contributing to brocephalus
 h3. Copyright
 
 Copyright (c) 2011 Infochimps. See LICENSE.txt for further details.
+
+
+
