@@ -1,8 +1,15 @@
 h1. brocephalus
 
-Brocephalus is a fabric for routing metrics and facts through your organization.
+Data goes in. The right thing happens.
 
 Simple enough to use in a shell script, performant enough to use everywhere, reliable and powerful enough that why the hell *wouldn't* you bro.send() that?
+
+writes might be complex, reads are always simple.
+
+can use icss to pre-define if you like
+  - read back an icss using path
+  - have configliere generate / use ICSS
+  
 
 * *Metrics*: Any system anywhere can throw a namespaced, timestamped numeric quantity at Brocephalus. These metrics can report on status ('there are 3 cups of coffee remaining'), timing ('this response took 100ms'), or counting ('I just served a 404 response code').
 
@@ -24,6 +31,10 @@ Not design goals:
 * *Analysis*:           ditto.
 * *Graphing*:           ditto.
 
+Q: ...but what if I ???
+A: don't do that
+
+readers and writers of facts need to exhibit decorum and collegiality. 
 
 h2. Clients
 
@@ -81,6 +92,9 @@ h2. API
 
   types: Hash, Array, String, Time, Integer, Float, Nil
 
+    mongo: string, int, double, boolean, date, bytearray, object, array, others
+    couch: string,number,boolean,array,object
+  
 h4. add (set? send?)
 
 GET  http://brocephalus:9099/f/{clxn}/{arbitrary/name/space}.{ext}?auth=token&query=predicate
@@ -102,6 +116,14 @@ h4. add to set
 
 what do we need to provide the 'I got next' feature of old_broham?
 
+h4. auth
+
+/_bro/_auth/ holds one hash giving public key.
+  walk down the hash until you see _tok
+  can only auth at first or second level?
+  or by wildcard?
+  access is read or read_write; by default allows read_write 
+
 h2. Others
 
 GET latest
@@ -119,7 +141,10 @@ h4. Doozerd
 * WALK path, rev, offset => path, rev, value
 * REV => rev
 
-* WATCH 
+* watch(rev, path, &blk)
+* getdir(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
+* walk(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
+
 * globbing on path sequences. doozerd allows ?, * and **.
 
 h4. Noah
@@ -136,6 +161,8 @@ The system SHOULD be flexible in deployment options.
 The system SHOULD support watches similar to ZooKeeper
 The system SHOULD support pluggable callbacks for watches.
 The system SHOULD support being a client of itself.
+
+four distinct states: up, down, pending_up, pending_down
 
 h3. Zookeeper
 
@@ -194,6 +221,9 @@ h3. Chubby
 
 * "Chubby":http://labs.google.com/papers/chubby.html
 
+h3. Pulp
+
+https://fedorahosted.org/pulp/wiki
 
 
 h2. Design
