@@ -6,7 +6,7 @@ Simple enough to use in a shell script, performant enough to use everywhere, tha
 
 Any system anywhere can chuck into brocephalus a
 
-* *status*:  'there are 3 cups of coffee remaining': 
+* *value*:   'there are 3 cups of coffee remaining': 
 * *timing*:  'this response took 100ms'
 * *count*:   'I just served a 404 response code'
 * *fact*:    'here's everything to know about the coffee machine: {"cups_remaining":3,"uptime":127,room:"hyrule"}' -- an arbitrary JSON hash
@@ -47,6 +47,18 @@ Hash will hold:
 * `_id`           unique _id
 * `_ts`           timestamp, set if blank
 * `_path`         `name.spaced.path.fact_name`, omits the collection part
+
+
+h3. write
+
+* value
+* count
+* timing
+* fact
+
+http://bro:9000/bob/dobolina/mr/bob/dobolina?_count=1
+http://bro:9000/bob/dobolina/mr/bob/dobolina?_count=1&_sampling=0.1
+http://bro:9000/bob/dobolina/mr/bob/dobolina?_timing=320
 
 h3. also
 
