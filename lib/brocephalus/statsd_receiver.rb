@@ -50,6 +50,7 @@ module Brocephalus
     attr_reader   :config
     attr_reader   :logger
 
+    # set up timers to flush stats to graphite, and to log debugging info
     def initialize config, logger
       @config = config
       @logger = logger
@@ -67,6 +68,7 @@ module Brocephalus
       end
     end
 
+    # triggered when UDP packed received.
     def receive_data msg
       logger.debug("rcvd\t#{msg}") if config[:dump_messages]
       key, *bits = msg.strip.split(':')
@@ -84,9 +86,7 @@ module Brocephalus
         else
           logger.info("Bad line: #{bit}") ; next
         end
-        logger.debug([ key, bits, num, type, rate ])
       end
-      logger.debug([ key, bits, "Counters:", counters.to_json, "Timers:", timers.to_json ].join("\t"))
     end
 
     def flush_metrics
@@ -94,6 +94,7 @@ module Brocephalus
       metrics   = []
       num_stats = 0
 
+      # assemble metrics from all counters
       counters.each do |key, val|
         adj_val = val.to_f / config[:flush_interval]
         metrics << ["stats.#{key}",        adj_val]
@@ -103,6 +104,7 @@ module Brocephalus
         num_stats += 1
       end
 
+      # assemble metrics from all timers
       timers.each do |key, timings|
         next if timings.blank?
         min, mean, max_at_threshold, max, count = timing_stats(timings)
@@ -117,10 +119,10 @@ module Brocephalus
         num_stats += 1
       end
 
+      # assemble metric showing number of metrics
       metrics << ["statsd.numStats", num_stats]
-
-      logger.info("Get out of the shower, I gotta flush: #{metrics.inspect}")
       
+      # send them to graphite
       send_metrics(metrics, ts)
     end
 
