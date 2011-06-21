@@ -16,7 +16,7 @@ Spork.prefork do
   require 'support/test_helper'
 
   # Requires custom matchers & macros, etc from files in ./support/ & subdirs
-  Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
+  Dir[Goliath.root_path("spec/support/**/*.rb")].each {|f| require f}
 
   # Configure rspec
   RSpec.configure do |config|

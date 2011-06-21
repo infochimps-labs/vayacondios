@@ -1,0 +1,172 @@
+
+h4. Doozerd
+
+"Doozerd":https://github.com/ha/doozerd 
+
+* DEL path, rev
+* GET path, rev => value, rev
+* SET path, rev, value => rev
+* WAIT path, rev => path, rev, value, flags
+* WALK path, rev, offset => path, rev, value
+* REV => rev
+
+* watch(rev, path, &blk)
+* getdir(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
+* walk(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
+
+* globbing on path sequences. doozerd allows ?, * and **.
+
+h4. Noah
+
+"Noah":https://github.com/lusis/Noah has a few basic design goals:
+
+The system MUST support RESTful interaction for operations where REST maps properly
+The system MUST support basic concepts of hosts, services, applications and configurations
+The system MUST support horizontal scaling.
+
+Additionally:
+
+The system SHOULD be flexible in deployment options.
+The system SHOULD support watches similar to ZooKeeper
+The system SHOULD support pluggable callbacks for watches.
+The system SHOULD support being a client of itself.
+
+four distinct states: up, down, pending_up, pending_down
+
+h3. Zookeeper
+
+* "Zookeeper":http://zookeeper.apache.org/
+
+h3. Cfmap
+
+"Cfmap":http://code.google.com/p/cfmap/
+
+Indexed (searchable)
+* Required columns - These three columns are required for all new records. Its used to create the record key.
+  - "host" - Should be set to whatever hostname thinks it is
+  - "port" - Should be set to the port of whatever app/service the info is about
+  - "appname" - Should be set to the name of the app or service the info is about
+* Optional columns
+  - "ip" - This is set by cfmap to the IP of the client at time of connection. For security reasons, this value can never be set using APIs.
+  - "status" - The current status of this resource.
+  - "checked" - The time when last status was updated.
+  - "deployed_date" - The time when the resource was deployed.
+  - "type" - By default its set to "apps". But you can change it to anything. We recommend the following
+    app - for services/applications
+    host - for servers/hardware
+    disk - for any kind of storage divice
+    process - for any kind of process
+Non-indexed (not searchable)   
+* "stats_*" - These columns must have numeric values and is generally used for graphing system state. Reverse indexes for these columns are not created.
+* "info_*" - These columns have informational values which are not something one would search by. Reverse indexes for these columns are not created. Stack traces, for example, could be embedded inside these columns
+* example
+  - /cfmap/browse/create.jsp?host=myserver&port=0&appname=apache&status=running - Simple REST API to set status of "apache" app to "running"
+  
+<pre>
+        sub prepareMpstat()      {$mpstat=&getExec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH; mpstat | grep all | tail -1 | sed -e\'s/  / /g\' | sed -e\'s/  / /g\'| sed -e\'s/  / /g\'");}
+        sub getCpuUser()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[3];}}
+        sub getCpuIdle()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[10];}}
+        sub getCpuSys()          {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[5];}}
+        sub getCpuIowait()       {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[6];}}
+        sub getCpuIntrS()        {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[11];}}
+        sub getHostName()        { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH;hostname"); }
+        sub getKernelVersion()   { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin;uname --kernel-release"); }
+        sub getTotalMem()        { exec('cat /proc/meminfo | grep ^MemTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getFreeMem()         { exec('cat /proc/meminfo | grep ^MemFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getTotalSwap()       { exec('cat /proc/meminfo | grep ^SwapTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getFreeSwap()        { exec('cat /proc/meminfo | grep ^SwapFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
+        sub getLoadAvg1m()       { exec('cat /proc/loadavg | awk \'{print $1 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvg5m()       { exec('cat /proc/loadavg | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvg15m()      { exec('cat /proc/loadavg | awk \'{print $3 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getLoadAvgEntities() { exec('cat /proc/loadavg | awk \'{print $4 }\' | cut -d\'/\' -f2 | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
+        sub getCpuBusy()         { exec('cat /proc/uptime | perl -e\'while(<STDIN>){$_=~s/\n//g;@a=split(/ /,$_);print 100*($a[0]-$a[1])/$a[0];}\' | cut -d\'.\' -f1');}
+        sub getStartDate()       { exec('A=`cat /proc/uptime | cut -d\' \' -f1 | cut -d\'.\' -f1`;B=`date +\'%s\'`;C=$((B-A));echo $C'); $_dd=floor($_d/10)*10;  return $_dd;}
+        sub getESTCount()        { exec('netstat -na | grep -i established | wc -l');}
+        sub getPSCount()         { exec('ps -aef | wc -l');}
+        sub getIOWait()          { exec('sar 1 3 2> /dev/null | tail -1 | awk \'{print $6}\'');}
+</pre>
+
+h3. Chubby
+
+* "Chubby":http://labs.google.com/papers/chubby.html
+
+h3. Pulp
+
+https://fedorahosted.org/pulp/wiki
+
+
+h2. Design
+
+h3. Network layer
+
+Brocephalus accepts input via:
+
+* UDP  -- UDP is connectionless, so it's fire-and-forget. As Etsy puts it,
+
+  bq. So, why do we use UDP to send data to StatsD? Well, it’s fast — you don’t want to slow your application down in order to track its performance — but also sending a UDP packet is fire-and-forget. Either StatsD gets the data, or it doesn’t. The application doesn’t care if StatsD is up, down, or on fire; it simply trusts that things will work. If they don’t, our stats go a bit wonky, but the site stays up. Because we also worship at the Church of Uptime, this is quite alright. (The Church of Graphs makes sure we graph UDP packet receipt failures though, which the kernel usefully provides.)
+
+  However, UDP (though bone-simple) is somewhat arcane; and since the packet size of a UDP datagram is limited, Brocephalus can't accept large Facts via UDP.
+  
+* HTTP -- HTTP is ubiquitous, and allows for security, load-balancing and so forth. It's connectionful (which is good and bad) and it's heavier-weight enough that you'll want to stick with UDP at the thousands-per-second case.
+
+h3. Aggregator / Router
+
+* HTTP via Goliath
+* also opens a UDP socket
+* is drop-in compatible with statsd
+* "Ruby Metrics":https://github.com/johnewart/ruby-metrics for accumulation
+  - ATTN: does this allow for namespacing?
+
+* drops packets but doesn't fail if Graphite is missing
+* drops packets but doesn't fail if MongoDB is missing
+
+
+h3. Watches
+
+zeromq pubsub?
+pubsubhubbub?
+
+h3. Statsd
+
+* PUT /_stats/meter?name={name.of.stat}&incr={num}
+* PUT /_stats/counter?name={name.of.stat}&incr={num}
+* GET /_stats/instrument?name.of.stat=value
+
+
+
+
+h3. Components
+
+h4. client libraries:
+
+<pre>
+                        UDP	HTTP    facts   metrics 
+  ruby eventmachine     y       y       y       y       
+  ruby stdlib-only      y                       y       
+  ruby faraday          n       y       y       y       
+  java                    ?     y       y       y       
+  curl (shell)          n       y       y       y       
+</pre>
+
+h4. backend targets:
+
+* Graphite
+* MongoDB
+
+h4. integrations
+
+Integrations can
+* send to a
+* store some limited
+
+* goliath: statsd_middleware and statsd_plugin. 
+* ATTN: rack:  ???
+* ATTN: rails: ???
+
+QUESTIONS: 
+* ATTN: do we have to worry about memory use?
+* ATTN: idempotency
+* ATTN: make it easy to include, or ignore:
+  - machine info
+  - deploy info
+

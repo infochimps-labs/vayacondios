@@ -61,3 +61,4 @@ lib/goliath.rb
 lib/icss
 lib/icss.rb
 
+.vendor

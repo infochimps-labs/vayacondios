@@ -43,7 +43,21 @@ broham facts:
 * zendesk.email                 {email,subject,tags}
 * monitor.system                {processes,swap,memory,cpu,disk_free.drive.path}
 * scraper.tw_api                summary of scrape this hour.
+
+* chef.{nodes,roles,cookbooks}
+* fog.servers                   { cloud id created_at state ip_address private_ip_address dns_name nodename ... }
+* google_analytics.{}
+* {simple.dashboard}            {hash representing form results}
 ```
+
+path  => _id handle
+query => payload
+
+posts against path is idempotent
+can specify _next
+
+how do we handle tree leaves vs. branches (files vs dirs)
+
 
 graphite metrics:
 
@@ -63,4 +77,8 @@ graphite metrics:
 * `george.{item}.count`                               count of registered * `users, datasets, downloads, purchases, uniques, pageviews, supplier signups
 * `george-ext.render.timing`                          something from the outside world
 
+* "materialized paths":http://www.mongodb.org/display/DOCS/Trees+in+MongoDB#TreesinMongoDB-MaterializedPaths%28FullPathinEachNode%29
 * see also: [Modeling a Tree in a Document Database](http://seancribbs.com/tech/2009/09/28/modeling-a-tree-in-a-document-database)
+
+
+

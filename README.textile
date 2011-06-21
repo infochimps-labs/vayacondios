@@ -1,75 +1,29 @@
 h1. brocephalus
 
-Data goes in. The right thing happens.
+bq. "Data goes in. The right thing happens."
 
-Simple enough to use in a shell script, performant enough to use everywhere, reliable and powerful enough that why the hell *wouldn't* you bro.send() that?
+Simple enough to use in a shell script, performant enough to use everywhere, that why the hell *wouldn't* you bro.yo() that?
 
-writes might be complex, reads are always simple.
+Any system anywhere can chuck into brocephalus a
 
-can use icss to pre-define if you like
-  - read back an icss using path
-  - have configliere generate / use ICSS
-
-* *Metrics*: Any system anywhere can throw a namespaced, timestamped numeric quantity at Brocephalus. These metrics can report on status ('there are 3 cups of coffee remaining'), timing ('this response took 100ms'), or counting ('I just served a 404 response code').
-
-* *Facts*: Any system anywhere can throw an arbitrary namespaced, timestamped JSON hash at Brocephalus. (We call this 'facts' in contrast to 'logging' to emphasize that this is _structured_ data with _unstructured_ semantics).
+* *status*:  'there are 3 cups of coffee remaining': 
+* *timing*:  'this response took 100ms'
+* *count*:   'I just served a 404 response code'
+* *fact*:    'here's everything to know about the coffee machine: {"cups_remaining":3,"uptime":127,room:"hyrule"}' -- an arbitrary JSON hash
 
 h3. Design goals
 
-* *Decentralized*:      Any system anywhere can dispatch facts or metrics using an arbitrary namespace and schema. Nothing needs to be created in advance.
-* *Bulletproof*:        Clients will never fail because of network loss or timeout.
+* *Decentralized*:      Any (authorized) system can dispatch facts or metrics using an arbitrary namespace and schema. Nothing needs to be created in advance.
+* *Bulletproof*:        UDP clients will never fail because of network loss or timeout.
 * *Fast*:               UDP clients are non-blocking and happily dispatch thousands of requests per second.
-* *High Throughput*:    Brocephalus on a t1.micro should outpace Graphite on an m1.small and Mongo on an m1.large.
 * *Minimal Dependency*: Ruby clients can dispatch or query using nothing outside of the standard libraries. 
 * *Ubiquitous*:         A shell script can send a simple basket of facts in < 3 lines.
+* *writes are simple, reads are clever*: A writer gets to chuck things in according to its conception of the world.
 
-Not design goals:
-
-* *Reliable delivery*:  If the network or datastore fails, Brocephalus will drop packets on the floor. However, it will report metrics to show this is happening.
-* *Storage*:            Brocephalus is designed to be friends with Graphite and MongoDB (and pluggable for others). It doesn't do anything but aggregation and routing, though.
-* *Analysis*:           ditto.
-* *Graphing*:           ditto.
-
-Q: ...but what if I ???
-A: don't do that
-
-readers and writers of facts need to exhibit decorum and collegiality. 
-
-h2. Clients
-
-
-* Periodic fetch        Chef
-  /chef/nodes/
-* Periodic fetch        Fog (cloud machines)
-  /fog/compute/servers/:id { cloud id created_at state ip_address private_ip_address dns_name nodename ... }
-* Periodic fetch        google analytics
-* hadoop script completed, sends { script_name started_at run_time completion_status run_params cluster_config }
-* simple dashboard form
-* notify        cluster appears
-* I am A foo-bar, assign me uniquely the NEXT foo-bar
-* Tell me where ALL clusters/magilla/cassandra_datanode_seed are
-* Tell me where THE MOST RECENT clusters/gibbon/hadoop_namenode is
-
-* *metric*
-  - value    /metric/scope/of/metric?ts=:time&val=:val
-  - timing
-  - counting
-  - 
-
-* Tweet by us  /community/twitter/users/infochimps/198734234 -- { tweet_id text created_at geo{ lat lng } ... }
-
-path  => _id handle
-query => payload
-
-posts against path is idempotent
-can specify _next
-
-how do we handle tree leaves vs. branches (files vs dirs)
 
 h2. API
 
 h3. namespacing
-
 
 The first path segment defines a collection, and the remainder defines a [materialized path.](http://www.mongodb.org/display/DOCS/Trees+in+MongoDB#TreesinMongoDB-MaterializedPaths%28FullPathinEachNode%29)
 All hashes within a given colxn.path should always have the same structure (so, don't record a george download and a george signup in the same scope).
@@ -94,50 +48,9 @@ Hash will hold:
 * `_ts`           timestamp, set if blank
 * `_path`         `name.spaced.path.fact_name`, omits the collection part
 
-The only _underscored fields that request can fill in are _id, _ts and _path. All others are scrubbed (?). All other fields must be `[a-z][a-z0-9_]+` (lowercase,starts with a letter).
-
-
-broham facts:
-
-```
-* code.commit                   {repo,message,lines,author}
-* code.deploy                   {cluster,repo,environment,SHA,cluster-facet-idx,instance_id}
-* hackboxen.run                 {runtime,hackbox,icss_files,data_assets,...}
-* hackboxen.hadoop              {job_name,job_id,cluster,nodes,machine_size,runtime,input,output,map_tasks,reduce_tasks,counters,bytes_read,outcome}
-* troop.{target}                publishing to george, s3, mysql, es, etc.
-* george.{item}                 info on a new registered * user, dataset, download, purchase, unique, pageview, or supplier signup
-* highrise.note                 {email,case,subject,contact}
-* highrise.contact              {name,email,phone}
-* zendesk.email                 {email,subject,tags}
-* monitor.system                {processes,swap,memory,cpu,disk_free.drive.path}
-* scraper.tw_api                summary of scrape this hour.
-```
-
-graphite metrics:
-
-* `buzzkill.em.latency.prehensile.apinode-5`
-* `buzzkill.em.connection_count.prehensile.apinode-5`
-* `buzzkill.req.{200,404,...}.{timing,count}`
-* `buzzkill.req.error.{missing_apikey,request_failed,...}`
-* `apeyeye.req.{200,404,...}.{timing,count}`
-* `apeyeye.req.social.network.tw.influence.trstrank`
-* `apeyeye.endpoint_req.name.space.protocol.endpoint`
-* `scraper.tw_api.reqs.{all,200,401,404,502,503}`
-* `scraper.tw_api.mb`
-* `scraper.tw_search.reqs.{all,200,401,404,502,503}`
-* `scraper.tw_search`
-* `scraper.tw_parsed.{user,tweet,geo,...}`
-* `monitor.system.{machine_name}.{processes,swap,memory,cpu,disk_free.drive.path}`
-* `george.{item}.count`                               count of registered * `users, datasets, downloads, purchases, uniques, pageviews, supplier signups
-* `george-ext.render.timing`                          something from the outside world
-
-* "materialized paths":http://www.mongodb.org/display/DOCS/Trees+in+MongoDB#TreesinMongoDB-MaterializedPaths%28FullPathinEachNode%29
-* "Modeling a Tree in a Document Database":http://seancribbs.com/tech/2009/09/28/modeling-a-tree-in-a-document-database/
-
 h3. also
 
-* path components must be ASCII strings that start with [a-z] and contain only lowercase alphanum, _, or -.
-  components starting with a '_' have reserved meanings
+* path components must be ASCII strings matching `[a-z][a-z0-9_]+` -- that is,  start with [a-z] and contain only lowercase alphanum or _underscore. Components starting with a '_' have reserved meanings -- the only _underscored fields that request can fill in are _id, _ts and _path. 
 
 * Brocephalus reserves the right to read and write paths in /bro, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
 
@@ -197,179 +110,10 @@ GET latest
 GET all
 GET next
 
-h4. Doozerd
-
-"Doozerd":https://github.com/ha/doozerd 
-
-* DEL path, rev
-* GET path, rev => value, rev
-* SET path, rev, value => rev
-* WAIT path, rev => path, rev, value, flags
-* WALK path, rev, offset => path, rev, value
-* REV => rev
-
-* watch(rev, path, &blk)
-* getdir(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
-* walk(rev, path, off=0, lim=MaxInt64, ents=[], &blk)
-
-* globbing on path sequences. doozerd allows ?, * and **.
-
-h4. Noah
-
-"Noah":https://github.com/lusis/Noah has a few basic design goals:
-
-The system MUST support RESTful interaction for operations where REST maps properly
-The system MUST support basic concepts of hosts, services, applications and configurations
-The system MUST support horizontal scaling.
-
-Additionally:
-
-The system SHOULD be flexible in deployment options.
-The system SHOULD support watches similar to ZooKeeper
-The system SHOULD support pluggable callbacks for watches.
-The system SHOULD support being a client of itself.
-
-four distinct states: up, down, pending_up, pending_down
-
-h3. Zookeeper
-
-* "Zookeeper":http://zookeeper.apache.org/
-
-h3. Cfmap
-
-"Cfmap":http://code.google.com/p/cfmap/
-
-Indexed (searchable)
-* Required columns - These three columns are required for all new records. Its used to create the record key.
-  - "host" - Should be set to whatever hostname thinks it is
-  - "port" - Should be set to the port of whatever app/service the info is about
-  - "appname" - Should be set to the name of the app or service the info is about
-* Optional columns
-  - "ip" - This is set by cfmap to the IP of the client at time of connection. For security reasons, this value can never be set using APIs.
-  - "status" - The current status of this resource.
-  - "checked" - The time when last status was updated.
-  - "deployed_date" - The time when the resource was deployed.
-  - "type" - By default its set to "apps". But you can change it to anything. We recommend the following
-    app - for services/applications
-    host - for servers/hardware
-    disk - for any kind of storage divice
-    process - for any kind of process
-Non-indexed (not searchable)   
-* "stats_*" - These columns must have numeric values and is generally used for graphing system state. Reverse indexes for these columns are not created.
-* "info_*" - These columns have informational values which are not something one would search by. Reverse indexes for these columns are not created. Stack traces, for example, could be embedded inside these columns
-* example
-  - /cfmap/browse/create.jsp?host=myserver&port=0&appname=apache&status=running - Simple REST API to set status of "apache" app to "running"
-  
-<pre>
-        sub prepareMpstat()      {$mpstat=&getExec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH; mpstat | grep all | tail -1 | sed -e\'s/  / /g\' | sed -e\'s/  / /g\'| sed -e\'s/  / /g\'");}
-        sub getCpuUser()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[3];}}
-        sub getCpuIdle()         {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[10];}}
-        sub getCpuSys()          {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[5];}}
-        sub getCpuIowait()       {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[6];}}
-        sub getCpuIntrS()        {if (length($mpstat)>10){@mpstat=split(/ /,$mpstat);return $mpstat[11];}}
-        sub getHostName()        { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin; export PATH;hostname"); }
-        sub getKernelVersion()   { exec("PATH=\$PATH:/usr/bin:/usr/sbin:/bin:/sbin;uname --kernel-release"); }
-        sub getTotalMem()        { exec('cat /proc/meminfo | grep ^MemTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
-        sub getFreeMem()         { exec('cat /proc/meminfo | grep ^MemFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
-        sub getTotalSwap()       { exec('cat /proc/meminfo | grep ^SwapTotal | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
-        sub getFreeSwap()        { exec('cat /proc/meminfo | grep ^SwapFree | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;$a=$a/1024;print ($a);\''); }
-        sub getLoadAvg1m()       { exec('cat /proc/loadavg | awk \'{print $1 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
-        sub getLoadAvg5m()       { exec('cat /proc/loadavg | awk \'{print $2 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
-        sub getLoadAvg15m()      { exec('cat /proc/loadavg | awk \'{print $3 }\' | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
-        sub getLoadAvgEntities() { exec('cat /proc/loadavg | awk \'{print $4 }\' | cut -d\'/\' -f2 | perl -e \'$a=<STDIN>;$a=~s/\n//g;print ($a);\''); }
-        sub getCpuBusy()         { exec('cat /proc/uptime | perl -e\'while(<STDIN>){$_=~s/\n//g;@a=split(/ /,$_);print 100*($a[0]-$a[1])/$a[0];}\' | cut -d\'.\' -f1');}
-        sub getStartDate()       { exec('A=`cat /proc/uptime | cut -d\' \' -f1 | cut -d\'.\' -f1`;B=`date +\'%s\'`;C=$((B-A));echo $C'); $_dd=floor($_d/10)*10;  return $_dd;}
-        sub getESTCount()        { exec('netstat -na | grep -i established | wc -l');}
-        sub getPSCount()         { exec('ps -aef | wc -l');}
-        sub getIOWait()          { exec('sar 1 3 2> /dev/null | tail -1 | awk \'{print $6}\'');}
-</pre>
-
-h3. Chubby
-
-* "Chubby":http://labs.google.com/papers/chubby.html
-
-h3. Pulp
-
-https://fedorahosted.org/pulp/wiki
-
-
-h2. Design
-
-h3. Network layer
-
-Brocephalus accepts input via:
-
-* UDP  -- UDP is connectionless, so it's fire-and-forget. As Etsy puts it,
-
-  bq. So, why do we use UDP to send data to StatsD? Well, it’s fast — you don’t want to slow your application down in order to track its performance — but also sending a UDP packet is fire-and-forget. Either StatsD gets the data, or it doesn’t. The application doesn’t care if StatsD is up, down, or on fire; it simply trusts that things will work. If they don’t, our stats go a bit wonky, but the site stays up. Because we also worship at the Church of Uptime, this is quite alright. (The Church of Graphs makes sure we graph UDP packet receipt failures though, which the kernel usefully provides.)
-
-  However, UDP (though bone-simple) is somewhat arcane; and since the packet size of a UDP datagram is limited, Brocephalus can't accept large Facts via UDP.
-  
-* HTTP -- HTTP is ubiquitous, and allows for security, load-balancing and so forth. It's connectionful (which is good and bad) and it's heavier-weight enough that you'll want to stick with UDP at the thousands-per-second case.
-
-h3. Aggregator / Router
-
-* HTTP via Goliath
-* also opens a UDP socket
-* is drop-in compatible with statsd
-* "Ruby Metrics":https://github.com/johnewart/ruby-metrics for accumulation
-  - ATTN: does this allow for namespacing?
-
-* drops packets but doesn't fail if Graphite is missing
-* drops packets but doesn't fail if MongoDB is missing
-
-
-h3. Watches
-
-zeromq pubsub?
-pubsubhubbub?
-
-h3. Statsd
-
-* PUT /_stats/meter?name={name.of.stat}&incr={num}
-* PUT /_stats/counter?name={name.of.stat}&incr={num}
-* GET /_stats/instrument?name.of.stat=value
-
-
-
-
-h3. Components
-
-h4. client libraries:
-
-<pre>
-                        UDP	HTTP    facts   metrics 
-  ruby eventmachine     y       y       y       y       
-  ruby stdlib-only      y                       y       
-  ruby faraday          n       y       y       y       
-  java                    ?     y       y       y       
-  curl (shell)          n       y       y       y       
-</pre>
-
-h4. backend targets:
-
-* Graphite
-* MongoDB
-
-h4. integrations
-
-Integrations can
-* send to a
-* store some limited
-
-* goliath: statsd_middleware and statsd_plugin. 
-* ATTN: rack:  ???
-* ATTN: rails: ???
-
-QUESTIONS: 
-* ATTN: do we have to worry about memory use?
-* ATTN: idempotency
-* ATTN: make it easy to include, or ignore:
-  - machine info
-  - deploy info
-
-
 h2. Notes
+
+* isn't this just logging? Broham facts are _structured_ data with _unstructured_ semantics.
+
 
 h3. When to use HTTP vs UDP
 
