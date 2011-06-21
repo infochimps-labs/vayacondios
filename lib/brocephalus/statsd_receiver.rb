@@ -71,13 +71,13 @@ module Brocephalus
       logger.debug("rcvd\t#{msg}") if config[:dump_messages]
       key, *bits = msg.strip.split(':')
       key  = key.gsub(/\s+/, '_').gsub(/\//, '-').gsub(/[^a-zA-Z_\-0-9\.]/, '')
-      bits = [1] if bits.empty?
+      bits = ["1"] if bits.empty?
       bits.each do |bit|
         num,type,rate = bit.split('|')
         case
-        when type.strip == 'ms'
+        when type.to_s.strip == 'ms'
           timers[key] << num.to_f
-        when type.strip == 'c'
+        when type.to_s.strip == 'c'
           if (rate.to_s =~ /^@([\d\.]+)/) then rate = $1.to_f else rate = 1.0 ; end
           num = 1 if num.blank?
           counters[key] += ( num.to_i / rate )
@@ -95,9 +95,9 @@ module Brocephalus
       num_stats = 0
 
       counters.each do |key, val|
-        adj_val = val / config[:flush_interval]
-        metrics << ["stats.#{key}", adj_val]
-        metrics << ["stats_counts.#{key}", val]
+        adj_val = val.to_f / config[:flush_interval]
+        metrics << ["stats.#{key}",        adj_val]
+        metrics << ["stats_counts.#{key}", val.to_i]
         #
         counters[key] = 0
         num_stats += 1

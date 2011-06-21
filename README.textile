@@ -56,9 +56,12 @@ h3. write
 * timing
 * fact
 
+echo 'bob.dobolina.mr.bob.dobolina:320|ms:320' | netcat -c -u 127.0.0.1 8125
+
 http://bro:9000/bob/dobolina/mr/bob/dobolina?_count=1
 http://bro:9000/bob/dobolina/mr/bob/dobolina?_count=1&_sampling=0.1
 http://bro:9000/bob/dobolina/mr/bob/dobolina?_timing=320
+
 
 h3. also
 
