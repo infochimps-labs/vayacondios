@@ -33,20 +33,24 @@ module Brocephalus
       @logger = logger
       @config = DEFAULT_CONFIG.merge(full_config[:statsd_receiver] || {})
       unless @config[:graphite_host] then raise "please specify a graphite host in config[:statsd_receiver][:graphite_host]" end
+      @@agent = nil
+    end
+
+    def agent
+      @@agent
     end
 
     # Called automatically to start the plugin
     def run
       # Start a listener on the UDP socket
-      EM.open_datagram_socket(config[:statsd_rcv_addr], config[:statsd_rcv_port], StatsdReceiverCounter, config, logger)
+      @@agent = EM.open_datagram_socket(config[:statsd_rcv_addr], config[:statsd_rcv_port], StatsdReceiverCounter, config, logger)
     end
-
   end
-
 
   module StatsdReceiverCounter
     attr_accessor :counters
     attr_accessor :timers
+    attr_accessor :values
     attr_reader   :config
     attr_reader   :logger
 
@@ -56,6 +60,7 @@ module Brocephalus
       @logger = logger
       self.counters = Hash.new{|h,k| h[k] = 0  }
       self.timers   = Hash.new{|h,k| h[k] = [] }
+      self.values   = Hash.new{|h,k| h[k] = [] }
 
       EM.add_periodic_timer(config[:flush_interval]) do
         flush_metrics
@@ -83,10 +88,21 @@ module Brocephalus
           if (rate.to_s =~ /^@([\d\.]+)/) then rate = $1.to_f else rate = 1.0 ; end
           num = 1 if num.blank?
           counters[key] += ( num.to_i / rate )
+        when type.to_s.strip == 'v'
+          receive_value
         else
           logger.info("Bad line: #{bit}") ; next
         end
       end
+    end
+
+    def receive_count count, sample_rate
+    end
+
+    def receive_value val
+    end
+
+    def receive_iiming
     end
 
     def flush_metrics
@@ -121,7 +137,7 @@ module Brocephalus
 
       # assemble metric showing number of metrics
       metrics << ["statsd.numStats", num_stats]
-      
+
       # send them to graphite
       send_metrics(metrics, ts)
     end
@@ -157,7 +173,7 @@ module Brocephalus
       rescue Errno::EPIPE, Errno::ECONNREFUSED => boom
         @graphite_socket = nil
         unless retried then retried = true; retry ; end
-	logger.error("failed to save stats\t#{boom.class}\t#{boom}\t#{metrics_message.join("\t")}")
+        logger.error("failed to save stats\t#{boom.class}\t#{boom}\t#{metrics_message.join("\t")}")
       end
     end
 
