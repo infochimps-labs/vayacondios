@@ -21,6 +21,21 @@ h3. Design goals
 * *writes are simple, reads are clever*: A writer gets to chuck things in according to its conception of the world.
 
 
+See also Coda Hale's metrics (https://github.com/codahale/metrics/).
+
+
+Types of metrics:
+
+* counters              Counter metrics provide increment and decrement capabilities for a single scalar value.
+* gauges                Gauges are point-in-time single value metrics.
+* histograms and timers Histograms are collections of values that have statistical analysis done to them, such as mean, min, max, kurtosis and percentile. The can be used like "timers" as well with the timed update functions.
+* histories             Histories are a collection of past events, such as errors or log messages.
+* meters                Meters are increment only counters with mean rates and exponentially weighted moving averages applied to them, similar to a unix load average.
+
+and in broham,
+* facts                 A json hash
+
+
 h2. API
 
 h3. namespacing
