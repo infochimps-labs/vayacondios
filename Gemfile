@@ -1,10 +1,10 @@
 source "http://rubygems.org"
 
 gem   'yajl-ruby', "~> 0.8.2"
-gem   'gorillib',  "~> 0.0.4"
+gem   'gorillib',  "~> 0.1.1"
 
 gem   'goliath',         :git => 'https://github.com/postrank-labs/goliath.git'
-gem   'icss',            :git => 'https://github.com/infochimps/icss.git', :branch => 'with_gorillib'
+gem   'icss',            :git => 'https://github.com/infochimps/icss.git'
 
 gem   'eventmachine',    :git => 'https://github.com/eventmachine/eventmachine.git'
 gem   'em-synchrony',    :git => 'https://github.com/igrigorik/em-synchrony.git'

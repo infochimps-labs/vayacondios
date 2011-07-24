@@ -1,14 +1,14 @@
 GIT
   remote: https://github.com/eventmachine/eventmachine.git
-  revision: 7497dd1d1794f6307e9ad34e11158b62f0c7a2f4
+  revision: 1107730c338892c8281a14b6b2e0802f8d715fb4
   specs:
-    eventmachine (1.0.0.beta.3)
+    eventmachine (1.0.0.beta.4)
 
 GIT
   remote: https://github.com/igrigorik/em-http-request.git
-  revision: 2712fbed9d4d8058e77573882e59023364bb1406
+  revision: 1b4e646c65ad33b9a04e18f6bc0fa0c2e54e81f2
   specs:
-    em-http-request (1.0.0.beta.3)
+    em-http-request (1.0.0.beta.4)
       addressable (>= 2.2.3)
       em-socksify
       eventmachine (>= 1.0.0.beta.3)
@@ -16,29 +16,29 @@ GIT
 
 GIT
   remote: https://github.com/igrigorik/em-synchrony.git
-  revision: 574d71fc7a93ded2857171d3f55f944b661df1ca
+  revision: 81af523ebad26a6cff2eb2842a4a1691c0c49374
   specs:
     em-synchrony (0.3.0.beta.1)
       eventmachine (>= 1.0.0.beta.1)
 
 GIT
   remote: https://github.com/infochimps/icss.git
-  revision: da034a69f3d45b9b1f4dfe2a81e4e7a8a582d074
-  branch: with_gorillib
+  revision: b0fdb805bc3c1266ba84f745965578fe3c743f46
   specs:
-    icss (0.0.2)
-      gorillib (~> 0.0.4)
-      yajl-ruby (~> 0.8.2)
+    icss (0.1.3)
+      activemodel (~> 3.0.9)
+      gorillib (~> 0.1.1)
 
 GIT
   remote: https://github.com/postrank-labs/goliath.git
-  revision: bb8d049d15eaf78bc062fa2bbfa03f96f7e12f3d
+  revision: 3beab0f1e113f9d590d5c3d5dd6a1158a4756dba
   specs:
-    goliath (0.9.1)
+    goliath (0.9.2)
       async-rack
       em-synchrony (>= 0.3.0.beta.1)
       eventmachine (>= 1.0.0.beta.3)
       http_parser.rb
+      http_router (~> 0.9.0)
       log4r
       multi_json
       rack (>= 1.2.2)
@@ -48,11 +48,17 @@ GIT
 GEM
   remote: http://rubygems.org/
   specs:
+    activemodel (3.0.9)
+      activesupport (= 3.0.9)
+      builder (~> 2.1.2)
+      i18n (~> 0.5.0)
+    activesupport (3.0.9)
     addressable (2.2.6)
     async-rack (0.5.1)
       rack (~> 1.1)
     bson (1.3.1)
     bson_ext (1.3.1)
+    builder (2.1.2)
     diff-lcs (1.1.2)
     em-mongo (0.3.6)
       bson (>= 1.1.3)
@@ -61,21 +67,25 @@ GEM
     em-socksify (0.1.0)
       eventmachine
     git (1.2.5)
-    gorillib (0.0.7)
+    gorillib (0.1.4)
     http_parser.rb (0.5.1)
+    http_router (0.9.1)
+      rack (>= 1.0.0)
+      url_mount (~> 0.2.1)
+    i18n (0.5.0)
     jeweler (1.5.2)
       bundler (~> 1.0.0)
       git (>= 1.2.5)
       rake
     log4r (1.1.9)
-    multi_json (1.0.2)
-    rack (1.2.2)
+    multi_json (1.0.3)
+    rack (1.3.1)
     rack-accept-media-types (0.9)
     rack-contrib (1.1.0)
       rack (>= 0.9.1)
     rack-respond_to (0.9.8)
       rack-accept-media-types (>= 0.6)
-    rake (0.8.7)
+    rake (0.9.2)
     rcov (0.9.9)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
@@ -85,7 +95,9 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
-    spork (0.9.0.rc7)
+    spork (0.9.0.rc9)
+    url_mount (0.2.1)
+      rack
     watchr (0.7)
     yajl-ruby (0.8.2)
     yard (0.6.8)
@@ -100,7 +112,7 @@ DEPENDENCIES
   em-synchrony!
   eventmachine!
   goliath!
-  gorillib (~> 0.0.4)
+  gorillib (~> 0.1.1)
   icss!
   jeweler (~> 1.5.2)
   rcov (>= 0.9.9)
