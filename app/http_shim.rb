@@ -22,8 +22,9 @@ class HttpShim < Goliath::API
 
   # Pass the request on to host given in config[:forwarder]
   def response(env)
+    raise ArgumentError, "Must specify a bucket name in the path" unless bucket_name.present?
     result = collection.insert(env.params)
-    [200, {}, { :result => { :bucket => bucket_name, :id => result }}.to_json]
+    [200, {}, { :result => { :bucket => bucket_name, :id => result }}]
   end
 
 protected
@@ -34,5 +35,4 @@ protected
   def collection
     db.collection(bucket_name)
   end
-
 end

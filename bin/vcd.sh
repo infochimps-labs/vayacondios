@@ -20,7 +20,7 @@ hola)
     facts="$3"
     if [ -z "$bucket" ] || [ -z "$facts" ] ; then echo "vcd hola foo/bar '{...json hash...}'" ; echo "  got '$bucket' '$fact'" ; exit -1 ; fi
 
-    echo -- curl -H 'Content-Type:application/json' -d "$facts" "$vcd_server_url/$bucket"
+    echo -- curl -H 'Content-Type:application/json' -d "'$facts'" "'$vcd_server_url/$bucket'"
     curl -H 'Content-Type:application/json' -d "$facts" "$vcd_server_url/$bucket"
     ;;
 
