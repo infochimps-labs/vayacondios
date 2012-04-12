@@ -38,11 +38,8 @@ class HttpShim < Goliath::API
   end
 
 protected
-  def db
-    @db ||= env.config['vayacondios_dev']
-  end
 
   def collection
-    db.collection(bucket_name + '_events')
+    DB.collection(bucket_name + '_events ')
   end
 end
