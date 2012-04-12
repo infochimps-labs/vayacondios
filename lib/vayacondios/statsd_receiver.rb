@@ -1,9 +1,9 @@
-module Brocephalus
+module Vayacondios
   # Acts as a statsd-compatible server: Aggregates values, counts and timings to
   # a remote graphite.
   #
   # @example
-  #  plugin Brocephalus::StatsdReceiver
+  #  plugin Vayacondios::StatsdReceiver
   #
   class StatsdReceiver
     attr_reader   :config
@@ -27,7 +27,7 @@ module Brocephalus
     # @param config [Hash] The server configuration data
     # @param status [Hash] A status hash
     # @param logger [Log4R::Logger] The logger
-    # @return [Goliath::Plugin::Latency] An instance of the Brocephalus::StatsdReceiver plugin
+    # @return [Goliath::Plugin::Latency] An instance of the Vayacondios::StatsdReceiver plugin
     def initialize(port, full_config, status, logger)
       @status = status
       @logger = logger
