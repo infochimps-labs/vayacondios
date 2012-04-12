@@ -16,16 +16,23 @@ class HttpShim < Goliath::API
   # db = EM::Mongo::Connection.new('localhost').db('my_database')
   # collection = db.collection('my_collection')
 
-  def db
-    @db ||= env.config['vayacondios_dev']
+  def bucket_name
+    env[Goliath::Request::REQUEST_PATH].sub(/^\//, '').gsub(/[\W_]+/, '_')
   end
 
   # Pass the request on to host given in config[:forwarder]
   def response(env)
-    p env.params
-    collection = db.collection(env[Goliath::Request::REQUEST_PATH])
     result = collection.insert(env.params)
-    [200, {}, result.to_s]
+    [200, {}, { :result => { :bucket => bucket_name, :id => result }}.to_json]
+  end
+
+protected
+  def db
+    @db ||= env.config['vayacondios_dev']
+  end
+
+  def collection
+    db.collection(bucket_name)
   end
 
 end
