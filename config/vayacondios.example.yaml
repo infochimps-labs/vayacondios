@@ -1,0 +1,8 @@
+statsd_logger:
+  name:         fiddle
+  host:         localhost
+  port:         8125
+mongo:
+  host:         localhost
+  port:         27017
+  database:     vayacondios_dev

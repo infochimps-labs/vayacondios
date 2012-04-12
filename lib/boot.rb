@@ -20,7 +20,7 @@ def try_or_exec_bootstrap try_bootstrap=true, &block
   if try_bootstrap && (not block.call)
     cmd = Goliath.root_path("config/bootstrap.rb")
     warn "WARN The gem environment is out-of-date or has yet to be bootstrapped."
-    warn "     Runnning '#{cmd.join(' ')} --local' to remedy this situation. "
+    warn "     Runnning '#{cmd} --local' to remedy this situation. "
     warn "     if you get an error about 'rake' or somesuch not installed, "
     warn "     run #{cmd} explicitly (without the --local flag)."
     system cmd, "--local"
@@ -39,7 +39,7 @@ if is_production
 else
   # Run a more exhaustive bootstrap check in non-production environments by making
   # sure the Gemfile matches the .bundle/loadpath file checksum.
-  
+
   # Verify the environment has been bootstrapped by checking that the .bundle/loadpath file exists.
   try_or_exec_bootstrap do
     File.exist?(Goliath.root_path(".bundle/loadpath"))

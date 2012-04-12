@@ -1,3 +1,12 @@
+def ENV.root_path(*args)
+  File.expand_path(File.join(File.dirname(__FILE__), '..', *args))
+end
+
+require 'configliere'
+Settings.define :app_name, :default => 'vayacondios', :description => 'Name to key on for tracer stats, statsd metrics, etc.'
+Settings.read(ENV.root_path('config/vayacondios.yaml'))
+Settings.resolve!
+
 config[:server] = {
   :nodename => ENV['NODENAME'],
   :hostname => `hostname`.chomp,
@@ -16,16 +25,32 @@ config[:statsd_receiver] = {
   :debug_interval => 2.0,
 }
 
+config[:statsd_logger] = Settings[:statsd_logger]
+
+config[:activity_stream] = Settings[:activity_stream]
+
+DB_NAME = Settings[:mongo][:database]
+
 environment(:production) do
-  config['broham'] = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
-    EM::Mongo::Connection.new('localhost', 27017, 1, {:reconnect_in => 1}).db('broham_test')
+  Settings[:environment] = config[:environment] = 'production'
+  config[DB_NAME] = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
+    conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
+    conn.db(DB_NAME)
   end
 end
 
 environment(:development) do
-  config['broham'] = EM::Mongo::Connection.new('localhost', 27017, 1, {:reconnect_in => 1}).db('broham_test')
+  Settings[:environment] = config[:environment] = 'development'
+  conn = EM::Mongo::Connection.new(Settings[:mongo][:host],Settings[:mongo][:port], 1, {:reconnect_in => 1})
+  config[DB_NAME] = conn.db(DB_NAME)
 end
 
 environment(:test) do
-  config['broham'] = EM::Mongo::Connection.new('localhost', 27017, 1, {:reconnect_in => 1}).db('broham_test')
+  Settings[:environment] = config[:environment] = 'test'
+  conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
+  config[DB_NAME] = conn(DB_NAME)
+end
+
+def config.inspect
+  self.reject{|k, v| /#{DB_NAME}/ =~ k.to_s}.inspect
 end
