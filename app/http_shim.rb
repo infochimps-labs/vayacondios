@@ -16,14 +16,15 @@ class HttpShim < Goliath::API
   # db = EM::Mongo::Connection.new('localhost').db('my_database')
   # collection = db.collection('my_collection')
 
-  def collection
-    @collection ||= env.config['vayacondios_dev'].collection('my_collection')
+  def db
+    @db ||= env.config['vayacondios_dev']
   end
 
   # Pass the request on to host given in config[:forwarder]
   def response(env)
     p env.params
-    result = collection.insert( { :revolution => 'now' } )
+    collection = db.collection(env[Goliath::Request::REQUEST_PATH])
+    result = collection.insert(env.params)
     [200, {}, result.to_s]
   end
 
