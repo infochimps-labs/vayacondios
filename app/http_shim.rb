@@ -2,6 +2,7 @@
 require File.expand_path('../lib/boot', File.dirname(__FILE__))
 require 'vayacondios'
 require 'vayacondios/statsd_receiver'
+require 'time'
 
 class HttpShim < Goliath::API
   use Goliath::Rack::Heartbeat                     # respond to /status with 200, OK (monitoring, etc)
@@ -23,7 +24,16 @@ class HttpShim < Goliath::API
   # Pass the request on to host given in config[:forwarder]
   def response(env)
     raise ArgumentError, "Must specify a bucket name in the path" unless bucket_name.present?
-    result = collection.insert(env.params)
+    document = {d: env.params}
+    document[:_id] = document[:d].delete("_id") if document[:d].has_key? "_id"
+    begin
+      document[:t]   = Time.parse(document[:d].delete("_ts")) if document[:d].has_key? "_ts"
+    rescue
+      raise ArgumentError, "_ts field contained invalid time string"
+    end
+    document[:t] ||= Time.now
+    
+    result = collection.insert(document)
     [200, {}, { :result => { :bucket => bucket_name, :id => result }}]
   end
 
@@ -33,6 +43,6 @@ protected
   end
 
   def collection
-    db.collection(bucket_name)
+    db.collection(bucket_name + '_events')
   end
 end
