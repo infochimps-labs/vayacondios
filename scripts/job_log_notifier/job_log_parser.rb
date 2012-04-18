@@ -166,7 +166,7 @@ def parse_properties(conf_lines, jobid)
   properties = {}
   conf_lines.each do |line|
     m = /<name>([^<]+)<\/name><value>([^<]+)<\/value>/.match line
-    if m and not m[2].index('SecretAccessKey') then
+    if m and not m[1].downcase.index('secret') then
       properties[m[1]] = m[2]
     end
   end

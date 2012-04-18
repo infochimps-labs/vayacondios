@@ -4,6 +4,13 @@ jgrab() {
     s3cmd get -r $prefix/$jobdate/_logs/ $jobdate/_logs/
 }
 
+jhgrab() {
+    jobdate=$1
+    prefix=$2
+    mkdir -p $jobdate/_logs
+    hdp-get $prefix/$jobdate/_logs/ $jobdate/
+}
+
 jparse() {
     jobdate=$1
     $dir/log_scraper.rb $jobdate >$jobdate.json
