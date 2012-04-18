@@ -1,0 +1,33 @@
+export dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+bdump_and_bparse() {
+    bucket_name=$1
+    bdump $1 ; bparse $1
+}
+
+bparse_and_bload() {
+    bucket_name=$1
+    bparse $1 ; bload "$@"
+}
+
+bdump_and_bload() {
+    bucket_name=$1
+    bdump $1; bparse $1 ; bload $1
+}
+
+bdump() {
+    bucket_name=$1
+    s3cmd ls -r s3://$bucket_name/ >$bucket_name.ls
+}
+
+bparse() {
+    bucket_name=$1
+    $dir/parse_ls.py <$bucket_name.ls >$bucket_name.json
+}
+
+bload() {
+    bucket_name=$1
+    db=$2
+    collection=$3
+    mongoimport -d $db -c $collection $bucket_name.json
+}

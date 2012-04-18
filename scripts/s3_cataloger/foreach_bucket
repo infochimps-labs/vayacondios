@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+export dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+. $dir/buckets
+
+case $1 in
+    -f)
+	bucket_file=$2
+	shift 2
+	;;
+    -h|--help)
+	cat <<EOF
+foreach_bucket [OPTIONS] COMMAND [ARGUMENTS]
+
+This script is used to do a recursive listing of an s3 bucket using
+the s3cmd and then jsonify the output. It runs the COMMAND on the
+buckets specified in a file; on standard input; or, by default, on all
+buckets that can be seen by s3cmd.
+
+OPTIONS include the following:
+
+  -f BUCKET_FILE    file containing a bucket name on each line. If
+                    this is set to '-', then buckets are read from
+                    standard input.
+
+COMMAND includes anything in the 'buckets' script. The main commands
+are the following:
+
+    bdump           dumps BUCKET to a file BUCKET.ls in the current
+                    working directory
+
+    bparse          runs BUCKET.ls through a parser to jsonify it and
+                    outputs the result as BUCKET.json
+
+    bload           loads BUCKET.json into a mongo database. The first
+                    argument passed to this command specifies the
+                    mongo database, while the second specifies the
+                    collection.
+EOF
+	exit 0
+	;;
+    -*)
+	echo "Invalid option: $1"
+	exit 1
+	;;
+esac
+
+command=$1
+shift
+
+buckets=()
+
+## no bucket file specified read all s3 buckets
+if [[ -z $bucket_file ]]
+then
+    for bucket in `s3cmd ls | cut -d ' ' -f 4 | cut -d / -f 3`
+    do
+	buckets=("${buckets[@]}" "$bucket")
+    done
+
+## read buckets from standard input    
+elif [[ $bucket_file == "-" ]]
+then
+    read bucket
+    until [[ $? -eq 1 ]]
+    do
+	buckets=("${buckets[@]}" "$bucket")
+	read bucket
+    done
+
+## read from bucket_file    
+else
+    tmpIFS=$IFS
+    IFS=$'\n'
+
+    for bucket in `cat $bucket_file`
+    do
+	buckets=("${buckets[@]}" "$bucket")
+    done
+
+    IFS=$tmpIFS
+fi
+    
+for bucket in "${buckets[@]}"
+do
+    ($command $bucket "$@")&
+done

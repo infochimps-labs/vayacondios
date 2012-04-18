@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+export dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+. $dir/jobs
+
+prefix="s3n://scraped.chimpy.us/twitter/api"
+
+case $1 in
+    -f)
+	job_file=$2
+	shift 2
+	;;
+    -h|--help)
+	cat <<EOF
+foreach_job [OPTIONS] COMMAND [ARGUMENTS]
+
+This script is used to scrape logs and jsonify their stats in a format
+appropriate for mongo.
+
+OPTIONS include the following:
+
+  -f JOB_FILE       file containing a job name on each line. Jobs will
+                    eventually be prepended by a prefix specified on
+                    the command line. If this is set to '-' or
+                    unspecified, then jobs are read from standard
+                    input.
+
+COMMAND includes anything in the 'jobs' script. The main commands
+are the following:
+
+    jgrab           dumps the _logs directory in the job directories
+                    specified in the current working directory.
+                    ARGUMENTS should contain a prefix appropriate
+                    for creating a URI. A slash will be added to
+                    this path, and the job name will be appended to
+                    fetch the output directory.
+
+    jparse          runs the JOB directory through a parser to
+                    jsonify it and outputs the result as JOB.json.
+
+EOF
+	exit 0
+	;;
+    -*)
+	echo "Invalid option: $1"
+	exit 1
+	;;
+esac
+
+command=$1
+shift
+
+jobs=()
+
+## read jobs from standard input    
+if [[ -z $job_file || $job_file == "-" ]]
+then
+    read job
+    until [[ $? -eq 1 ]]
+    do
+	jobs=("${jobs[@]}" "$job")
+	read job
+    done
+
+## read from job_file    
+else
+    tmpIFS=$IFS
+    IFS=$'\n'
+
+    for job in `cat $job_file`
+    do
+	jobs=("${jobs[@]}" "$job")
+    done
+
+    IFS=$tmpIFS
+fi
+    
+for job in "${jobs[@]}"
+do
+    ($command $job "$@"&)
+done
