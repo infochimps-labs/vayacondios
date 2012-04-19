@@ -13,7 +13,7 @@ jhgrab() {
 
 jparse() {
     jobdate=$1
-    $dir/log_scraper.rb $jobdate >$jobdate.json
+    $dir/job_log_parser.rb $jobdate >$jobdate.json
 }
 
 jgrab_and_jparse() {
