@@ -4,7 +4,7 @@ require 'configliere'
 require 'json'
 
 Settings.use :commandline
-Settings.define :machine_count, :type => Integer, :description => "number of machines running tasktrackers"
+Settings.define :machine_count, :type => Integer, :required => true, :description => "number of machines running tasktrackers"
 Settings.define :print_keys, :type => :boolean, :description => "output keys on command line"
 Settings.resolve!
 
@@ -29,9 +29,8 @@ STDIN.each_line do |line|
     reduce_child_opts = prop['mapred.reduce.child.java.opts']
     child_opts = prop['mapred.child.java.opts']
     pig_command = prop['pig.command.line']
-    result['persexaginta'] = persexaginta = /PERSEXAGINTA=(\d\d)/.match(pig_command)[1]
 
-    result['map_function']               = "filter tweets by ((tstamp) % 100l) < #{persexaginta};"
+    result['map_function'] = pig_command or 'not a pig function'
 
     result['mapper_child_heap_size'] = (/-Xmx(\d+)m/.match(child_opts) || [])[1].to_i
     result['reducer_child_heap_size'] = (/-Xmx(\d+)m/.match(reduce_child_opts) || [])[1].to_i
@@ -39,7 +38,7 @@ STDIN.each_line do |line|
     result['map_slots'] = prop['mapred.tasktracker.map.tasks.maximum'].to_i * Settings.machine_count
     result['reduce_slots'] = prop['mapred.tasktracker.reduce.tasks.maximum'].to_i * Settings.machine_count
 
-    result['script_name'] = prop['sun.java.command']
+    result['script_name'] = prop['sun.java.command'] or 'not a pig job'
 
     result['output_filesystem'] = output[/^(s3n|s3)/] || 'hdfs'
 
@@ -55,10 +54,10 @@ STDIN.each_line do |line|
     result['map_tasks'] = map_tasks = h['total_maps']
     result['reduce_tasks'] = reduce_tasks = h['total_reduces']
 
-    result['total_mapper_input_gb'] = map_fs_counters['hdfs_bytes_read'] / (2.0 ** 30)
+    result['total_mapper_input_gb'] = map_fs_counters.values.max / (2.0 ** 30)
     result['total_mapper_output_gb'] = map_counters['map_output_bytes'] / (2.0 ** 30)
-    result['total_reducer_output_gb'] = reduce_fs_counters['hdfs_bytes_written'] / (2.0 ** 30)
-
+    result['total_reducer_output_gb'] = reduce_fs_counters.values.max / (2.0 ** 30)
+    
     result['mapper_input_gb_per_task']   = result['total_mapper_input_gb'] / map_tasks
     result['mapper_output_gb_per_task']  = result['total_mapper_output_gb'] / map_tasks
     result['reducer_output_gb_per_task'] = result['total_reducer_output_gb'] / reduce_tasks
@@ -89,7 +88,7 @@ indices.each {|i| result["map_duration_#{i}"] = ix(map_run_durations, i)}
 indices.each {|i| result["reducer_end_time_#{i}"] = ix(reducer_end_times, i)}
 indices.each {|i| result["reducer_duration_#{i}"] = ix(reducer_run_durations, i)}
 
-first_keys = ['persexaginta']
+first_keys = []
 last_keys = ['map_function', 'script_name']
 
 case Settings.print_keys
@@ -98,14 +97,3 @@ when true
 else
   puts (first_keys + (result.keys - last_keys - first_keys) + last_keys).map{|k| result[k]}.join "\t"
 end
-
-#puts JSON.generate(result)
-  
-#puts [
-#      lambda {|x| x['map_function'][-4..-2]},               # fraction over 60
-#      lambda {|x| x['reduce_end_time'][-1] - 921404},       # runtime - 4 runtime
-#      lambda {|x| x['map_end_time'][-1]},                   # 100 map end time
-#      lambda {|x| x['map_end_time'][-2]},                   # 90 map end time
-#      lambda {|x| x['reduce_end_time'][-1] - x['map_end_time'][-1]},                   # 100 reduce - map end time
-#      lambda {|x| x['reduce_end_time'][-2] - x['map_end_time'][-1]},                   # 90 reduce - map end time
-#     ].collect {|x| x.call(result)}.join "\t"

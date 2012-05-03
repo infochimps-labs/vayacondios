@@ -1,5 +1,6 @@
 jgrab() {
     jobdate=$1
+    prefix=$2
     mkdir -p $jobdate/_logs
     s3cmd get -r $prefix/$jobdate/_logs/ $jobdate/_logs/
 }

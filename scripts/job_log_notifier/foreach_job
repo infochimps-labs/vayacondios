@@ -4,8 +4,6 @@ export dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 . $dir/jobs
 
-prefix="s3n://scraped.chimpy.us/twitter/api"
-
 case $1 in
     -f)
 	job_file=$2

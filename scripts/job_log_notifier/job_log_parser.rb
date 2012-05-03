@@ -63,12 +63,12 @@ end
 
 def each_record log
   log.scan /(#{scan_until '.'})\./ do |record,|
-    yield parse_record(record)
+    record.strip!
+    yield parse_record(record) if record.size > 0
   end
 end
 
 def parse_record line
-  line.strip!
   type,l = line.strip.split ' ', 2
   type = parse_key type
   cur = {}
