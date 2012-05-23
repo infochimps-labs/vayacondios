@@ -18,9 +18,12 @@ module Vayacondios
     def initialize
       Swineherd.configure_hadoop_jruby
       conf = Swineherd.get_hadoop_conf
-      addr = Java::org.apache.hadoop.mapred.JobTracker.get_address conf
+      jconf = Java::org.apache.hadoop.mapred.JobConf.new conf
+
+      # Using the other constructors of JobClient causes null pointer
+      # exceptions, apparently due to Cloudera patches.
       @job_client = 
-        Java::org.apache.hadoop.mapred.JobClient.new addr, conf
+        Java::org.apache.hadoop.mapred.JobClient.new jconf
       @launched_jobs = {}
       @conn = Mongo::Connection.new
       @db = @conn[MONGO_JOBS_DB]
@@ -43,6 +46,7 @@ module Vayacondios
 
           unless @launched_jobs[job.get_id.to_s]
             @launched_jobs[job.get_id.to_s] = job
+
             Thread.new(job, job_status) do |job, job_status|
               begin
                 jp = JobProfile.new(job_status.get_username,
@@ -52,7 +56,7 @@ module Vayacondios
                                     job.get_job_name)
 
                 bs = ByteArrayOutputStream.new
-                jp.write DataOutputStream.new bs
+                jp.write DataOutputStream.new(bs)
 
                 # The data format below is reversed from the
                 # undocumented JobProfile.write method. See the
@@ -115,6 +119,7 @@ module Vayacondios
                 raise
               end
             end
+            
           end
           
         end
