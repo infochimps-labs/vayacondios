@@ -70,12 +70,11 @@ module Vayacondios
         fs = Swineherd::FileSystem.get job.get_job_file
 
         # There is a small chance that this will cause a
-        # file-not-found exception due to a job completing
-        # between the check for running status above and
-        # here. The correct behavior is just to print a
-        # stack trace, because the java.io.IOException that
-        # Hadoop returns can mean a lot of different
-        # things: if that exception comes up, it's probably
+        # file-not-found exception due to a job completing between the
+        # check for running status above and here. The correct
+        # behavior is just to print a stack trace, because the
+        # java.io.IOException that Hadoop returns can mean a lot of
+        # different things: if that exception comes up, it's probably
         # something else.
         properties = JobLogParser.parse_properties(fs.open(job.get_job_file))
 
