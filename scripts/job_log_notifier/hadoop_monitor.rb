@@ -75,8 +75,8 @@ module Vayacondios
         # here. The correct behavior is just to print a
         # stack trace, because the java.io.IOException that
         # Hadoop returns can mean a lot of different
-        # things. At any rate, if that exception comes up,
-        # it's probably something else anyway.
+        # things: if that exception comes up, it's probably
+        # something else.
         properties = JobLogParser.parse_properties(fs.open(job.get_job_file))
 
         output_dir = properties["mapred_output_dir"]
