@@ -1,9 +1,12 @@
 #!/usr/bin/env jruby
 
 require_relative 'job_log_parser'
+require_relative 'machine_monitor'
 require 'swineherd-fs'
 require 'java'
 require 'mongo'
+require 'scanf'
+require 'gorillib/hash/slice'
 
 module Vayacondios
 
@@ -12,8 +15,10 @@ module Vayacondios
     include JobLogParser
 
     IFSTAT_READ_BUF_SIZE = 0x10000
+    SLEEP_SECONDS = 1
     MONGO_JOBS_DB = 'job_info'
     MONGO_JOB_LOGS_COLLECTION = 'job_logs'
+    MONGO_MACHINE_STATS_COLLECTION = 'machine_stats'
 
     def initialize
       Swineherd.configure_hadoop_jruby
@@ -27,12 +32,14 @@ module Vayacondios
       @running_jobs = JobList.new
       @conn = Mongo::Connection.new
       @db = @conn[MONGO_JOBS_DB]
-      @coll = @db[MONGO_JOB_LOGS_COLLECTION]
+      @job_logs = @db[MONGO_JOB_LOGS_COLLECTION]
+      @machine_stats = @db[MONGO_MACHINE_STATS_COLLECTION]
+      @trackers = {}
     end
 
     def run
       loop do
-        
+
         # Launch threads to watch running jobs for events.
         @job_client.get_all_jobs.select do |job_status|
           job_status.get_run_state ==
@@ -41,11 +48,33 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
-            Thread.new(job, @coll, @running_jobs) do |*args|
+            Thread.new(job, @job_logs, @running_jobs) do |*args|
               self.class.watch_job_events *args
             end
-            
           end
+        end
+
+        # If there are hadoop jobs running, listen to stats for all
+        # machines listed as task trackers.
+        if @running_jobs.empty?
+          @trackers.values.each{|t| t.kill}
+          @trackers = {}
+          sleep SLEEP_SECONDS
+        else
+          # Grab all trackers
+          trackers = @job_client.get_cluster_status(true).
+            get_active_tracker_names.map{|t| t[/ip(-\d+){4}\.ec2\.internal/]}
+          # Launch threads to listen to new ones
+          (trackers - @trackers.keys).each do |t|
+            @trackers[t] = Thread.new(t,
+                                      @machine_stats,
+                                      @running_jobs) do |*args|
+              self.class.monitor_tracker *args
+            end
+          end
+          # Close connections to old ones and forget about them.
+          @trackers.slice(*(@trackers.keys - trackers)).each{|t| t.kill}
+          @trackers.select!{|k,| trackers.index k}
         end
       end
     end
@@ -97,6 +126,22 @@ module Vayacondios
     end
 
     #
+    # Opens a connection to machine_monitor on the task tracker and
+    # logs its stats to mongo.
+    #
+    def self.monitor_tracker hostname, coll, running_jobs
+      socket = TCPSocket.open hostname, Vayacondios::DEFAULT_STAT_SERVER_PORT
+      loop do
+        coll.insert \
+        :_id => "#{hostname}:#{Time.now.to_i}",
+        :timestamp => Time.now.to_i,
+        :hostname => hostname,
+        :running_jobs => running_jobs.all.map{|j| j.get_id.to_s},
+        :stats => JSON.parse(socket.readline)
+      end
+    end
+
+    #
     # provides basic Hash operations in a thread-safe manner.
     #
     class JobList
@@ -115,6 +160,10 @@ module Vayacondios
       
       def del job
         @job_list_lock.synchronize { @job_list.delete job.get_id.to_s}
+      end
+
+      def empty?
+        @job_list_lock.synchronize { @job_list.empty? }
       end
 
       def [] job

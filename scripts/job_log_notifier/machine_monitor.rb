@@ -8,11 +8,13 @@ require 'json'
 
 module Vayacondios
 
+  DEFAULT_STAT_SERVER_PORT = 13622
+
   module StatServer
-    def self.serve_stats port = DEFAULT_PORT
+    def self.serve_stats port = DEFAULT_STAT_SERVER_PORT
       queues = StatsQueues.new
 
-      t = new_thread(queues, DEFAULT_PORT) {|*a| accept_connections *a}
+      t = new_thread(queues, port) {|*a| accept_connections *a}
       t.run
 
       loop do
@@ -37,8 +39,6 @@ module Vayacondios
     end
 
     private
-
-    DEFAULT_PORT = 13622
 
     def self.split_top_stats line
       line.split(':', 2).last.split(',').map(&:strip).map do |stat|
