@@ -11,7 +11,7 @@ module Vayacondios
 
     include JobLogParser
 
-    SLEEP_SECONDS = 1
+    IFSTAT_READ_BUF_SIZE = 0x10000
     MONGO_JOBS_DB = 'job_info'
     MONGO_JOB_LOGS_COLLECTION = 'job_logs'
 
@@ -24,31 +24,25 @@ module Vayacondios
       # exceptions, apparently due to Cloudera patches.
       @job_client = 
         Java::org.apache.hadoop.mapred.JobClient.new jconf
-      @launched_jobs = {}
+      @running_jobs = JobList.new
       @conn = Mongo::Connection.new
       @db = @conn[MONGO_JOBS_DB]
       @coll = @db[MONGO_JOB_LOGS_COLLECTION]
     end
 
     def run
-      include_class [org.apache.hadoop.mapred.JobProfile,
-                     java.io.DataOutputStream,
-                     java.io.ByteArrayOutputStream]
-
-      while true
-        sleep SLEEP_SECONDS
-
+      loop do
+        
+        # Launch threads to watch running jobs for events.
         @job_client.get_all_jobs.select do |job_status|
           job_status.get_run_state ==
             Java::org.apache.hadoop.mapred.JobStatus::RUNNING
         end.each do |job_status|
           job = @job_client.get_job job_status.get_job_id
 
-          unless @launched_jobs[job.get_id.to_s]
-            @launched_jobs[job.get_id.to_s] = job
-            
-            Thread.new(job, @coll) do |job, coll|
-              self.class.watch_job_events job, coll
+          unless @running_jobs[job]
+            Thread.new(job, @coll, @running_jobs) do |*args|
+              self.class.watch_job_events *args
             end
             
           end
@@ -65,8 +59,10 @@ module Vayacondios
     # sharing. According to the mongo-ruby-driver documentation, that
     # gem is thread-safe, so it should be safe to share.
     #
-    def self.watch_job_events job, coll
+    def self.watch_job_events job, coll, running_jobs
       begin
+        running_jobs.add job
+
         fs = Swineherd::FileSystem.get job.get_job_file
 
         # There is a small chance that this will cause a
@@ -95,6 +91,34 @@ module Vayacondios
         puts e
         puts e.backtrace
         raise
+      ensure
+        running_jobs.del job
+      end
+    end
+
+    #
+    # provides basic Hash operations in a thread-safe manner.
+    #
+    class JobList
+      def initialize
+        @job_list = {}
+        @job_list_lock = Mutex.new
+      end
+
+      def add job
+        @job_list_lock.synchronize { @job_list[job.get_id.to_s] = job }
+      end
+
+      def all
+        @job_list_lock.synchronize { @job_list.values }
+      end
+      
+      def del job
+        @job_list_lock.synchronize { @job_list.delete job.get_id.to_s}
+      end
+
+      def [] job
+        @job_list_lock.synchronize { @job_list[job.get_id.to_s] }
       end
     end
   end
