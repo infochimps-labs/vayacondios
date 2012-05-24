@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'thread'
 require 'socket'
 require 'scanf'
@@ -22,15 +24,15 @@ module Vayacondios
 
         # Grab the stats!
         # ifstat's delay will function as our heartbeat timer.
-        interfaces, ignore, speeds = `ifstat 1 1`.split("\n").map(&:split)
+        is, ignore, rw = `ifstat 1 1`.split("\n").map(&:split)
         headers, *disks = `iostat -x`.split("\n")[5..-1].map(&:split)
         cpu, mem, swap, proc_headers, *procs = `top -b -n 1`.
           split("\n").map(&:strip).select{|x| not x.empty?}[2..-1]
 
         # Queue the stats up for listeners.
         queues.push \
-        :net_io => interfaces.zip(speeds.each_slice(2).map).mkhash,
-        :disk_io => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
+        :net => is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}}).mkhash,
+        :disk => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
         :cpu => split_top_stats(cpu),
         :mem => split_top_stats(mem),
         :swap => split_top_stats(swap)
