@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require_relative 'configure'
 require 'thread'
 require 'socket'
 require 'scanf'
@@ -10,10 +11,15 @@ require 'json'
 
 module Vayacondios
 
-  DEFAULT_STAT_SERVER_PORT = 13622
-
   module StatServer
-    def self.serve_stats port = DEFAULT_STAT_SERVER_PORT
+
+    def self.serve_stats port = nil
+      conf = Object.new
+      class << conf
+        include Vayacondios::Configurable
+      end
+      port ||= conf.conf[Vayacondios::Configurable::STAT_SERVER_PORT]
+
       queues = StatsQueues.new
 
       t = new_thread(queues, port) {|*a| accept_connections *a}
@@ -113,3 +119,5 @@ module Vayacondios
     end
   end
 end
+
+Vayacondios::StatServer.serve_stats

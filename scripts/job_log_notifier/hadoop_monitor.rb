@@ -1,18 +1,18 @@
 #!/usr/bin/env jruby
 
 require_relative 'job_log_parser'
-require_relative 'machine_monitor'
-require 'swineherd-fs'
+require_relative 'configure'
 require 'java'
 require 'mongo'
 require 'scanf'
 require 'gorillib/hash/slice'
+require 'thread'
 
 module Vayacondios
 
   class HadoopMonitor
-
     include JobLogParser
+    include Configurable
 
     IFSTAT_READ_BUF_SIZE = 0x10000
     SLEEP_SECONDS = 1
@@ -21,8 +21,8 @@ module Vayacondios
     MONGO_MACHINE_STATS_COLLECTION = 'machine_stats'
 
     def initialize
-      Swineherd.configure_hadoop_jruby
-      conf = Swineherd.get_hadoop_conf
+      self.class.configure_hadoop_jruby
+      conf = self.class.get_hadoop_conf
       jconf = Java::org.apache.hadoop.mapred.JobConf.new conf
 
       # Using the other constructors of JobClient causes null pointer
@@ -66,7 +66,8 @@ module Vayacondios
             get_active_tracker_names.map{|t| t[/ip(-\d+){4}\.ec2\.internal/]}
           # Launch threads to listen to new ones
           (trackers - @trackers.keys).each do |t|
-            @trackers[t] = Thread.new(t,
+            @trackers[t] = Thread.new(conf,
+                                      t,
                                       @machine_stats,
                                       @running_jobs) do |*args|
               self.class.monitor_tracker *args
@@ -92,7 +93,7 @@ module Vayacondios
       begin
         running_jobs.add job
 
-        fs = Swineherd::FileSystem.get job.get_job_file
+        fs = Swineherd::FileSystem.get job.get_job_file.split(":").first.to_sym
 
         # There is a small chance that this will cause a
         # file-not-found exception due to a job completing between the
@@ -129,8 +130,8 @@ module Vayacondios
     # Opens a connection to machine_monitor on the task tracker and
     # logs its stats to mongo.
     #
-    def self.monitor_tracker hostname, coll, running_jobs
-      socket = TCPSocket.open hostname, Vayacondios::DEFAULT_STAT_SERVER_PORT
+    def self.monitor_tracker conf, hostname, coll, running_jobs
+      socket = TCPSocket.open hostname, conf[STAT_SERVER_PORT]
       loop do
         coll.insert \
         :_id => "#{hostname}:#{Time.now.to_i}",
@@ -170,5 +171,49 @@ module Vayacondios
         @job_list_lock.synchronize { @job_list[job.get_id.to_s] }
       end
     end
+
+    def self.configure_hadoop_jruby
+      hadoop_home = ENV['HADOOP_HOME']
+
+      raise "\nHadoop installation not found. Try setting $HADOOP_HOME\n" unless
+        (hadoop_home and (File.exist? hadoop_home))
+
+      $CLASSPATH << File.join(File.join(hadoop_home, 'conf') ||
+                              ENV['HADOOP_CONF_DIR'],
+                              '') # add trailing slash
+      
+      Dir["#{hadoop_home}/{hadoop*.jar,lib/*.jar}"].each{|jar| require jar}
+
+      begin
+        require 'java'
+      rescue LoadError => e
+        raise "\nJava not found. Are you sure you're running with JRuby?\n" +
+          e.message
+      end
+    end
+
+    def self.get_hadoop_conf
+      conf = Java::org.apache.hadoop.conf.Configuration.new
+
+      # per-site defaults
+      %w[capacity-scheduler.xml core-site.xml hadoop-policy.xml
+       hadoop-site.xml hdfs-site.xml mapred-site.xml].each do |conf_file|
+        conf.addResource conf_file
+      end
+      conf.reload_configuration
+
+      # per-user overrides
+      if Swineherd.config[:aws]
+        conf.set("fs.s3.awsAccessKeyId",Swineherd.config[:aws][:access_key])
+        conf.set("fs.s3.awsSecretAccessKey",Swineherd.config[:aws][:secret_key])
+
+        conf.set("fs.s3n.awsAccessKeyId",Swineherd.config[:aws][:access_key])
+        conf.set("fs.s3n.awsSecretAccessKey",Swineherd.config[:aws][:secret_key])
+      end
+
+      conf
+    end
   end
-end
+end  
+
+Vayacondios::HadoopMonitor.new.run

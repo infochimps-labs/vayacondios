@@ -26,9 +26,9 @@ module Vayacondios
     def self.parse_log_dir dir, properties = nil
       # find logs
       dir = File.join dir, "_logs/history"
-      conf, log = ["*.xml", "*{[^x]??,[^m]?,[^l]}"].map do |g|
-        fs = Swineherd::FileSystem.get dir
-        fs.open fs.glob(File.join(dir, g)).first
+      conf, log = [/\.xml$/, /([^l]|[^m].|[^x]..|[^\.]...)$/].map do |g|
+        fs = Swineherd::FileSystem.get dir.split(":").first.to_sym
+        fs.open fs.ls(dir).select{|d| g =~ d}.first
       end
 
       parse_log_and_conf log, (properties || conf)
