@@ -27,7 +27,7 @@ module Vayacondios
 
         # Queue the stats up for listeners.
         queues.push \
-        :net_io => interfaces.zip(speeds.each_slice(2).map(&:dup)).mkhash,
+        :net_io => interfaces.zip(speeds.each_slice(2).map).mkhash,
         :disk_io => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
         :cpu => split_top_stats(cpu),
         :mem => split_top_stats(mem),
