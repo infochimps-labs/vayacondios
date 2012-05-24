@@ -27,8 +27,21 @@ module Vayacondios
 
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
-      @job_client = 
-        Java::org.apache.hadoop.mapred.JobClient.new jconf
+      loop do
+        begin
+          @job_client = Java::org.apache.hadoop.mapred.JobClient.new jconf
+        rescue NativeException => e
+          if e.to_s.start_with? "java.net.ConnectException"
+            puts "Couldn't contact job tracker. retrying in 10 seconds."
+            sleep 10
+            next
+          else
+            raise
+          end
+        end
+        break
+      end
+      
       @running_jobs = JobList.new
       @conn = Mongo::Connection.new
       @db = @conn[MONGO_JOBS_DB]
