@@ -11,11 +11,6 @@ class HttpShim < Goliath::API
   #
   use Goliath::Rack::DefaultMimeType    # cleanup accepted media types
   use Goliath::Rack::Render, 'json'     # auto-negotiate response format
-  #
-  # plugin Vayacondios::StatsdReceiver               # listen like statsd would
-
-  # db = EM::Mongo::Connection.new('localhost').db('my_database')
-  # collection = db.collection('my_collection')
 
   def bucket_name
     env[Goliath::Request::REQUEST_PATH].sub(/^\//, '').gsub(/[\W_]+/, '_')
@@ -24,6 +19,7 @@ class HttpShim < Goliath::API
   # Pass the request on to host given in config[:forwarder]
   def response(env)
     raise ArgumentError, "Must specify a bucket name in the path" unless bucket_name.present?
+    
     document = {d: env.params}
     document[:_id] = document[:d].delete("_id") if document[:d].has_key? "_id"
     begin
@@ -33,13 +29,18 @@ class HttpShim < Goliath::API
     end
     document[:t] ||= Time.now
     
-    result = collection.insert(document)
+    if document[:_id]
+      result = collection.update({:_id => document[:_id]}, document, {:upsert => true})
+    else
+      result = collection.insert(document)
+    end
+
     [200, {}, { :result => { :bucket => bucket_name, :id => result }}]
   end
 
 protected
 
   def collection
-    DB.collection(bucket_name + '_events ')
+    DB.collection(bucket_name + '_events')
   end
 end
