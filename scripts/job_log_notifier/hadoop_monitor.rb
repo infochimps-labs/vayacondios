@@ -15,17 +15,10 @@ module Vayacondios
     include JobLogParser
     include Configurable
 
-    IFSTAT_READ_BUF_SIZE = 0x10000
-    SLEEP_SECONDS = 1
-    MONGO_JOBS_DB = 'job_info'
-    MONGO_JOB_LOGS_COLLECTION = 'job_logs'
-    MONGO_JOB_EVENTS_COLLECTION = 'job_events'
-    MONGO_MACHINE_STATS_COLLECTION = 'machine_stats'
-
     def initialize
       self.class.configure_hadoop_jruby
-      conf = self.class.get_hadoop_conf
-      jconf = Java::org.apache.hadoop.mapred.JobConf.new conf
+      hadoop_conf = self.class.get_hadoop_conf
+      jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
 
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
@@ -46,10 +39,10 @@ module Vayacondios
       
       @running_jobs = JobList.new
       @conn = Mongo::Connection.new
-      @db = @conn[MONGO_JOBS_DB]
-      @job_logs = @db[MONGO_JOB_LOGS_COLLECTION]
-      @job_events = @db[MONGO_JOB_EVENTS_COLLECTION]
-      @machine_stats = @db[MONGO_MACHINE_STATS_COLLECTION]
+      @db = @conn[conf[MONGO_JOBS_DB]]
+      @job_logs = @db[conf[MONGO_JOB_LOGS_COLLECTION]]
+      @job_events = @db[conf[MONGO_JOB_EVENTS_COLLECTION]]
+      @machine_stats = @db[conf[MONGO_MACHINE_STATS_COLLECTION]]
       @trackers = {}
     end
 
@@ -75,7 +68,7 @@ module Vayacondios
         if @running_jobs.empty?
           @trackers.values.each{|t| t.kill}
           @trackers = {}
-          sleep SLEEP_SECONDS
+          sleep conf[SLEEP_SECONDS]
         else
           # Grab all trackers
           trackers = @job_client.get_cluster_status(true).
