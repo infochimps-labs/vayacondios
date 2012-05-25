@@ -1,4 +1,4 @@
-#!/usr/bin/env jruby
+#!/usr/bin/env jruby19
 
 require_relative 'job_log_parser'
 require_relative 'configure'
