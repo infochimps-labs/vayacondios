@@ -20,6 +20,21 @@ module Vayacondios
       hadoop_conf = self.class.get_hadoop_conf
       jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
 
+      @running_jobs = JobList.new
+      @conn = Mongo::Connection.new
+      @db = @conn[conf[MONGO_JOBS_DB]]
+      @job_logs = @db.create_collection(conf[MONGO_JOB_LOGS_COLLECTION],
+                                        :capped => true,
+                                        :size => conf[JOB_LOGS_SIZE])
+      @job_events = @db.create_collection(conf[MONGO_JOB_EVENTS_COLLECTION],
+                                          :capped => true,
+                                          :size => conf[JOB_EVENTS_SIZE])
+      @machine_stats = @db[conf[MONGO_MACHINE_STATS_COLLECTION]]
+      # @machine_stats = @db.create_collection(conf[MONGO_MACHINE_STATS_COLLECTION],
+      #                                        :capped => true,
+      #                                        :size => conf[MACHINE_STATS_SIZE])
+      @trackers = {}      
+
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
       loop do
@@ -36,14 +51,6 @@ module Vayacondios
         end
         break
       end
-      
-      @running_jobs = JobList.new
-      @conn = Mongo::Connection.new
-      @db = @conn[conf[MONGO_JOBS_DB]]
-      @job_logs = @db[conf[MONGO_JOB_LOGS_COLLECTION]]
-      @job_events = @db[conf[MONGO_JOB_EVENTS_COLLECTION]]
-      @machine_stats = @db[conf[MONGO_MACHINE_STATS_COLLECTION]]
-      @trackers = {}
     end
 
     def run
@@ -57,35 +64,20 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
+            # Report the cluster beginning to work. We must do this in a
+            # critical section or two threads may both report the same
+            # event.
+            @running_jobs.synchronize do
+              @job_events.insert(EVENT => CLUSTER_WORKING,
+                                 TIME => Time.now.to_i) if @running_jobs.empty?
+              @running_jobs.add job
+            end
             Thread.new(job, @job_logs, @job_events, @running_jobs) do |*args|
               self.class.watch_job_events *args
             end
           end
         end
-
-        # If there are hadoop jobs running, listen to stats for all
-        # machines listed as task trackers.
-        if @running_jobs.empty?
-          @trackers.values.each{|t| t.kill}
-          @trackers = {}
-          sleep conf[SLEEP_SECONDS]
-        else
-          # Grab all trackers
-          trackers = @job_client.get_cluster_status(true).
-            get_active_tracker_names.map{|t| t[/ip(-\d+){4}\.ec2\.internal/]}
-          # Launch threads to listen to new ones
-          (trackers - @trackers.keys).each do |t|
-            @trackers[t] = Thread.new(conf,
-                                      t,
-                                      @machine_stats,
-                                      @running_jobs) do |*args|
-              self.class.monitor_tracker *args
-            end
-          end
-          # Close connections to old ones and forget about them.
-          @trackers.slice(*(@trackers.keys - trackers)).each{|t| t.kill}
-          @trackers.select!{|k,| trackers.index k}
-        end
+        
       end
     end
 
@@ -100,15 +92,6 @@ module Vayacondios
     #
     def self.watch_job_events job, job_logs, job_events, running_jobs
       begin
-        # Report the cluster beginning to work. We must do this in a
-        # critical section or two threads may both report the same
-        # event.
-        running_jobs.synchronize do
-          job_events.insert(:event => "cluster_working",
-                            :time => Time.now.to_i) if running_jobs.empty?
-          running_jobs.add job
-        end
-
         host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
         job_id = job.get_id.to_s
         conf_uri = "#{host_port}/logs/#{job_id}_conf.xml"
@@ -138,25 +121,9 @@ module Vayacondios
         # event.
         running_jobs.synchronize do
           running_jobs.del job
-          job_events.insert(:event => "cluster_quiet",
-                            :time => Time.now.to_i) if running_jobs.empty?
+          job_events.insert(EVENT => CLUSTER_QUIET,
+                            TIME => Time.now.to_i) if running_jobs.empty?
         end
-      end
-    end
-
-    #
-    # Opens a connection to machine_monitor on the task tracker and
-    # logs its stats to mongo.
-    #
-    def self.monitor_tracker conf, hostname, coll, running_jobs
-      socket = TCPSocket.open hostname, conf[STAT_SERVER_PORT]
-      loop do
-        coll.insert \
-        :_id => "#{hostname}:#{Time.now.to_i}",
-        :timestamp => Time.now.to_i,
-        :hostname => hostname,
-        :running_jobs => running_jobs.all.map{|j| j.get_id.to_s},
-        :stats => JSON.parse(socket.readline)
       end
     end
 

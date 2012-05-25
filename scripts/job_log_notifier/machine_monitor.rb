@@ -5,6 +5,7 @@ require 'thread'
 require 'socket'
 require 'scanf'
 require 'json'
+require 'mongo'
 
 # This script must be run in ruby, not jruby. Jruby's IO
 # implementation is horribly broken.
@@ -13,17 +14,44 @@ module Vayacondios
 
   module StatServer
 
+    include Configurable
+
     def self.serve_stats port = nil
-      conf = Configuration.new
-      port ||= conf.conf[Vayacondios::Configurable::STAT_SERVER_PORT]
+      conf = Configuration.new.conf
+      # TODO: get master host and connect to its db
+      conn = Mongo::Connection.new
+      db = conn[conf[MONGO_JOBS_DB]]
 
-      queues = StatsQueues.new
+      sleep conf[SLEEP_SECONDS] until
+        db.collection_names.index conf[MONGO_JOB_EVENTS_COLLECTION]
 
-      t = new_thread(queues, port) {|*a| accept_connections *a}
-      t.run
+      job_events = db[conf[MONGO_JOB_EVENTS_COLLECTION]]
+
+      machine_stats = db.create_collection(conf[MONGO_MACHINE_STATS_COLLECTION],
+                                           :capped => true,
+                                           :size => conf[MACHINE_STATS_SIZE])
+
+      # Look for events that start after
+      job_events.insert :event => "ignore", :time => 0
+      events = job_events.find :_id => {"$gt" => BSON::ObjectId.new}
+      events.add_option 0x02 # tailable
+
+      cluster_working = false
 
       loop do
-        stats_entry = {}
+
+        # Change state if necessary.
+        current_event = events.next || {}
+        cluster_working = case current_event[EVENT]
+                          when CLUSTER_WORKING then true
+                          when CLUSTER_QUIET then false
+                          else cluster_working
+                          end
+
+        unless cluster_working
+          sleep conf[SLEEP_SECONDS]
+          next
+        end
 
         # Grab the stats!
         # ifstat's delay will function as our heartbeat timer.
@@ -33,7 +61,7 @@ module Vayacondios
           split("\n").map(&:strip).select{|x| not x.empty?}[2..-1]
 
         # Queue the stats up for listeners.
-        queues.push \
+        machine_stats.insert \
         :net => is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}}).mkhash,
         :disk => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
         :cpu => split_top_stats(cpu),
@@ -54,64 +82,6 @@ module Vayacondios
     class ::Array
       def mkhash
         self.inject({}) {|h, item| h.merge item.first => item.last}
-      end
-    end
-
-    def self.accept_connections queues, port
-      puts port
-      new_thread do
-        Socket.tcp_server_loop port do |sock, client_addrinfo|
-          new_thread sock, q = queues.create do |*a|
-            begin
-              handle_connection *a
-            ensure
-              queues.destroy q
-            end
-          end
-        end
-      end
-    end
-
-    def self.handle_connection client, stats_queue
-      loop do
-        begin
-          client.puts JSON.generate stats_queue.pop
-        rescue Errno::EPIPE
-          break
-        end
-      end
-    end
-
-    def self.new_thread *args, &blk
-      Thread.new *args do
-        begin
-          yield *args
-        rescue Exception => e
-          STDERR.write "#{e}\n#{e.backtrace.join "\n"}\n"
-        end
-      end
-    end
-
-    #
-    # provides thread-safe access to queues through which stats will
-    # be pushed
-    #
-    class StatsQueues
-      def initialize
-        @queues = []
-        @lock = Mutex.new
-      end
-
-      def push val 
-        @lock.synchronize { @queues.each {|q| q.push val} }
-      end
-
-      def create
-        @lock.synchronize { (@queues << Queue.new).last }
-      end
-
-      def destroy queue
-        @lock.synchronize { @queues.delete queue }
       end
     end
   end
