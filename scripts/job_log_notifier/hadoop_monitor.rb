@@ -19,6 +19,7 @@ module Vayacondios
     SLEEP_SECONDS = 1
     MONGO_JOBS_DB = 'job_info'
     MONGO_JOB_LOGS_COLLECTION = 'job_logs'
+    MONGO_JOB_EVENTS_COLLECTION = 'job_events'
     MONGO_MACHINE_STATS_COLLECTION = 'machine_stats'
 
     def initialize
@@ -47,6 +48,7 @@ module Vayacondios
       @conn = Mongo::Connection.new
       @db = @conn[MONGO_JOBS_DB]
       @job_logs = @db[MONGO_JOB_LOGS_COLLECTION]
+      @job_events = @db[MONGO_JOB_EVENTS_COLLECTION]
       @machine_stats = @db[MONGO_MACHINE_STATS_COLLECTION]
       @trackers = {}
     end
@@ -62,7 +64,7 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
-            Thread.new(job, @job_logs, @running_jobs) do |*args|
+            Thread.new(job, @job_logs, @job_events, @running_jobs) do |*args|
               self.class.watch_job_events *args
             end
           end
@@ -103,9 +105,16 @@ module Vayacondios
     # sharing. According to the mongo-ruby-driver documentation, that
     # gem is thread-safe, so it should be safe to share.
     #
-    def self.watch_job_events job, coll, running_jobs
+    def self.watch_job_events job, job_logs, job_events, running_jobs
       begin
-        running_jobs.add job
+        # Report the cluster beginning to work. We must do this in a
+        # critical section or two threads may both report the same
+        # event.
+        running_jobs.synchronize do
+          job_events.insert(:event => "cluster_working",
+                            :time => Time.now.to_i) if running_jobs.empty?
+          running_jobs.add job
+        end
 
         host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
         job_id = job.get_id.to_s
@@ -120,7 +129,7 @@ module Vayacondios
         puts "#{job.get_id.to_s} is complete!"
 
         JobLogParser.parse_log_dir(output_dir, properties).each do |e|
-          coll.insert e
+          job_logs.insert e
         end
 
         puts "Done writing updating logs for #{job.get_id.to_s}."
@@ -131,7 +140,14 @@ module Vayacondios
         puts e.backtrace
         raise
       ensure
-        running_jobs.del job
+        # Report the cluster finishing all jobs. We must do this in a
+        # critical section or two threads may both report the same
+        # event.
+        running_jobs.synchronize do
+          running_jobs.del job
+          job_events.insert(:event => "cluster_quiet",
+                            :time => Time.now.to_i) if running_jobs.empty?
+        end
       end
     end
 
@@ -158,6 +174,20 @@ module Vayacondios
       def initialize
         @job_list = {}
         @job_list_lock = Mutex.new
+
+        # To prevent deadlock, @job_list_lock should always be locked
+        # *after* this lock, never before. It is designed to
+        # encapsulate code that must lock and release @job_list_lock
+        # multiple times. It is necessary (I think) because Ruby locks
+        # are non-reentrant.
+        @synchronize_block_lock = Mutex.new
+      end
+
+      #
+      # Executes a critical section
+      #
+      def synchronize &blk
+        @synchronize_block_lock.synchronize &blk
       end
 
       def add job
