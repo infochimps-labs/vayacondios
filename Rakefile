@@ -13,7 +13,7 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "brocephalus"
+  gem.name = "vayacondios"
   gem.homepage = "http://infochimps.com/labs"
   gem.license = "MIT"
   gem.summary = %Q{Aggregate, route and query all the facts in your organization}
