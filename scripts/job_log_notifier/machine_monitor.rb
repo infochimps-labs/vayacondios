@@ -14,10 +14,7 @@ module Vayacondios
   module StatServer
 
     def self.serve_stats port = nil
-      conf = Object.new
-      class << conf
-        include Vayacondios::Configurable
-      end
+      conf = Configuration.new
       port ||= conf.conf[Vayacondios::Configurable::STAT_SERVER_PORT]
 
       queues = StatsQueues.new

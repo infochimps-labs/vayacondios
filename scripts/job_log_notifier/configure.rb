@@ -9,4 +9,8 @@ module Vayacondios
       @conf ||= Configliere::Param.new STAT_SERVER_PORT => 13622
     end
   end
+
+  class Configuration
+    include Configurable
+  end
 end
