@@ -7,6 +7,7 @@ require 'mongo'
 require 'scanf'
 require 'gorillib/hash/slice'
 require 'thread'
+require 'open-uri'
 
 module Vayacondios
 
@@ -106,16 +107,11 @@ module Vayacondios
       begin
         running_jobs.add job
 
-        fs = Swineherd::FileSystem.get job.get_job_file.split(":").first.to_sym
-
-        # There is a small chance that this will cause a
-        # file-not-found exception due to a job completing between the
-        # check for running status above and here. The correct
-        # behavior is just to print a stack trace, because the
-        # java.io.IOException that Hadoop returns can mean a lot of
-        # different things: if that exception comes up, it's probably
-        # something else.
-        properties = JobLogParser.parse_properties(fs.open(job.get_job_file))
+        host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
+        job_id = job.get_id.to_s
+        conf_uri = "#{host_port}/logs/#{job_id}_conf.xml"
+        
+        properties = JobLogParser.parse_properties(open conf_uri)
 
         output_dir = properties["mapred_output_dir"]
 
