@@ -22,35 +22,28 @@ module Vayacondios
 
       @running_jobs = JobList.new
       @conn = Mongo::Connection.new
-      @db = @conn[conf[MONGO_JOBS_DB]]
-      @job_logs = @db.create_collection(conf[MONGO_JOB_LOGS_COLLECTION],
+      @db = @conn[get_conf[MONGO_JOBS_DB]]
+      @job_logs = @db.create_collection(get_conf[MONGO_JOB_LOGS_COLLECTION],
                                         :capped => true,
-                                        :size => conf[JOB_LOGS_SIZE])
-      @job_events = @db.create_collection(conf[MONGO_JOB_EVENTS_COLLECTION],
+                                        :size => get_conf[JOB_LOGS_SIZE])
+
+      # After we create the job_events database, one of the machine
+      # monitors will create the machine stats databse.
+      @job_events = @db.create_collection(get_conf[MONGO_JOB_EVENTS_COLLECTION],
                                           :capped => true,
-                                          :size => conf[JOB_EVENTS_SIZE])
-      @machine_stats = @db[conf[MONGO_MACHINE_STATS_COLLECTION]]
-      # @machine_stats = @db.create_collection(conf[MONGO_MACHINE_STATS_COLLECTION],
-      #                                        :capped => true,
-      #                                        :size => conf[MACHINE_STATS_SIZE])
+                                          :size => get_conf[JOB_EVENTS_SIZE])
+
+      # *After* creating the job_events databse above, wait for the
+      # machine_stats database.
+      sleep get_conf[SLEEP_SECONDS] until
+        @db.collection_names.index get_conf[MONGO_MACHINE_STATS_COLLECTION]
+
+      @machine_stats = @db[get_conf[MONGO_MACHINE_STATS_COLLECTION]]
       @trackers = {}      
 
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
-      loop do
-        begin
-          @job_client = Java::org.apache.hadoop.mapred.JobClient.new jconf
-        rescue NativeException => e
-          if e.to_s.start_with? "java.net.ConnectException"
-            puts "Couldn't contact job tracker. retrying in 10 seconds."
-            sleep 10
-            next
-          else
-            raise
-          end
-        end
-        break
-      end
+      @job_client = Java::org.apache.hadoop.mapred.JobClient.new jconf
     end
 
     def run

@@ -7,9 +7,6 @@ require 'scanf'
 require 'json'
 require 'mongo'
 
-# This script must be run in ruby, not jruby. Jruby's IO
-# implementation is horribly broken.
-
 module Vayacondios
 
   module StatServer
@@ -17,41 +14,42 @@ module Vayacondios
     include Configurable
 
     def self.serve_stats port = nil
-      conf = Configuration.new.conf
-      # TODO: get master host and connect to its db
-      conn = Mongo::Connection.new
-      db = conn[conf[MONGO_JOBS_DB]]
+      vconf = Configuration.new.conf
+      unless hadoop_monitor_ip = vconf.get_conf[HADOOP_MONITOR_NODE]
+        raise "The IP address of the hadoop monitor node must be set!"
+      end
 
-      sleep conf[SLEEP_SECONDS] until
-        db.collection_names.index conf[MONGO_JOB_EVENTS_COLLECTION]
+      conn = Mongo::Connection.new vconf.get_conf[HADOOP_MONITOR_NODE]
+      db = conn[vconf.get_conf[MONGO_JOBS_DB]]
 
-      job_events = db[conf[MONGO_JOB_EVENTS_COLLECTION]]
+      # Wait until the hadoop monitor creates the event collection.
+      sleep vconf.get_conf[SLEEP_SECONDS] until
+        db.collection_names.index vconf.get_conf[MONGO_JOB_EVENTS_COLLECTION]
 
-      machine_stats = db.create_collection(conf[MONGO_MACHINE_STATS_COLLECTION],
-                                           :capped => true,
-                                           :size => conf[MACHINE_STATS_SIZE])
+      job_events = db[vconf.get_conf[MONGO_JOB_EVENTS_COLLECTION]]
 
-      # Look for events that start after
-      job_events.insert :event => "ignore", :time => 0
-      events = job_events.find :_id => {"$gt" => BSON::ObjectId.new}
+      machine_stats = db.
+        create_collection(vconf.get_conf[MONGO_MACHINE_STATS_COLLECTION],
+                          :capped => true,
+                          :size => vconf.get_conf[MACHINE_STATS_SIZE])
+
+      events = job_events.find
       events.add_option 0x02 # tailable
 
-      cluster_working = false
+      # Get up-to-date on the state of the cluster. assume quiet to start.
+      cluster_working = next_state events, false
 
+      # main loop
       loop do
 
-        # Change state if necessary.
-        current_event = events.next || {}
-        cluster_working = case current_event[EVENT]
-                          when CLUSTER_WORKING then true
-                          when CLUSTER_QUIET then false
-                          else cluster_working
-                          end
+        # Stay asleep until there is an event to parse.
+        sleep vconf.get_conf[SLEEP_SECONDS] until current_event = events.next
 
-        unless cluster_working
-          sleep conf[SLEEP_SECONDS]
-          next
-        end
+        # Get up-to-date on the state of the cluster.
+        cluster_working = next_state events, cluster_working
+
+        # Don't grab stats unless the cluster is working
+        next unless cluster_working
 
         # Grab the stats!
         # ifstat's delay will function as our heartbeat timer.
@@ -60,7 +58,7 @@ module Vayacondios
         cpu, mem, swap, proc_headers, *procs = `top -b -n 1`.
           split("\n").map(&:strip).select{|x| not x.empty?}[2..-1]
 
-        # Queue the stats up for listeners.
+        # Write the stats into the mongo collection.
         machine_stats.insert \
         :net => is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}}).mkhash,
         :disk => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
@@ -83,6 +81,17 @@ module Vayacondios
       def mkhash
         self.inject({}) {|h, item| h.merge item.first => item.last}
       end
+    end
+
+    def self.next_state events_cursor, current_state
+      while current_event = events_cursor.next
+        current_state = case current_event[vconf.get_conf[EVENT]]
+                        when CLUSTER_WORKING then true
+                        when CLUSTER_QUIET then false
+                        else current_state
+                        end
+      end
+      current_state
     end
   end
 end
