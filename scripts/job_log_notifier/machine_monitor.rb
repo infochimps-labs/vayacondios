@@ -14,42 +14,52 @@ module Vayacondios
     include Configurable
 
     def self.serve_stats port = nil
-      vconf = Configuration.new.conf
-      unless hadoop_monitor_ip = vconf.get_conf[HADOOP_MONITOR_NODE]
+      vconf = Configuration.new.get_conf
+      unless hadoop_monitor_ip = vconf[HADOOP_MONITOR_NODE]
         raise "The IP address of the hadoop monitor node must be set!"
       end
 
-      conn = Mongo::Connection.new vconf.get_conf[HADOOP_MONITOR_NODE]
-      db = conn[vconf.get_conf[MONGO_JOBS_DB]]
+      conn = Mongo::Connection.new vconf[HADOOP_MONITOR_NODE]
+      db = conn[vconf[MONGO_JOBS_DB]]
 
       # Wait until the hadoop monitor creates the event collection.
-      sleep vconf.get_conf[SLEEP_SECONDS] until
-        db.collection_names.index vconf.get_conf[MONGO_JOB_EVENTS_COLLECTION]
+      sleep vconf[SLEEP_SECONDS] until
+        db.collection_names.index vconf[MONGO_JOB_EVENTS_COLLECTION]
 
-      job_events = db[vconf.get_conf[MONGO_JOB_EVENTS_COLLECTION]]
+      job_events = db[vconf[MONGO_JOB_EVENTS_COLLECTION]]
 
       machine_stats = db.
-        create_collection(vconf.get_conf[MONGO_MACHINE_STATS_COLLECTION],
+        create_collection(vconf[MONGO_MACHINE_STATS_COLLECTION],
                           :capped => true,
-                          :size => vconf.get_conf[MACHINE_STATS_SIZE])
+                          :size => vconf[MACHINE_STATS_SIZE])
 
+      # Keep querying the job_events collection until there's an
+      # event. Don't just use the cursor from .find without checking,
+      # because if hadoop_monitor inserts an event into an empty
+      # database, this cursor will no longer work, even if it's
+      # tailable. not quite sure why Mongo does it that way.
       events = job_events.find
       events.add_option 0x02 # tailable
+      until events.has_next?
+        sleep vconf[SLEEP_SECONDS]
+        events = job_events.find
+        events.add_option 0x02 # tailable
+      end
 
       # Get up-to-date on the state of the cluster. assume quiet to start.
-      cluster_working = next_state events, false
+      cluster_working = next_state(events, false, vconf[EVENT])
 
       # main loop
       loop do
 
-        # Stay asleep until there is an event to parse.
-        sleep vconf.get_conf[SLEEP_SECONDS] until current_event = events.next
-
         # Get up-to-date on the state of the cluster.
-        cluster_working = next_state events, cluster_working
+        cluster_working = next_state(events, cluster_working, vconf[EVENT])
 
         # Don't grab stats unless the cluster is working
-        next unless cluster_working
+        unless cluster_working
+          sleep vconf[SLEEP_SECONDS]
+          next
+        end
 
         # Grab the stats!
         # ifstat's delay will function as our heartbeat timer.
@@ -83,9 +93,9 @@ module Vayacondios
       end
     end
 
-    def self.next_state events_cursor, current_state
+    def self.next_state events_cursor, current_state, event_attr_name
       while current_event = events_cursor.next
-        current_state = case current_event[vconf.get_conf[EVENT]]
+        current_state = case current_event[event_attr_name]
                         when CLUSTER_WORKING then true
                         when CLUSTER_QUIET then false
                         else current_state

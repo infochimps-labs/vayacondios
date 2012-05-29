@@ -20,6 +20,7 @@ module Vayacondios
     declare_name :job_logs_size
     declare_name :job_events_size
     declare_name :machine_stats_size
+    declare_name :monitoring_cluster
     declare_name :cluster_working
     declare_name :cluster_quiet
     declare_name :event
@@ -32,22 +33,42 @@ module Vayacondios
       @conf = Configliere::Param.new
       @conf.use :env_var, :config_file, :commandline, :config_block
       
-      @conf \
-      STAT_SERVER_PORT => 13622,
-      SLEEP_SECONDS => 1,
-      MONGO_JOBS_DB => 'job_info',
-      MONGO_JOB_LOGS_COLLECTION => 'job_logs',
-      MONGO_JOB_EVENTS_COLLECTION => 'job_events',
-      MONGO_MACHINE_STATS_COLLECTION => 'machine_stats',
-      HADOOP_MONITOR_NODE => nil,
-      JOB_LOGS_SIZE => 10 * (1 << 20),
-      JOB_EVENTS_SIZE => 10 * (1 << 20),
-      MACHINE_STATS_SIZE => 100 * (1 << 20)
+      @conf.define(SLEEP_SECONDS,
+                   :default => 1,
+                   :description => "Time to sleep in main loops")
+      @conf.define(MONGO_JOBS_DB,
+                   :default => 'job_info',
+                   :description => "Mongo database to dump hadoop job information into")
+      @conf.define(MONGO_JOB_LOGS_COLLECTION,
+                   :default => 'job_logs',
+                   :description => "Mongo collection to dump job logs into.")
+      @conf.define(MONGO_JOB_EVENTS_COLLECTION,
+                   :default => 'job_events',
+                   :description => "Mongo collection containing jobs events.")
+      @conf.define(MONGO_MACHINE_STATS_COLLECTION,
+                   :default => 'machine_stats',
+                   :description => "Mongo collection containing machine stats.")
+      @conf.define(HADOOP_MONITOR_NODE,
+                   :default => nil,
+                   :description => "IP address of Hadoop monitor node")
+      @conf.define(JOB_LOGS_SIZE,
+                   :default => 10 * (1 << 20),
+                   :description => ("Size (in bytes) of Mongo jobs log " \
+                                    "collection"))
+      @conf.define(JOB_EVENTS_SIZE,
+                   :default => 10 * (1 << 20),
+                   :description => ("Size (in bytes) of Mongo job events " \
+                                    "collection"))
+      @conf.define(MACHINE_STATS_SIZE,
+                   :default => 100 * (1 << 20),
+                   :description => ("Size (in bytes) of machine stats " \
+                                    "collection"))
 
       # unconfigurable constants
       @conf.finally do |cnf|
         cnf[CLUSTER_WORKING] = "cluster_working"
         cnf[CLUSTER_QUIET] = "cluster_quiet"
+        cnf[MONITORING_CLUSTER] = "monitoring_cluster"
         cnf[EVENT] = "event"
         cnf[TIME] = "time"
       end
