@@ -17,7 +17,7 @@ module Vayacondios
       configurable = Configuration.new
       vconf = configurable.get_conf
       logger = configurable.logger
-      unless hadoop_monitor_ip = vconf[HADOOP_MONITOR_NODE]
+      unless vconf[HADOOP_MONITOR_NODE]
         raise "The IP address of the hadoop monitor node must be set!"
       end
 
