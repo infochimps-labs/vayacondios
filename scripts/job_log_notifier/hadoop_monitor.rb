@@ -67,7 +67,7 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
-            self.logger.debug "New job: #{job.get_id.to_s}"
+            logger.debug "New job: #{job.get_id.to_s}"
 
             # Report the cluster beginning to work. We must do this in a
             # critical section or two threads may both report the same
@@ -80,7 +80,11 @@ module Vayacondios
               end
               @running_jobs.add job
             end
-            Thread.new(job, @job_logs, @job_events, @running_jobs) do |*args|
+            Thread.new(job,
+                       @job_logs,
+                       @job_events,
+                       @running_jobs,
+                       logger) do |*args|
               self.class.watch_job_events *args
             end
           end
@@ -100,7 +104,7 @@ module Vayacondios
     # sharing. According to the mongo-ruby-driver documentation, that
     # gem is thread-safe, so it should be safe to share.
     #
-    def self.watch_job_events job, job_logs, job_events, running_jobs
+    def self.watch_job_events job, job_logs, job_events, running_jobs, logger
       begin
         host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
         job_id = job.get_id.to_s
