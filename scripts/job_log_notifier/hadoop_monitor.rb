@@ -28,7 +28,7 @@ module Vayacondios
       @running_jobs = JobList.new
 
       logger.debug "Creating job_logs and job_events mongo collections."
-      @conn = Mongo::Connection.new
+      @conn = Mongo::Connection.new get_conf[MONGO_IP]
       @db = @conn[get_conf[MONGO_JOBS_DB]]
       @job_logs = @db.create_collection(get_conf[MONGO_JOB_LOGS_COLLECTION],
                                         :capped => true,

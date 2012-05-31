@@ -17,11 +17,13 @@ module Vayacondios
       configurable = Configuration.new
       vconf = configurable.get_conf
       logger = configurable.logger
-      unless vconf[HADOOP_MONITOR_NODE]
-        raise "The IP address of the hadoop monitor node must be set!"
+      unless vconf[MONGO_IP]
+        raise "The IP address of the mongo server must be set!"
       end
 
-      conn = Mongo::Connection.new vconf[HADOOP_MONITOR_NODE]
+      logger.info "Connecting to Mongo server at ip #{vconf[MONGO_IP]}"
+      conn = Mongo::Connection.new vconf[MONGO_IP]
+      logger.debug "Getting job database #{vconf[MONGO_JOBS_DB]}"
       db = conn[vconf[MONGO_JOBS_DB]]
 
       logger.debug "Waiting for hadoop monitor to create the event collection."
