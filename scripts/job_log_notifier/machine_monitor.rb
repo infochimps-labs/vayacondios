@@ -14,7 +14,9 @@ module Vayacondios
     include Configurable
 
     def self.serve_stats port = nil
-      vconf = Configuration.new.get_conf
+      configurable = Configuration.new
+      vconf = configurable.get_conf
+      logger = configurable.logger
       unless hadoop_monitor_ip = vconf[HADOOP_MONITOR_NODE]
         raise "The IP address of the hadoop monitor node must be set!"
       end
@@ -22,17 +24,19 @@ module Vayacondios
       conn = Mongo::Connection.new vconf[HADOOP_MONITOR_NODE]
       db = conn[vconf[MONGO_JOBS_DB]]
 
-      # Wait until the hadoop monitor creates the event collection.
+      logger.debug "Waiting for hadoop monitor to create the event collection."
       sleep vconf[SLEEP_SECONDS] until
         db.collection_names.index vconf[MONGO_JOB_EVENTS_COLLECTION]
 
       job_events = db[vconf[MONGO_JOB_EVENTS_COLLECTION]]
 
+      logger.debug "Got the event collection. Creating machine stats collection."
       machine_stats = db.
         create_collection(vconf[MONGO_MACHINE_STATS_COLLECTION],
                           :capped => true,
                           :size => vconf[MACHINE_STATS_SIZE])
 
+      logger.debug "Querying job_events until we see an insertion."
       # Keep querying the job_events collection until there's an
       # event. Don't just use the cursor from .find without checking,
       # because if hadoop_monitor inserts an event into an empty
@@ -46,11 +50,15 @@ module Vayacondios
         events.add_option 0x02 # tailable
       end
 
+      logger.debug "Priming main event loop. Waiting to see if the cluster is working."
+
       # Get up-to-date on the state of the cluster. assume quiet to start.
       cluster_working = next_state(events, false, vconf[EVENT])
 
       # main loop
       loop do
+        
+        logger.debug "In main event loop. Waiting to see if the cluster is working."
 
         # Get up-to-date on the state of the cluster.
         cluster_working = next_state(events, cluster_working, vconf[EVENT])
@@ -61,6 +69,8 @@ module Vayacondios
           next
         end
 
+        logger.debug "Grabbing stats and pushing them into the collection."
+
         # Grab the stats!
         # ifstat's delay will function as our heartbeat timer.
         is, ignore, rw = `ifstat 1 1`.split("\n").map(&:split)
@@ -69,28 +79,22 @@ module Vayacondios
           split("\n").map(&:strip).select{|x| not x.empty?}[2..-1]
 
         # Write the stats into the mongo collection.
-        machine_stats.insert \
-        :net => is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}}).mkhash,
-        :disk => disks.map{|d| [d.first, headers.zip(d).mkhash]}.mkhash,
-        :cpu => split_top_stats(cpu),
-        :mem => split_top_stats(mem),
-        :swap => split_top_stats(swap)
+        machine_stats.insert(
+          :net => Hash[is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}})],
+          :disk => Hash[disks.map{|d| [d.first, Hash[headers.zip(d)]]}],
+          :cpu => split_top_stats(cpu),
+          :mem => split_top_stats(mem),
+          :swap => split_top_stats(swap))
 
       end
     end
 
-    private
+  private
 
     def self.split_top_stats line
-      line.split(':', 2).last.split(',').map(&:strip).map do |stat|
-        stat.scanf("%f%*c%s").reverse
-      end.mkhash
-    end
-
-    class ::Array
-      def mkhash
-        self.inject({}) {|h, item| h.merge item.first => item.last}
-      end
+      Hash[line.split(':', 2).last.split(',').map(&:strip).map do |stat|
+             stat.scanf("%f%*c%s").reverse
+           end]
     end
 
     def self.next_state events_cursor, current_state, event_attr_name
