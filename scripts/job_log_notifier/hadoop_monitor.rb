@@ -67,7 +67,7 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
-            logger.debug "New job: #{job.get_id_to_s}"
+            logger.debug "New job: #{job.get_id.to_s}"
 
             # Report the cluster beginning to work. We must do this in a
             # critical section or two threads may both report the same
