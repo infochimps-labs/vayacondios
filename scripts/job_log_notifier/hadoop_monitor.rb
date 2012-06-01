@@ -22,8 +22,7 @@ module Vayacondios
       self.class.configure_hadoop_jruby
       logger.debug "Getting hadoop configuration"
       hadoop_conf = self.class.get_hadoop_conf
-      logger.debug "Connecting to Hadoop"
-      jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
+      @jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
 
       @running_jobs = JobList.new
 
@@ -40,21 +39,23 @@ module Vayacondios
                                           :capped => true,
                                           :size => get_conf[JOB_EVENTS_SIZE])
 
+    end
+
+    def run
       logger.debug "Waiting for machine_monitor to create mongo_stats collection."
       sleep get_conf[SLEEP_SECONDS] until
         @db.collection_names.index get_conf[MONGO_MACHINE_STATS_COLLECTION]
 
       @machine_stats = @db[get_conf[MONGO_MACHINE_STATS_COLLECTION]]
+
       @trackers = {}
+
+      logger.info "Connecting to job tracker."
 
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
-      @job_client = Java::org.apache.hadoop.mapred.JobClient.new jconf
+      @job_client = Java::org.apache.hadoop.mapred.JobClient.new @jconf
 
-      logger.debug "Done with initialization"
-    end
-
-    def run
       loop do
         
         logger.debug "In main event loop."
@@ -74,7 +75,7 @@ module Vayacondios
             # event.
             @running_jobs.synchronize do
               if @running_jobs.empty?
-                logger.debug "Cluster just started working. logging event."
+                logger.info "Cluster just started working. logging event."
                 @job_events.insert(EVENT => CLUSTER_WORKING,
                                    TIME => Time.now.to_i)
               end
@@ -95,7 +96,7 @@ module Vayacondios
       end
     end
 
-    private
+  private
 
     #
     # watches for job events and records information as appropriate.
@@ -136,7 +137,7 @@ module Vayacondios
         running_jobs.synchronize do
           running_jobs.del job
           if running_jobs.empty?
-            logger.debug "Cluster went quiet. logging event.:"
+            logger.info "Cluster went quiet. logging event.:"
             job_events.insert(EVENT => CLUSTER_QUIET,
                               TIME => Time.now.to_i)
           end

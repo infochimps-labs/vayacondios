@@ -9,34 +9,33 @@ require 'mongo'
 
 module Vayacondios
 
-  module StatServer
+  class StatServer
 
     include Configurable
 
-    def self.serve_stats port = nil
-      configurable = Configuration.new
-      vconf = configurable.get_conf
-      logger = configurable.logger
-      unless vconf[MONGO_IP]
+    def initialize
+      unless get_conf[MONGO_IP]
         raise "The IP address of the mongo server must be set!"
       end
 
-      logger.info "Connecting to Mongo server at ip #{vconf[MONGO_IP]}"
-      conn = Mongo::Connection.new vconf[MONGO_IP]
-      logger.debug "Getting job database #{vconf[MONGO_JOBS_DB]}"
-      db = conn[vconf[MONGO_JOBS_DB]]
+      logger.info "Connecting to Mongo server at ip #{get_conf[MONGO_IP]}"
+      conn = Mongo::Connection.new get_conf[MONGO_IP]
+      logger.debug "Getting job database #{get_conf[MONGO_JOBS_DB]}"
+      @db = conn[get_conf[MONGO_JOBS_DB]]
+    end
 
+    def run
       logger.debug "Waiting for hadoop monitor to create the event collection."
-      sleep vconf[SLEEP_SECONDS] until
-        db.collection_names.index vconf[MONGO_JOB_EVENTS_COLLECTION]
+      sleep get_conf[SLEEP_SECONDS] until
+        @db.collection_names.index get_conf[MONGO_JOB_EVENTS_COLLECTION]
 
-      job_events = db[vconf[MONGO_JOB_EVENTS_COLLECTION]]
+      job_events = @db[get_conf[MONGO_JOB_EVENTS_COLLECTION]]
 
       logger.debug "Got the event collection. Creating machine stats collection."
-      machine_stats = db.
-        create_collection(vconf[MONGO_MACHINE_STATS_COLLECTION],
+      machine_stats = @db.
+        create_collection(get_conf[MONGO_MACHINE_STATS_COLLECTION],
                           :capped => true,
-                          :size => vconf[MACHINE_STATS_SIZE])
+                          :size => get_conf[MACHINE_STATS_SIZE])
 
       logger.debug "Querying job_events until we see an insertion."
       # Keep querying the job_events collection until there's an
@@ -47,7 +46,7 @@ module Vayacondios
       events = job_events.find
       events.add_option 0x02 # tailable
       until events.has_next?
-        sleep vconf[SLEEP_SECONDS]
+        sleep get_conf[SLEEP_SECONDS]
         events = job_events.find
         events.add_option 0x02 # tailable
       end
@@ -55,7 +54,7 @@ module Vayacondios
       logger.debug "Priming main event loop. Waiting to see if the cluster is working."
 
       # Get up-to-date on the state of the cluster. assume quiet to start.
-      cluster_working = next_state(events, false, vconf[EVENT])
+      cluster_working = self.class.next_state(events, false, get_conf[EVENT])
 
       # main loop
       loop do
@@ -63,11 +62,11 @@ module Vayacondios
         logger.debug "In main event loop. Waiting to see if the cluster is working."
 
         # Get up-to-date on the state of the cluster.
-        cluster_working = next_state(events, cluster_working, vconf[EVENT])
+        cluster_working = self.class.next_state(events, cluster_working, get_conf[EVENT])
 
         # Don't grab stats unless the cluster is working
         unless cluster_working
-          sleep vconf[SLEEP_SECONDS]
+          sleep get_conf[SLEEP_SECONDS]
           next
         end
 
@@ -84,10 +83,9 @@ module Vayacondios
         machine_stats.insert(
           :net => Hash[is.zip(rw.each_slice(2).map{|r,w| {:r => r, :w => w}})],
           :disk => Hash[disks.map{|d| [d.first, Hash[headers.zip(d)]]}],
-          :cpu => split_top_stats(cpu),
-          :mem => split_top_stats(mem),
-          :swap => split_top_stats(swap))
-
+          :cpu => self.class.split_top_stats(cpu),
+          :mem => self.class.split_top_stats(mem),
+          :swap => self.class.split_top_stats(swap))
       end
     end
 
@@ -112,4 +110,4 @@ module Vayacondios
   end
 end
 
-Vayacondios::StatServer.serve_stats
+Vayacondios::StatServer.new.run
