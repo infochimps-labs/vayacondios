@@ -1,4 +1,5 @@
 require 'configliere'
+require 'logger'
 
 module Vayacondios
 
@@ -25,7 +26,10 @@ module Vayacondios
     declare_name :cluster_quiet
     declare_name :event
     declare_name :time
-    declare_name :hadoop_monitor_node
+    declare_name :mongo_ip
+    declare_name :log_level
+
+    attr_reader :logger
 
     def get_conf
       return @conf if defined? @conf
@@ -36,6 +40,9 @@ module Vayacondios
       @conf.define(SLEEP_SECONDS,
                    :default => 1,
                    :description => "Time to sleep in main loops")
+      @conf.define(LOG_LEVEL,
+                   :default => "info",
+                   :description => "Log level. See standard Logger class")
       @conf.define(MONGO_JOBS_DB,
                    :default => 'job_info',
                    :description => "Mongo database to dump hadoop job information into")
@@ -48,7 +55,7 @@ module Vayacondios
       @conf.define(MONGO_MACHINE_STATS_COLLECTION,
                    :default => 'machine_stats',
                    :description => "Mongo collection containing machine stats.")
-      @conf.define(HADOOP_MONITOR_NODE,
+      @conf.define(MONGO_IP,
                    :default => nil,
                    :description => "IP address of Hadoop monitor node")
       @conf.define(JOB_LOGS_SIZE,
@@ -74,6 +81,10 @@ module Vayacondios
       end
 
       @conf.resolve!
+
+      @logger = Logger.new(STDERR)
+      @logger.level = Logger.const_get(@conf[LOG_LEVEL].upcase.to_sym)
+
       @conf
     end
   end

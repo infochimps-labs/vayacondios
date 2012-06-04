@@ -16,12 +16,18 @@ module Vayacondios
     include Configurable
 
     def initialize
+      get_conf
+
+      logger.debug "Setting up jruby"
       self.class.configure_hadoop_jruby
+      logger.debug "Getting hadoop configuration"
       hadoop_conf = self.class.get_hadoop_conf
-      jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
+      @jconf = Java::org.apache.hadoop.mapred.JobConf.new hadoop_conf
 
       @running_jobs = JobList.new
-      @conn = Mongo::Connection.new
+
+      logger.debug "Creating job_logs and job_events mongo collections."
+      @conn = Mongo::Connection.new get_conf[MONGO_IP]
       @db = @conn[get_conf[MONGO_JOBS_DB]]
       @job_logs = @db.create_collection(get_conf[MONGO_JOB_LOGS_COLLECTION],
                                         :capped => true,
@@ -33,21 +39,26 @@ module Vayacondios
                                           :capped => true,
                                           :size => get_conf[JOB_EVENTS_SIZE])
 
-      # *After* creating the job_events databse above, wait for the
-      # machine_stats database.
+    end
+
+    def run
+      logger.debug "Waiting for machine_monitor to create mongo_stats collection."
       sleep get_conf[SLEEP_SECONDS] until
         @db.collection_names.index get_conf[MONGO_MACHINE_STATS_COLLECTION]
 
       @machine_stats = @db[get_conf[MONGO_MACHINE_STATS_COLLECTION]]
-      @trackers = {}      
+
+      @trackers = {}
+
+      logger.info "Connecting to job tracker."
 
       # Using the other constructors of JobClient causes null pointer
       # exceptions, apparently due to Cloudera patches.
-      @job_client = Java::org.apache.hadoop.mapred.JobClient.new jconf
-    end
+      @job_client = Java::org.apache.hadoop.mapred.JobClient.new @jconf
 
-    def run
       loop do
+        
+        logger.debug "In main event loop."
 
         # Launch threads to watch running jobs for events.
         @job_client.get_all_jobs.select do |job_status|
@@ -57,24 +68,35 @@ module Vayacondios
           job = @job_client.get_job job_status.get_job_id
 
           unless @running_jobs[job]
+            logger.debug "New job: #{job.get_id.to_s}"
+
             # Report the cluster beginning to work. We must do this in a
             # critical section or two threads may both report the same
             # event.
             @running_jobs.synchronize do
-              @job_events.insert(EVENT => CLUSTER_WORKING,
-                                 TIME => Time.now.to_i) if @running_jobs.empty?
+              if @running_jobs.empty?
+                logger.info "Cluster just started working. logging event."
+                @job_events.insert(EVENT => CLUSTER_WORKING,
+                                   TIME => Time.now.to_i)
+              end
               @running_jobs.add job
             end
-            Thread.new(job, @job_logs, @job_events, @running_jobs) do |*args|
+            Thread.new(job,
+                       @job_logs,
+                       @job_events,
+                       @running_jobs,
+                       logger) do |*args|
               self.class.watch_job_events *args
             end
           end
         end
-        
+
+        sleep get_conf[SLEEP_SECONDS]
+
       end
     end
 
-    private
+  private
 
     #
     # watches for job events and records information as appropriate.
@@ -83,7 +105,7 @@ module Vayacondios
     # sharing. According to the mongo-ruby-driver documentation, that
     # gem is thread-safe, so it should be safe to share.
     #
-    def self.watch_job_events job, job_logs, job_events, running_jobs
+    def self.watch_job_events job, job_logs, job_events, running_jobs, logger
       begin
         host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
         job_id = job.get_id.to_s
@@ -114,8 +136,11 @@ module Vayacondios
         # event.
         running_jobs.synchronize do
           running_jobs.del job
-          job_events.insert(EVENT => CLUSTER_QUIET,
-                            TIME => Time.now.to_i) if running_jobs.empty?
+          if running_jobs.empty?
+            logger.info "Cluster went quiet. logging event.:"
+            job_events.insert(EVENT => CLUSTER_QUIET,
+                              TIME => Time.now.to_i)
+          end
         end
       end
     end
