@@ -38,7 +38,7 @@ module Vayacondios
     end
 
     def init_settings
-      return unless defined? settings
+      return if defined? @settings
       
       @settings = Configliere::Param.new
       @settings.use :env_var, :config_file, :commandline
