@@ -79,6 +79,8 @@ module Vayacondios
       @logger = Logger.new(STDERR)
       @logger.level = Logger.const_get(@settings[LOG_LEVEL].upcase.to_sym)
 
+      @logger.info "Settings: #{@settings}"
+
       @settings
     end
 
