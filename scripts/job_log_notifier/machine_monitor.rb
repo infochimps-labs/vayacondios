@@ -33,9 +33,7 @@ module Vayacondios
 
       logger.debug "Got the event collection. Creating machine stats collection."
       machine_stats = @db.
-        create_collection(get_conf[MONGO_MACHINE_STATS_COLLECTION],
-                          :capped => true,
-                          :size => get_conf[MACHINE_STATS_SIZE])
+        create_collection(get_conf[MONGO_MACHINE_STATS_COLLECTION])
 
       logger.debug "Querying job_events until we see an insertion."
       # Keep querying the job_events collection until there's an
@@ -51,21 +49,21 @@ module Vayacondios
         events.add_option 0x02 # tailable
       end
 
-      logger.debug "Priming main event loop. Waiting to see if the cluster is working."
+      logger.debug "Priming main event loop. Waiting to see if the cluster is busy."
 
       # Get up-to-date on the state of the cluster. assume quiet to start.
-      cluster_working = self.class.next_state(events, false, get_conf[EVENT])
+      cluster_busy = self.class.next_state(events, false, get_conf[EVENT])
 
       # main loop
       loop do
         
-        logger.debug "In main event loop. Waiting to see if the cluster is working."
+        logger.debug "In main event loop. Waiting to see if the cluster is busy."
 
         # Get up-to-date on the state of the cluster.
-        cluster_working = self.class.next_state(events, cluster_working, get_conf[EVENT])
+        cluster_busy = self.class.next_state(events, cluster_busy, get_conf[EVENT])
 
-        # Don't grab stats unless the cluster is working
-        unless cluster_working
+        # Don't grab stats unless the cluster is busy
+        unless cluster_busy
           sleep get_conf[SLEEP_SECONDS]
           next
         end
@@ -100,7 +98,7 @@ module Vayacondios
     def self.next_state events_cursor, current_state, event_attr_name
       while current_event = events_cursor.next
         current_state = case current_event[event_attr_name]
-                        when CLUSTER_WORKING then true
+                        when CLUSTER_BUSY then true
                         when CLUSTER_QUIET then false
                         else current_state
                         end
