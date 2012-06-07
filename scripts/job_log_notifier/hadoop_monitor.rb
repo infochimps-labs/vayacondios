@@ -81,7 +81,7 @@ module Vayacondios
     # on arrays of jobs.)
     #
     def subtract jobs_array1, jobs_array2
-      jobs_array1.reject{|j| jobs_array2.map(&:job_id).map(&:to_s).index j}
+      jobs_array1.reject{|j| jobs_array2.map(&:job_id).map(&:to_s).index j.job_id.to_s}
     end
 
     def jobs_with_state state
