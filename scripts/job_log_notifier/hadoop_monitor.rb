@@ -45,9 +45,11 @@ module Vayacondios
         cur_running_jobs   = jobs_with_state JobStatus::RUNNING
         cur_cluster_state  = current_cluster_state cur_running_jobs
 
-        monitored_ids, running_ids = [@monitored_jobs.map{|j| j.get_id.to_s}, cur_running_jobs.map{|j| j.get_id.to_s}]
-        (monitored_ids - running_ids).each{|job_id| logger.debug "#{job_id} is complete."}
-        (running_ids - monitored_ids).each{|job_id| logger.debug "#{job_id} started."}
+        subtract(@monitored_jobs, cur_running_jobs).each{|job| logger.debug "#{job.get_id.to_s} is complete."}
+        subtract(cur_running_jobs, @monitored_jobs).each do |job|
+          logger.debug "#{job.get_id.to_s} started."
+          update_job_properties job
+        end
 
         (@monitored_jobs + cur_running_jobs).each{|job| update_job_stats job}
 
@@ -72,6 +74,14 @@ module Vayacondios
       when true then CLUSTER_BUSY
       when false then CLUSTER_QUIET
       end
+    end
+
+    #
+    # (Equality doesn't work for jobs, so - will not work as intended
+    # on arrays of jobs.)
+    #
+    def subtract jobs_array1, jobs_array2
+      jobs_array1.reject{|j| jobs_array2.map(&:job_id).map(&:to_s).index j}
     end
 
     def jobs_with_state state
