@@ -104,10 +104,16 @@ module Vayacondios
                           when JobStatus::SUCCEEDED then :SUCCEEDED
                           end,
 
-        finished_maps:    num_tasks(@job_client, job_id, :map, finished_status),
+        finished_maps:    num_tasks(@job_client, job_id, :map,    finished_status),
         finished_reduces: num_tasks(@job_client, job_id, :reduce, finished_status),
-        failed_maps:      num_tasks(@job_client, job_id, :map, failed_status),
+        failed_maps:      num_tasks(@job_client, job_id, :map,    failed_status),
         failed_reduces:   num_tasks(@job_client, job_id, :reduce, failed_status),
+
+        cleanup_progress: job.cleanup_progress,
+        map_progress:     job.map_progress,
+        reduce_progress:  job.reduce_progress,
+        setup_progress:   job.setup_progress,
+
         counters:         parse_counters(job.get_counters),
         type:             :job,
 
@@ -160,6 +166,7 @@ module Vayacondios
         task_status: task_report.get_current_status.to_s,
         start_time:  task_report.get_start_time,
         finish_time: task_report.get_finish_time,
+        progress:    task_report.get_progress,
         counters:    parse_counters(task_report.get_counters),
         type:        :task,
       }
