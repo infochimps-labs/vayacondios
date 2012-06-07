@@ -44,35 +44,35 @@ module Vayacondios
       @settings.use :env_var, :config_file, :commandline
       
       @settings.define(SLEEP_SECONDS,
-                   :default => 5,
-                   :description => "Time to sleep in main loops")
+                       default: 5,
+                       description: "Time to sleep in main loops")
       @settings.define(LOG_LEVEL,
-                   :default => "info",
-                   :description => "Log level. See standard Logger class")
+                       default: "info",
+                       description: "Log level. See standard Logger class")
       @settings.define(MONGO_JOBS_DB,
-                   :default => 'job_info',
-                   :description => "Mongo database to dump hadoop job information into")
+                       default: 'job_info',
+                       description: "Mongo database to dump hadoop job information into")
       @settings.define(MONGO_JOB_LOGS_COLLECTION,
-                   :default => 'job_logs',
-                   :description => "Mongo collection to dump job logs into.")
+                       default: 'job_logs',
+                       description: "Mongo collection to dump job logs into.")
       @settings.define(MONGO_JOB_EVENTS_COLLECTION,
-                   :default => 'job_events',
-                   :description => "Mongo collection containing jobs events.")
+                       default: 'job_events',
+                       description: "Mongo collection containing jobs events.")
       @settings.define(MONGO_MACHINE_STATS_COLLECTION,
-                   :default => 'machine_stats',
-                   :description => "Mongo collection containing machine stats.")
+                       default: 'machine_stats',
+                       description: "Mongo collection containing machine stats.")
       @settings.define(MONGO_IP,
-                   :default => nil,
-                   :description => "IP address of Hadoop monitor node")
+                       default: nil,
+                       description: "IP address of Hadoop monitor node")
       @settings.define(JOB_LOGS_SIZE,
-                   :default => 10 * (1 << 20),
-                   :description => ("Size (in bytes) of Mongo jobs log collection"))
+                       default: 10 * (1 << 20),
+                       description: ("Size (in bytes) of Mongo jobs log collection"))
       @settings.define(JOB_EVENTS_SIZE,
-                   :default => 10 * (1 << 20),
-                   :description => ("Size (in bytes) of Mongo job events collection"))
+                       default: 10 * (1 << 20),
+                       description: ("Size (in bytes) of Mongo job events collection"))
       @settings.define(MACHINE_STATS_SIZE,
-                   :default => 100 * (1 << 20),
-                   :description => ("Size (in bytes) of machine stats collection"))
+                       default: 100 * (1 << 20),
+                       description: ("Size (in bytes) of machine stats collection"))
       
       @settings.resolve!
 
