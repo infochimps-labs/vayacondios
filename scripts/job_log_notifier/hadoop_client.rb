@@ -88,9 +88,6 @@ module Vayacondios
 
       job_data = {
         
-        # missing some fields that show up in the logs here, but this
-        # should be a subset of the values provided there
-        
         _id:              job_id.to_s,
 
                           # not sure what is what. I'm guessing
