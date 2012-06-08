@@ -16,7 +16,7 @@ module Vayacondios
       raise "\nJava not found. Are you sure you're running with JRuby?\n#{e.message}"
     end
 
-    hadoop_home = ENV['HADOOP_HOME']
+    hadoop_home = ENV['HADOOP_HOME'] || '/usr/lib/hadoop'
 
     raise "\nHadoop installation not found. Try setting $HADOOP_HOME\n" unless (hadoop_home and (File.exist? hadoop_home))
 

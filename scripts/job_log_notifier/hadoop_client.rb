@@ -5,7 +5,6 @@ require 'optparse'
 require 'ostruct'
 require 'logger'
 require 'pp'
-require 'gorillib/hash/compact'
 require 'gorillib/string/inflections'
 require 'swineherd-fs'
 
@@ -114,28 +113,38 @@ module Vayacondios
         failed_maps:      num_tasks(job_id, :map,    failed_status),
         failed_reduces:   num_tasks(job_id, :reduce, failed_status),
 
-        cleanup_progress: job.cleanup_progress,
-        map_progress:     job.map_progress,
-        reduce_progress:  job.reduce_progress,
-        setup_progress:   job.setup_progress,
-
         counters:         parse_counters(job.get_counters),
         type:             :job,
 
       }
 
+      job_progress = {
+        
+        parent_id:        job.job_id,
+        cleanup_progress: job.cleanup_progress,
+        map_progress:     job.map_progress,
+        reduce_progress:  job.reduce_progress,
+        setup_progress:   job.setup_progress,
+
+      }
+
       map_task_data    = @job_client.get_map_task_reports    job_id
       reduce_task_data = @job_client.get_reduce_task_reports job_id
-      
-      map_reports    =    map_task_data.map{|task| parse_task task, "MAP",    job_id }
-      reduce_reports = reduce_task_data.map{|task| parse_task task, "REDUCE", job_id }
 
-      [job_data] + map_reports + reduce_reports
+      m_reports, m_progress_reports, r_reports, r_progress_reports =
+        [
+         map_task_data.map{|task|    parse_task          task, "MAP",    job_id },
+         map_task_data.map{|task|    parse_task_progress task, "MAP"            },
+         reduce_task_data.map{|task| parse_task          task, "REDUCE", job_id },
+         reduce_task_data.map{|task| parse_task_progress task, "REDUCE"         },
+        ]
+      
+      [job_data, job_progress] + m_reports + r_reports + m_progress_reports + r_progress_reports
     end
 
     def recordize_properties properties, job_id
       {
-        parent:     job_id,
+        parent_id:  job_id,
         type:       :conf,
         properties: properties,
         _id:        [job_id, "_properties"].join
@@ -163,15 +172,21 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       {
-        _id:         task_report.getTaskID.to_s,
+        _id:         task_report.get_task_id.to_s,
         parent_id:   parent_job_id,
         task_type:   task_type,
         task_status: task_report.get_current_status.to_s,
         start_time:  task_report.get_start_time,
         finish_time: task_report.get_finish_time,
-        progress:    task_report.get_progress,
         counters:    parse_counters(task_report.get_counters),
         type:        :task,
+      }
+    end
+
+    def parse_task_progress task_report, task_type
+      {
+        parent_id:   task_report.get_task_id.to_s,
+        progress:    task_report.get_progress,
       }
     end
 
