@@ -75,13 +75,13 @@ module Vayacondios
     def update_job_properties job
       properties = @hadoop.job_properties job
       logger.debug "upserting #{JSON.generate properties}"
-      @job_logs.update({_id: [job.get_id.to_s, '_properties'].join}, properties, upsert: true, safe: true)
+      @job_logs.save(properties, upsert: true, safe: true)
     end
 
     def update_job_stats job, finish_time = nil
-      @hadoop.job_stats(job, finish_time).each do |job_stat|
+      @hadoop.job_stats(job, finish_time || Time.now).each do |job_stat|
         logger.debug "upserting #{JSON.generate job_stat}"
-        @job_logs.update({_id: job_stat[:_id]}, job_stat, upsert: true, safe: true)
+        @job_logs.save(job_stat, upsert: true, safe: true)
       end
     end
 

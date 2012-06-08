@@ -13,7 +13,10 @@ module Vayacondios
 
   class HadoopClient
 
-  public
+    include Configurable
+    include Hadoopable
+
+    RUNNING = JobStatus::RUNNING
 
     def initialize
       init_settings
@@ -29,6 +32,10 @@ module Vayacondios
       jobs_array1.reject{|j| jobs_array2.map(&:job_id).map(&:to_s).index j.job_id.to_s}
     end
 
+    #
+    # Returns the jobs with the specified state. States are specified
+    # by constants in this class.
+    # 
     def jobs_with_state state
       jobs_by_state[state] || []
     end
@@ -48,17 +55,11 @@ module Vayacondios
     # Returns the stats for the current job as a hash.
     #
     def job_stats job, finish_time
-      job_id = job.get_id.to_s
-      parse_job job_id, finish_time
+      parse_job job.get_id.to_s, finish_time
     end
 
   private
     
-    include Hadoopable
-    include Configurable
-
-    RUNNING = JobStatus::RUNNING
-
     #
     # Returns a hash JobStatus::<SOME_STATE> => <array of jobs>
     #
@@ -67,6 +68,10 @@ module Vayacondios
       Hash[job_statuses_by_state.map{|state, job_statuses| [state, jobs_from_statuses(job_statuses)]}]
     end
 
+    #
+    # Some hadoop stuff returns JobStatus objects. This converts them
+    # to RunningJob objects.
+    #
     def jobs_from_statuses job_statuses
       job_statuses.map{|job_status| @job_client.get_job job_status.get_job_id}
     end
@@ -96,6 +101,9 @@ module Vayacondios
         launch_time:      job_status.get_start_time,
         submit_time:      job_status.get_start_time,
 
+                          # use milliseconds for compatibility with Java.
+        finish_time:      finish_time.to_i * 1000,
+
         job_status:       case job_status.get_run_state
                           when JobStatus::FAILED    then :FAILED 
                           when JobStatus::KILLED    then :KILLED
@@ -104,10 +112,10 @@ module Vayacondios
                           when JobStatus::SUCCEEDED then :SUCCEEDED
                           end,
 
-        finished_maps:    num_tasks(@job_client, job_id, :map,    finished_status),
-        finished_reduces: num_tasks(@job_client, job_id, :reduce, finished_status),
-        failed_maps:      num_tasks(@job_client, job_id, :map,    failed_status),
-        failed_reduces:   num_tasks(@job_client, job_id, :reduce, failed_status),
+        finished_maps:    num_tasks(job_id, :map,    finished_status),
+        finished_reduces: num_tasks(job_id, :reduce, finished_status),
+        failed_maps:      num_tasks(job_id, :map,    failed_status),
+        failed_reduces:   num_tasks(job_id, :reduce, failed_status),
 
         cleanup_progress: job.cleanup_progress,
         map_progress:     job.map_progress,
@@ -118,8 +126,6 @@ module Vayacondios
         type:             :job,
 
       }
-
-      job_data[:finish_time] = finish_time if finish_time
 
       map_task_data    = @job_client.get_map_task_reports    job_id
       reduce_task_data = @job_client.get_reduce_task_reports job_id
@@ -233,9 +239,9 @@ module Vayacondios
     # Returns the number of tasks of the specified TIPStatus from the
     # specified job_client of the specified type (map or reduce)
     #
-    def num_tasks job_client, job_id, map_or_reduce, statuses
+    def num_tasks job_id, map_or_reduce, statuses
       method_name = "get_#{map_or_reduce}_task_reports".to_sym
-      job_client.send(method_name, job_id).select do |report|
+      @job_client.send(method_name, job_id).select do |report|
         tip_statuses = statuses.map do |status|
           TIPStatus.const_get status
         end
