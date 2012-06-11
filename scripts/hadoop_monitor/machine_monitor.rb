@@ -25,6 +25,10 @@ module Vayacondios
     end
 
     def run
+
+      # TODO: This entire script should be replaced by calls to zabbix
+      # initiated by the main loop of the hadoop_monitor.
+
       logger.debug "Waiting for hadoop monitor to create the event collection."
       sleep get_conf[SLEEP_SECONDS] until
         @db.collection_names.index get_conf[MONGO_JOB_EVENTS_COLLECTION]
