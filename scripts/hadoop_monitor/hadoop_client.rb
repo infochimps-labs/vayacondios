@@ -122,6 +122,7 @@ module Vayacondios
         
         parent_id:        job.job_id,
         type:             :job_progress,
+        time:             Time.now.to_i,
         cleanup_progress: job.cleanup_progress,
         map_progress:     job.map_progress,
         reduce_progress:  job.reduce_progress,
@@ -187,6 +188,7 @@ module Vayacondios
     def parse_task_progress task_report, task_type
       {
         parent_id:   task_report.get_task_id.to_s,
+        time:        Time.now.to_i,
         type:        :task_progress,
         progress:    task_report.get_progress,
       }
