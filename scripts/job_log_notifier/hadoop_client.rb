@@ -121,6 +121,7 @@ module Vayacondios
       job_progress = {
         
         parent_id:        job.job_id,
+        type:             :job_progress,
         cleanup_progress: job.cleanup_progress,
         map_progress:     job.map_progress,
         reduce_progress:  job.reduce_progress,
@@ -133,8 +134,8 @@ module Vayacondios
 
       m_reports, m_progress_reports, r_reports, r_progress_reports =
         [
-         map_task_data.map{|task|    parse_task          task, "MAP",    job_id },
-         map_task_data.map{|task|    parse_task_progress task, "MAP"            },
+         map_task_data   .map{|task| parse_task          task, "MAP",    job_id },
+         map_task_data   .map{|task| parse_task_progress task, "MAP"            },
          reduce_task_data.map{|task| parse_task          task, "REDUCE", job_id },
          reduce_task_data.map{|task| parse_task_progress task, "REDUCE"         },
         ]
@@ -186,6 +187,7 @@ module Vayacondios
     def parse_task_progress task_report, task_type
       {
         parent_id:   task_report.get_task_id.to_s,
+        type:        :task_progress,
         progress:    task_report.get_progress,
       }
     end
