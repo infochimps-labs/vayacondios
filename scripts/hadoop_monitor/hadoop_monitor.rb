@@ -21,15 +21,15 @@ module Vayacondios
       @monitored_jobs = []
 
       logger.debug "Creating mongo collections."
-      @conn = Mongo::Connection.new settings[MONGO_IP]
-      @db = @conn[settings[MONGO_JOBS_DB]]
-      @job_logs = @db.create_collection(settings[MONGO_JOB_LOGS_COLLECTION])
+      @conn = Mongo::Connection.new settings.mongo_ip
+      @db = @conn[settings.mongo_jobs_db]
+      @job_logs = @db.create_collection(settings.mongo_job_logs_collection)
 
       # After we create the job_events database, one of the machine
       # monitors will create the machine stats databse.
-      @job_events = @db.create_collection(settings[MONGO_JOB_EVENTS_COLLECTION],
+      @job_events = @db.create_collection(settings.mongo_job_events_collection,
                                           :capped => true,
-                                          :size => settings[JOB_EVENTS_SIZE])
+                                          :size => settings.job_events_size)
 
       @cluster_state = CLUSTER_QUIET
     end
@@ -56,7 +56,7 @@ module Vayacondios
         @monitored_jobs = cur_running_jobs
         update_cluster_state cur_cluster_state
 
-        sleep settings[SLEEP_SECONDS]
+        sleep settings.sleep_seconds
 
       end
     end

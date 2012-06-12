@@ -14,14 +14,14 @@ module Vayacondios
     include Configurable
 
     def initialize
-      unless get_conf[MONGO_IP]
+      unless get_conf.mongo_ip
         raise "The IP address of the mongo server must be set!"
       end
 
-      logger.info "Connecting to Mongo server at ip #{get_conf[MONGO_IP]}"
-      conn = Mongo::Connection.new get_conf[MONGO_IP]
-      logger.debug "Getting job database #{get_conf[MONGO_JOBS_DB]}"
-      @db = conn[get_conf[MONGO_JOBS_DB]]
+      logger.info "Connecting to Mongo server at ip #{get_conf.mongo_ip}"
+      conn = Mongo::Connection.new get_conf.mongo_ip
+      logger.debug "Getting job database #{get_conf.mongo_jobs_db}"
+      @db = conn[get_conf.mongo_jobs_db]
     end
 
     def run
@@ -30,14 +30,14 @@ module Vayacondios
       # initiated by the main loop of the hadoop_monitor.
 
       logger.debug "Waiting for hadoop monitor to create the event collection."
-      sleep get_conf[SLEEP_SECONDS] until
-        @db.collection_names.index get_conf[MONGO_JOB_EVENTS_COLLECTION]
+      sleep get_conf.sleep_seconds until
+        @db.collection_names.index get_conf.mongo_job_events_collection
 
-      job_events = @db[get_conf[MONGO_JOB_EVENTS_COLLECTION]]
+      job_events = @db[get_conf.mongo_job_events_collection]
 
       logger.debug "Got the event collection. Creating machine stats collection."
       machine_stats = @db.
-        create_collection(get_conf[MONGO_MACHINE_STATS_COLLECTION])
+        create_collection(get_conf.mongo_machine_stats_collection)
 
       logger.debug "Querying job_events until we see an insertion."
       # Keep querying the job_events collection until there's an
@@ -48,7 +48,7 @@ module Vayacondios
       events = job_events.find
       events.add_option 0x02 # tailable
       until events.has_next?
-        sleep get_conf[SLEEP_SECONDS]
+        sleep get_conf.sleep_seconds
         events = job_events.find
         events.add_option 0x02 # tailable
       end
@@ -56,7 +56,7 @@ module Vayacondios
       logger.debug "Priming main event loop. Waiting to see if the cluster is busy."
 
       # Get up-to-date on the state of the cluster. assume quiet to start.
-      cluster_busy = self.class.next_state(events, false, get_conf[EVENT])
+      cluster_busy = self.class.next_state(events, false, get_conf.event)
 
       # main loop
       loop do
@@ -64,11 +64,11 @@ module Vayacondios
         logger.debug "In main event loop. Waiting to see if the cluster is busy."
 
         # Get up-to-date on the state of the cluster.
-        cluster_busy = self.class.next_state(events, cluster_busy, get_conf[EVENT])
+        cluster_busy = self.class.next_state(events, cluster_busy, get_conf.event)
 
         # Don't grab stats unless the cluster is busy
         unless cluster_busy
-          sleep get_conf[SLEEP_SECONDS]
+          sleep get_conf.sleep_seconds
           next
         end
 
