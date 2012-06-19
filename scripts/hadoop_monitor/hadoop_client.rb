@@ -122,7 +122,8 @@ module Vayacondios
         
         parent_id:        job.job_id,
         type:             :job_progress,
-        time:             Time.now.to_i,
+                          # report time in milliseconds for consistency
+        time:             Time.now.to_i * 1000,
         cleanup_progress: job.cleanup_progress,
         map_progress:     job.map_progress,
         reduce_progress:  job.reduce_progress,
@@ -174,21 +175,23 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       {
-        _id:         task_report.get_task_id.to_s,
-        parent_id:   parent_job_id,
-        task_type:   task_type,
-        task_status: task_report.get_current_status.to_s,
-        start_time:  task_report.get_start_time,
-        finish_time: task_report.get_finish_time,
-        counters:    parse_counters(task_report.get_counters),
-        type:        :task,
+        _id:              task_report.get_task_id.to_s,
+        parent_id:        parent_job_id,
+        task_type:        task_type,
+        task_status:      task_report.get_current_status.to_s,
+        start_time:       task_report.get_start_time,
+        finish_time:      task_report.get_finish_time,
+        counters:         parse_counters(task_report.get_counters),
+        type:             :task,
+        diagnostics:      task_report.get_diagnostics.map(&:to_s),
+        running_attempts: task_report.get_running_task_attempts.map(&:to_s),
       }
     end
 
     def parse_task_progress task_report, task_type
       {
         parent_id:   task_report.get_task_id.to_s,
-        time:        Time.now.to_i,
+        time:        Time.now.to_i * 1000,
         type:        :task_progress,
         progress:    task_report.get_progress,
       }
