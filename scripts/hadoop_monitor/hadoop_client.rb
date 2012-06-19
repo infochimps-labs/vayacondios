@@ -217,27 +217,6 @@ module Vayacondios
     end
 
     #
-    # parses counters in a Hadoop log into a hash
-    #
-    def parse_log_counters counters
-      result = {}
-      counters.scan /{(#{scan_until '\['})(#{scan_until "\}"})}/ do |counter|
-        headers, table = counter
-        headers.scan(/\((#{scan_until ')'})\)
-                  \((#{scan_until ')'})\)/x) do |type, description|
-          type = parse_key type
-          result[type] = {}
-          table.scan(/\[\((#{scan_until ')'})\)
-                    \((#{scan_until ')'})\)
-                    \((#{scan_until ')'})\)\]/x) do |name,description,val|
-            result[type][parse_key name] = parse_atom val
-          end
-        end
-      end
-      return result
-    end
-
-    #
     # Parse a value in a Hadoop log.
     #
     def parse_atom a
@@ -266,14 +245,5 @@ module Vayacondios
         tip_statuses.index report.get_current_status
       end.size
     end
-
-    #
-    # returns a regex that matches until character b. Escaped b's are
-    # skipped over.
-    #
-    def scan_until b
-      return /(?:[^\\#{b}]|\\.)*/
-    end
-
   end
 end
