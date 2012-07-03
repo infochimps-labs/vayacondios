@@ -1,12 +1,15 @@
 ## OS
 .DS_Store
-Icon?
+Icon
 nohup.out
 .bak
 
+*.pem
+
 ## EDITORS
 \#*
-.#*
+.\#*
+\#*\#
 *~
 *.swp
 REVISION
@@ -17,7 +20,6 @@ tmtags
 *.tmproj
 .project
 .settings
-mkmf.log
 
 ## COMPILED
 a.out
@@ -31,34 +33,27 @@ a.out
 .svn
 
 ## PROJECT::GENERAL
+
+log/*
+tmp/*
+pkg/*
+
 coverage
 rdoc
 doc
 pkg
+.rake_test_cache
+.bundle
 .yardoc
-*private.yaml
-.bundle
-db/*.sqlite3
-log/*.log*
-tmp/**/*
-config/database.yml
-public/stylesheets/compiled/*
-public/system/*
-
-## PROJECT::SPECIFIC
-public/stylesheets/style.css
-public/stylesheets/handheld.css
-
-vendor/gems
-vendor/bin
-.bundle
-.sass-cache
-vendor/goliath
-
-# gitignor'ing these files which you may happen to link in rather than gem
-lib/goliath
-lib/goliath.rb
-lib/icss
-lib/icss.rb
 
 .vendor
+
+## PROJECT::SPECIFIC
+
+Gemfile.lock
+.rvmrc
+.rbenv-version
+
+public/stylesheets/compiled/*
+public/system/*
+.sass-cache
