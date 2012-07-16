@@ -51,7 +51,7 @@ class HttpShim < Goliath::API
       end
       
       def collection(bucket)
-        collection = DB.collection(bucket)
+        collection = ::DB.collection(bucket)
       end
       
       def insert(bucket, document, field = nil)

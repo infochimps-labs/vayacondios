@@ -33,7 +33,7 @@ DB_NAME = Settings[:mongo][:database]
 
 environment(:production) do
   Settings[:environment] = config[:environment] = 'production'
-  HttpShim::DB = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
+  ::DB = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
     conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
     conn.db(DB_NAME)
   end
@@ -42,13 +42,13 @@ end
 environment(:development) do
   Settings[:environment] = config[:environment] = 'development'
   conn = EM::Mongo::Connection.new(Settings[:mongo][:host],Settings[:mongo][:port], 1, {:reconnect_in => 1})
-  HttpShim::DB = conn.db(DB_NAME)
+  ::DB = conn.db(DB_NAME)
 end
 
 environment(:test) do
   Settings[:environment] = config[:environment] = 'test'
   conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
-  HttpShim::DB = conn(DB_NAME)
+  ::DB = conn(DB_NAME)
 end
 
 def config.inspect
