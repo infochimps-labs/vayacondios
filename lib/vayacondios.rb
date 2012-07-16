@@ -6,4 +6,5 @@ require 'em-synchrony/em-mongo'
 #
 require 'gorillib/object/blank'
 require 'gorillib/enumerable/sum'
+require 'gorillib/hash/deep_merge'
 require 'yajl/json_gem'

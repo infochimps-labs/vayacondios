@@ -26,18 +26,19 @@ class HttpShim < Goliath::API
       def get(path)        
         bucket, id, field = parse_path(path)
         
-        fields = {'_id' => 0}
-        fields[field] = 1 if field.present?
-
-        result = collection(bucket).find_one({_id: id}, {fields: fields})
+        raise ArgumentError, "Must specify an organization and type in the path" unless bucket.present?
+        raise ArgumentError, "Must specify a document id in the path" unless id.present?
+        
+        result = find(bucket, id, field)
 
         if result.present?
-          result = field.split('.').inject(result){|acc, attr| acc = acc[attr]} if field.present?
           [200, {}, result]
         else
           [404, {}, {error: 'Not Found'}]
         end
       end
+      
+    private
       
       def parse_path(path)
         bucket   = [path[:organization], path[:type]].join('.')
@@ -54,12 +55,25 @@ class HttpShim < Goliath::API
         collection = ::DB.collection(bucket)
       end
       
+      def find(bucket, id, field=nil)
+        fields = {'_id' => 0}
+        fields[field] = 1 if field.present?
+
+        result = collection(bucket).find_one({_id: id}, {fields: fields})
+        result = field.split('.').inject(result){|acc, attr| acc = acc[attr]} if result.present? && field.present?
+
+        result
+      end
+      
       def insert(bucket, document, field = nil)
-        if document[:_id].present?
+        if (id = document.delete(:_id)).present?
+          existing_document = find(bucket, id, field)
+          document = existing_document.deep_merge(document) if existing_document.present?
+          
           fields   = { field => document} if field.present?
           fields ||= document
 
-          collection(bucket).update({:_id => fields.delete(:_id)}, {'$set' => fields}, {upsert: true})
+          collection(bucket).update({:_id => id}, {'$set' => fields}, {upsert: true})
         else
           collection(bucket).insert(document)
         end
