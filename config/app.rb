@@ -3,7 +3,10 @@ def ENV.root_path(*args)
 end
 
 require 'configliere'
-Settings.define :app_name, :default => 'vayacondios', :description => 'Name to key on for tracer stats, statsd metrics, etc.'
+Settings.define :app_name,    :default => 'vayacondios', :description => 'Name to key on for tracer stats, statsd metrics, etc.'
+Settings.define 'mongo.host', :default => 'localhost',   :description => 'Mongo hostname'
+Settings.define 'mongo.port', :default => '27017',       :description => 'Mongo port'
+
 Settings.read(ENV.root_path('config/vayacondios.yaml'))
 Settings.resolve!
 
