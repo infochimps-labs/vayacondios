@@ -5,19 +5,14 @@ class Vayacondios
   class Client
     class Error < StandardError; end
     
-    def initialize(host, port, organization=nil, type=nil)
+    def initialize(host, port, organization=nil)
       @host = host
       @port = port
-      @type = type if type
       @organization = organization if organization
     end
     
     def organization(organization)
-      self.class.new(@host, @port, organization)
-    end
-    
-    def config
-      self.class.new(@host, @port, @organization, :config)
+      @organization = organization
     end
     
     def uri
@@ -25,24 +20,25 @@ class Vayacondios
 
       uri_str  = "http://#{@host}:#{@port}/v1"
       uri_str += "/#{@organization}" if @organization
-      uri_str += "/#{@type}" if @type
       @uri ||= URI(uri_str)
     end
     
-    def fetch(id)
-      request(:get, id)
+    def fetch(type, id)
+      request(:get, type, id)
     end
     
-    def insert(document, id=nil)
-      id ||= document.delete(:_id) || document.delete('_id')
+    def insert(document, type = nil, id = nil)
+      id   ||= document.delete(:_id)   || document.delete('_id')
+      type ||= document.delete(:_type) || document.delete('_type')
       
-      request(:post, id, document)
+      request(:post, type, id, document)
     end
     
   private
     
-    def request(method, id=nil, document={})
-      path = File.join(uri.path, *id.to_s.split(/\W/))
+    def request(method, type, id=nil, document={})
+      path = File.join(uri.path, type.to_s, *id.to_s.split(/\W/))
+
       http = Net::HTTP.new(uri.host, uri.port)
 
       params  = [method.to_sym, path]
@@ -53,7 +49,7 @@ class Vayacondios
       if Net::HTTPSuccess === response
         JSON.parse(response.body) rescue response.body
       else
-        raise Error.new("Error (#{response.code}) while inserting document: " + response.body)
+        raise Error.new("Error (#{response.code}) while #{method.to_s == 'get' ? 'fetching' : 'inserting'} document: " + response.body)
       end
     end
   end

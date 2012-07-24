@@ -14,7 +14,7 @@ class Vayacondios
       id = [id, options[:env]].join('.') if options[:env]
       
       begin
-        new_data = client.config.fetch(id)
+        new_data = client.fetch(:config, id)
       rescue ::Vayacondios::Client::Error
         warn "Unable to load vayacondios config '#{id}' for #{organization} at: #{options[:host]}:#{options[:port]}"
         new_data = {}

@@ -9,7 +9,7 @@ class HttpShim < Goliath::API
   autoload :Version1, 'http_shim/version1'
   
   VERSION0_RE = /^(\/v0)?\/(?<bucket>([a-z]\w+\/?)+)(\.(?<format>[a-z0-9]+))/i
-  VERSION1_RE = /^\/v1\/(?<organization>[a-z]\w+)\/(?<type>config)(?<id>(\/\w+)*)(\/|\.(?<format>[a-z0-9]+))?$/i
+  VERSION1_RE = /^\/v1\/(?<organization>[a-z]\w+)\/(?<type>config|event)(?<id>(\/\w+)*)(\/|\.(?<format>[a-z0-9]+))?$/i
 
   use Goliath::Rack::Heartbeat                     # respond to /status with 200, OK (monitoring, etc)
   use Goliath::Rack::Tracer, 'X-Tracer'            # log trace statistics

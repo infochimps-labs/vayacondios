@@ -1,6 +1,6 @@
 class HttpShim < Goliath::API
   class Version1 < Goliath::API
-    def response(env, path_params={})     
+    def response(env, path_params={})
       if %w{PUT POST}.include?(env['REQUEST_METHOD'])
         post(path_params, env.params)
       elsif env['REQUEST_METHOD'] == 'GET'
@@ -18,6 +18,7 @@ class HttpShim < Goliath::API
         raise ArgumentError, "Must specify an organization and type in the path" unless bucket.present?
         raise ArgumentError, "Must specify a document in the path to update nested fields" if field.present? && !id.present?
 
+        params = format_event(params) if path[:type] == 'event'
         result = insert(bucket, params.merge({_id: id}), field)
 
         [200, {}, { :result => { :bucket => bucket, :id => id||result.to_s }}]
@@ -32,6 +33,8 @@ class HttpShim < Goliath::API
         result = find(bucket, id, field)
 
         if result.present?
+          result = unformat_event(result) if path[:type] == "event"
+          
           [200, {}, result]
         else
           [404, {}, {error: 'Not Found'}]
@@ -39,13 +42,34 @@ class HttpShim < Goliath::API
       end
       
     private
+    
+      def format_event(document)
+        time = document.delete(:time) || document.delete("time")
+        time = time ? Time.parse(time) : Time.now
+        
+        {t: time, d: document}
+      end
+      
+      def unformat_event(record)
+        record.delete("_id")
+        time = record.delete('t')
+        record["d"].merge("time" => time)
+      end
       
       def parse_path(path)
-        bucket   = [path[:organization], path[:type]].join('.')
         segments = path[:id].to_s.split('/').reject(&:blank?)
 
         id       = segments.shift
         field    = segments.join('.')
+        
+        if path[:type] == 'event'
+          bucket = [path[:organization], id, 'events'].join('_')
+          id     = segments.first
+          field  = nil
+        else
+          bucket = [path[:organization], path[:type]].join('.')
+        end
+        
         id       = BSON::ObjectId(id) if id.to_s.match(/^[a-f0-9]{24}$/)
         
         [bucket, id, field]
@@ -75,6 +99,7 @@ class HttpShim < Goliath::API
 
           collection(bucket).update({:_id => id}, {'$set' => fields}, {upsert: true})
         else
+          raise 'inserting!'
           collection(bucket).insert(document)
         end
       end
