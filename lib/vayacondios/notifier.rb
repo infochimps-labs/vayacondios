@@ -24,6 +24,16 @@ class Vayacondios
   
   class Notifier < Vayacondios
     include Gorillib::Builder
+
+    def prepare(obj)
+      case
+      when obj.respond_to?(:to_inspectable) then obj.to_inspectable
+      when obj.respond_to?(:to_wire)        then obj.to_wire
+      when obj.respond_to?(:to_hash)        then obj.to_hash
+      else
+        raise ArgumentError.new("Cannot notify '#{obj.inspect}' -- require a hash-like object.")
+      end
+    end
     
     def notify(topic, cargo = {})
       NoMethodError.unimplemented_method(self)
@@ -34,10 +44,11 @@ class Vayacondios
     field :client, Whatever, :default => Log
     
     def notify(topic, cargo = {})
-      level    = cargo.delete(:level) || :info
+      prepped  = prepare(cargo)
+      level    = prepped.delete(:level) || :info
       message  = "Notification: #{topic.inspect}."
-      message += " Reason: #{cargo.delete(:reason)}." if cargo[:reason]
-      message += " Cargo: #{cargo.inspect}"
+      message += " Reason: #{prepped.delete(:reason)}." if prepped[:reason]
+      message += " Cargo: #{prepped.inspect}"
       client.send(level, message)
     end
   end
@@ -45,8 +56,9 @@ class Vayacondios
   class HttpNotifier < Notifier
     field :client, Vayacondios::HttpClient
     
-    def notify(topic, cargo = {})      
-      client.insert(cargo, :event, topic)
+    def notify(topic, cargo = {})
+      prepped = prepare(cargo)
+      client.insert(prepped, :event, topic)
       nil
     end
   end
