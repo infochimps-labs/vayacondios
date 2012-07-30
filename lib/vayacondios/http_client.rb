@@ -2,7 +2,7 @@ require 'net/http'
 require 'json'
 
 class Vayacondios
-  class Client
+  class HttpClient
     include Gorillib::Builder
 
     field :host,         String,  :default => 'localhost'
