@@ -5,6 +5,15 @@ GIT
     eventmachine (1.0.0.beta.4)
 
 GIT
+  remote: https://github.com/infochimps-labs/gorillib.git
+  revision: 7a995126e2fbe6b6ddcdf04866937d43b3376b1b
+  branch: 7a995126e2fbe6b6ddcdf04866937d43b3376b1b
+  specs:
+    gorillib (0.4.0)
+      json
+      multi_json (~> 1.1)
+
+GIT
   remote: https://github.com/postrank-labs/goliath.git
   revision: f7a24c3d3df6d7e23461c8b425874f5184f5c98d
   specs:
@@ -55,8 +64,6 @@ GEM
     foreman (0.41.0)
       thor (>= 0.13.6)
     git (1.2.5)
-    gorillib (0.1.9)
-      json
     guard (1.0.1)
       ffi (>= 0.5.0)
       thor (~> 0.14.6)
@@ -120,7 +127,7 @@ DEPENDENCIES
   eventmachine!
   foreman
   goliath!
-  gorillib (~> 0.1.9)
+  gorillib!
   guard (~> 1)
   guard-rspec
   guard-yard
