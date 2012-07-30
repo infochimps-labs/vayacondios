@@ -3,23 +3,19 @@ require 'json'
 
 class Vayacondios
   class Client
+    include Gorillib::Builder
+
+    field :host,         String,  :default => 'localhost'
+    field :port,         Integer, :default => 8000
+    field :organization, String,  :default => 'infochimps'
+    
     class Error < StandardError; end
-    
-    def initialize(host, port, organization=nil)
-      @host = host
-      @port = port
-      @organization = organization if organization
-    end
-    
-    def organization(organization)
-      @organization = organization
-    end
-    
+
     def uri
       return @uri if @uri
 
-      uri_str  = "http://#{@host}:#{@port}/v1"
-      uri_str += "/#{@organization}" if @organization
+      uri_str  = "http://#{host}:#{port}/v1"
+      uri_str += "/#{organization}" if organization
       @uri ||= URI(uri_str)
     end
     
@@ -27,23 +23,22 @@ class Vayacondios
       request(:get, type, id)
     end
     
-    def insert(document, type = nil, id = nil)
+    def insert(document = {}, type = nil, id = nil)
       id   ||= document.delete(:_id)   || document.delete('_id')
       type ||= document.delete(:_type) || document.delete('_type')
       
-      request(:post, type, id, document)
+      request(:post, type, id, document.to_json)
     end
     
   private
     
-    def request(method, type, id=nil, document={})
-      path = File.join(uri.path, type.to_s, *id.to_s.split(/\W/))
-
-      http = Net::HTTP.new(uri.host, uri.port)
+    def request(method, type, id = nil, document = nil)
+      path    = File.join(uri.path, type.to_s, *id.to_s.split(/\W/))
+      http    = Net::HTTP.new(uri.host, uri.port)
 
       params  = [method.to_sym, path]
-      params += [document.to_json, {'Content-Type' => 'application/json'}] unless document.empty?
-
+      params += [document, {'Content-Type' => 'application/json'}] unless document.nil?
+      
       response = http.send *params
 
       if Net::HTTPSuccess === response
