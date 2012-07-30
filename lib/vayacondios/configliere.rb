@@ -1,41 +1,35 @@
-require 'configliere'
+require 'configliere' unless defined?::Configliere
+require 'gorillib/hash/keys'
+require 'vayacondios/client'
 
 class Vayacondios
-  DEFAULT_VAYACONDIOS_CONFIG = { :host => 'localhost', :port => 8000 }
-
   module Configliere
-    def vayacondios organization, id, options={}
-      require 'vayacondios/client'
-      
-      options  = options.inject({}){|hsh, pair| hsh.merge({pair[0].to_sym => pair[1]}) }
-      options  = DEFAULT_VAYACONDIOS_CONFIG.merge(options)
-      client   = ::Vayacondios::Client.new(options[:host], options[:port], organization)
+    def load_from_vayacondios(organization, id, options = {})
+      options.symbolize_keys!.deep_merge!(organization: organization)
 
-      id = [id, options[:env]].join('.') if options[:env]
+      client = ::Vayacondios::Client.receive(options.deep_compact)
+      id     = [id, options[:env]].compact.join('.')
       
       begin
         new_data = client.fetch(:config, id)
       rescue ::Vayacondios::Client::Error
-        warn "Unable to load vayacondios config '#{id}' for #{organization} at: #{options[:host]}:#{options[:port]}"
+        warn "Unable to load vayacondios config '#{id}' for #{organization} at: #{client.host}:#{client.port}"
         new_data = {}
       end
       deep_merge! new_data
       self
     end
     
-    def save_to_vayacondios options={}
-      require 'vayacondios/client'
-      
-      options  = options.inject({}){|hsh, pair| hsh.merge({pair[0].to_sym => pair[1]}) }
-      options  = DEFAULT_VAYACONDIOS_CONFIG.merge(options)
-      client   = ::Vayacondios::Client.new(options[:host], options[:port], organization)
+    def save_to_vayacondios(organization, id, options = {})
+      options.symbolize.keys!.deep_merge!(organization: organization)
 
-      id = [id, options[:env]].join('.') if options[:env]
+      client = ::Vayacondios::Client.receive(options.deep_compact)
+      id = [id, options[:env]].compact.join('.')
       
       begin
         client.insert(:config, id)
       rescue ::Vayacondios::Client::Error
-        warn "Unable to save vayacondios config '#{id}' for #{organization} at: #{options[:host]}:#{options[:port]}"
+        warn "Unable to save vayacondios config '#{id}' for #{organization} at: #{client.host}:#{client.port}"
       end
       self
     end
