@@ -5,25 +5,11 @@ require 'gorillib/metaprogramming/class_attribute'
 require 'vayacondios/http_client'
 
 class Vayacondios
+
   class_attribute :notifier
-
-  module Notifications 
-
-    def notify(topic, cargo = {})
-      notifier.notify(topic, cargo)
-    end
-    
-    def self.included(base)
-      base.class_attribute :notifier
-      base.notifier = Vayacondios.notifier
-    end
-
-  end
-  
-  extend Notifications
-  
+      
   class Notifier < Vayacondios
-    include Gorillib::Builder
+    attr_accessor :client
 
     def prepare(obj)
       case
@@ -41,7 +27,10 @@ class Vayacondios
   end
   
   class LogNotifier < Notifier
-    field :client, Whatever, :default => Log
+    
+    def initialize(options = {})
+      @client = options[:log] || Log
+    end
     
     def notify(topic, cargo = {})
       prepped  = prepare(cargo)
@@ -54,7 +43,10 @@ class Vayacondios
   end
 
   class HttpNotifier < Notifier
-    field :client, Vayacondios::HttpClient
+    
+    def initialize(options = {})
+      @client = Vayacondios::HttpClient.receive(options)
+    end
     
     def notify(topic, cargo = {})
       prepped = prepare(cargo)
@@ -62,6 +54,37 @@ class Vayacondios
       nil
     end
   end
+  
+  class NotifierFactory
+    def self.receive(attrs = {})
+      type = attrs.delete(:type)
+      case type
+      when 'http' then HttpNotifier.new(attrs)
+      when 'log'  then LogNotifier.new(attrs)
+      else
+        raise ArgumentError, "<#{type}> is not a valid build option"
+      end
+    end    
+  end  
+  
+  def self.default_notifier() NotifierFactory.receive(type: 'http') ; end
+  
+  module Notifications 
+    extend Gorillib::Concern
+    include Gorillib::Configurable
+    
+    def notify(topic, cargo = {})
+      notifier.notify(topic, cargo)
+    end
+    
+    included do
+      class_eval do
+        config(:notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier)
+      end
+    end
+    
+  end
 
-  self.notifier = HttpNotifier.receive(client: {})
+  extend Notifications
+  self.notifier = default_notifier
 end
