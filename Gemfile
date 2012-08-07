@@ -1,9 +1,9 @@
 source "http://rubygems.org"
 
 gem   'yajl-ruby',       "~> 1.1"
-gem   'gorillib',        :git => 'https://github.com/infochimps-labs/gorillib.git', :branch => '7a995126e2fbe6b6ddcdf04866937d43b3376b1b'
+gem   'gorillib',        :git => 'https://github.com/infochimps-labs/gorillib.git', :branch => '0.0.2'
 gem   'configliere'
-gem   'wukong-flume', '0.0.2', git: 'https://github.com/infochimps/wukong-flume.git', branch: '0.0.2'
+# gem   'wukong-flume', '0.0.2', git: 'https://github.com/infochimps/wukong-flume.git', branch: '0.0.2'
 
 gem   'goliath',         :git => 'https://github.com/postrank-labs/goliath.git'
 gem   'eventmachine',    :git => 'https://github.com/eventmachine/eventmachine.git'
