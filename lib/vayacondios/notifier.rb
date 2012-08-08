@@ -1,4 +1,5 @@
 require 'gorillib/builder'
+require 'gorillib/configurable'
 require 'gorillib/exception/raisers'
 require 'gorillib/logger/log'
 require 'gorillib/metaprogramming/class_attribute'
