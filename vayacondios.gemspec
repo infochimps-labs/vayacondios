@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
-require_relative 'lib/vayacondios/version'
+$:.push File.expand_path('../lib', __FILE__)
+require 'vayacondios/version'
 
 Gem::Specification.new do |gem|
   gem.name          = 'vayacondios'
@@ -19,23 +20,14 @@ DESC
   gem.test_files    = gem.files.grep(/^spec/)
   gem.require_paths = ['lib']
 
-gem    
-gem    'gorillib',        :git => 'https://github.com/infochimps-labs/gorillib.git', :branch => '0.0.2'
-gem    'configliere',     '>= 0.4.13'
-gem    'goliath',         :git => 'https://github.com/postrank-labs/goliath.git'
-
-gem    
-gem    
-gem    
-
-  gem.add_dependency('bundler',         '~> 1.1')
+  gem.add_dependency('bundler',         '~> 1')
   gem.add_dependency('configliere',     '>= 0.4.13')
   gem.add_dependency('yajl-ruby',       '~> 1.1')
   gem.add_dependency('goliath',         '~> 0.9.2')
   gem.add_dependency('em-http-request', '~> 1.0')
   gem.add_dependency('em-mongo',        '~> 0.4.2')
   gem.add_dependency('bson_ext',        '~> 1.6')
-  gem.add_dependency('gorillib')
+  # gem.add_dependency('gorillib')
   gem.add_dependency('foreman')
 
   gem.add_development_dependency('rake',        '>= 0.9')
