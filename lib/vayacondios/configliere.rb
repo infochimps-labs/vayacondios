@@ -9,7 +9,7 @@ class Vayacondios
     def load_from_vayacondios(organization, id, options = {})
       options.symbolize_keys!.deep_merge!(organization: organization)
 
-      client = ::Vayacondios::HttpClient.receive(options.deep_compact)
+      client = ::Vayacondios::HttpClient.receive(options.deep_compact!)
       id     = [id, options[:env]].compact.join('.')
       
       begin
@@ -25,7 +25,7 @@ class Vayacondios
     def save_to_vayacondios(organization, id, options = {})
       options.symbolize.keys!.deep_merge!(organization: organization)
 
-      client = ::Vayacondios::HttpClient.receive(options.deep_compact)
+      client = ::Vayacondios::HttpClient.receive(options.deep_compact!)
       id = [id, options[:env]].compact.join('.')
       
       begin
