@@ -29,7 +29,7 @@ class Vayacondios
       id = [id, options[:env]].compact.join('.')
       
       begin
-        client.insert(:config, id)
+        client.insert(self.to_hash, :config, id)
       rescue ::Vayacondios::HttpClient::Error
         warn "Unable to save vayacondios config '#{id}' for #{organization} at: #{client.host}:#{client.port}"
       end
