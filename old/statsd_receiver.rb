@@ -1,4 +1,4 @@
-module Vayacondios
+class Vayacondios
   # Acts as a statsd-compatible server: Aggregates values, counts and timings to
   # a remote graphite.
   #

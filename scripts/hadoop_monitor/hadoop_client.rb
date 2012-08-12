@@ -94,11 +94,10 @@ module Vayacondios
                           # launch time in the logs, but I'm going to
                           # go ahead and use it twice here.
 
-        launch_time:      job_status.get_start_time,
-        submit_time:      job_status.get_start_time,
+        launch_time:      Time.at(job_status.get_start_time / 1000),
+        submit_time:      Time.at(job_status.get_start_time / 1000),
 
-                          # use milliseconds for compatibility with Java.
-        finish_time:      finish_time.to_i * 1000,
+        finish_time:      finish_time,
 
         job_status:       case job_status.get_run_state
                           when JobStatus::FAILED    then :FAILED 
@@ -122,7 +121,8 @@ module Vayacondios
         
         parent_id:        job.job_id,
         type:             :job_progress,
-        time:             Time.now.to_i,
+                          # report time in milliseconds for consistency
+        time:             Time.now,
         cleanup_progress: job.cleanup_progress,
         map_progress:     job.map_progress,
         reduce_progress:  job.reduce_progress,
@@ -174,21 +174,23 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       {
-        _id:         task_report.get_task_id.to_s,
-        parent_id:   parent_job_id,
-        task_type:   task_type,
-        task_status: task_report.get_current_status.to_s,
-        start_time:  task_report.get_start_time,
-        finish_time: task_report.get_finish_time,
-        counters:    parse_counters(task_report.get_counters),
-        type:        :task,
+        _id:              task_report.get_task_id.to_s,
+        parent_id:        parent_job_id,
+        task_type:        task_type,
+        task_status:      task_report.get_current_status.to_s,
+        start_time:       Time.at(task_report.get_start_time / 1000),
+        finish_time:      Time.at(task_report.get_finish_time / 1000),
+        counters:         parse_counters(task_report.get_counters),
+        type:             :task,
+        diagnostics:      task_report.get_diagnostics.map(&:to_s),
+        running_attempts: task_report.get_running_task_attempts.map(&:to_s),
       }
     end
 
     def parse_task_progress task_report, task_type
       {
         parent_id:   task_report.get_task_id.to_s,
-        time:        Time.now.to_i,
+        time:        Time.now,
         type:        :task_progress,
         progress:    task_report.get_progress,
       }
