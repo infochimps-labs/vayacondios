@@ -32,13 +32,14 @@ group :development do
 end
 
 group :docs do
-  gem 'RedCloth',    ">= 4.2", :require => "redcloth"
-  gem 'redcarpet',   ">= 2.1"
+  gem 'RedCloth',    ">= 4.2",   :require => "redcloth"
+  gem 'redcarpet',   ">= 2.1",   :platform => :ruby
+  gem 'kramdown',                :platform => :jruby
 end
 
 # Gems for testing and coverage
 group :test do
-  gem 'simplecov',   ">= 0.5", :platform => :ruby_19
+  gem 'simplecov',   ">= 0.5",   :platform => :ruby_19
 end
 
 # Gems you would use if hacking on this gem (rather than with it)
