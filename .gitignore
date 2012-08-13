@@ -57,3 +57,5 @@ Gemfile.lock
 public/stylesheets/compiled/*
 public/system/*
 .sass-cache
+
+.rbx
