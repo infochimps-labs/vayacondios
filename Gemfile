@@ -4,7 +4,7 @@ gem   'yajl-ruby',       "~> 1.1"
 
 # # TODO: swap out yajl for preferred setup:
 # gem   'multi_json',  ">= 1.1"
-# gem 'oj',          ">= 1.2", :platform => :ruby
+# gem 'oj',          ">= 1.2", :platform => [:mri, :rbx]
 # gem 'json',                  :platform => :jruby
 
 gem   'gorillib',        :git => 'https://github.com/infochimps-labs/gorillib.git', :branch => '0.0.2'
@@ -33,7 +33,7 @@ end
 
 group :docs do
   gem 'RedCloth',    ">= 4.2",   :require => "redcloth"
-  gem 'redcarpet',   ">= 2.1",   :platform => :ruby
+  gem 'redcarpet',   ">= 2.1",   :platform => [:mri, :rbx]
   gem 'kramdown',                :platform => :jruby
 end
 
