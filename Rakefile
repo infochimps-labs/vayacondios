@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'lib/boot')
 
-# require 'bundler'
+
 # begin
 #   Bundler.setup(:default, :development)
 # rescue Bundler::BundlerError => e
@@ -9,52 +9,26 @@ require File.join(File.dirname(__FILE__), 'lib/boot')
 #   exit e.status_code
 # end
 require 'rake'
+require 'bundler'
 
-require 'jeweler'
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "vayacondios"
-  gem.homepage = "http://infochimps.com/labs"
-  gem.license = "MIT"
-  gem.summary = %Q{Aggregate, route and query all the facts in your organization}
-  gem.description = %Q{Aggregate, route and query all the facts in your organization}
-  gem.email = "coders@infochimps.org"
-  gem.authors = ["Infochimps"]
-
-  gem.add_dependency 'goliath',             ">= 0.9.1"
-  gem.add_dependency 'eventmachine',        ">= 1.0.0.beta.3"
-  gem.add_dependency 'em-synchrony',        ">= 0.3.0.beta.1"
-  gem.add_dependency 'em-http-request',     ">= 1.0.0.beta.3"
-  gem.add_dependency 'em-mongo',            "~> 0.3.5"
-
-  gem.add_dependency 'yajl-ruby',           "~> 0.8.2"
-  gem.add_dependency 'gorillib',            "~> 0.0.4"
-  gem.add_dependency 'icss',                "~> 0.0.2"
-
-  gem.add_dependency 'rack',                ">=1.2.2"
-  gem.add_dependency 'rack-contrib'
-  gem.add_dependency 'rack-respond_to'
-  gem.add_dependency 'async-rack'
-  gem.add_dependency 'multi_json'
-
-  gem.add_development_dependency 'bundler', "~> 1.0.12"
-  gem.add_development_dependency 'yard',    "~> 0.6.7"
-  gem.add_development_dependency 'jeweler', "~> 1.5.2"
-  gem.add_development_dependency 'rspec',   "~> 2.5.0"
-  gem.add_development_dependency 'rcov',    ">= 0.9.9"
-  gem.add_development_dependency 'spork',   "~> 0.9.0.rc5"
-  gem.add_development_dependency 'watchr'
-
-  ignores = File.readlines(".gitignore").grep(/^[^#]\S+/).map{|s| s.chomp }
-  dotfiles = [".gemtest", ".gitignore", ".rspec", ".yardopts"]
-  gem.files = dotfiles + Dir["**/*"].
-    reject{|f| f =~ /^vendor\// }.
-    reject{|f| File.directory?(f) }.
-    reject{|f| ignores.any?{|i| File.fnmatch(i, f) || File.fnmatch(i+'/**/*', f) } }
-  gem.test_files = gem.files.grep(/^spec\//)
-  gem.require_paths = ['lib']
+desc 'Build gem into the pkg directory'
+task :build do
+  FileUtils.rm_rf('pkg')
+  Dir['*.gemspec'].each do |gemspec|
+    system "gem build #{gemspec}"
+  end
+  FileUtils.mkdir_p('pkg')
+  FileUtils.mv(Dir['*.gem'], 'pkg')
 end
-Jeweler::RubygemsDotOrgTasks.new
+
+desc 'Tags version, pushes to remote, and pushes gem'
+task :release => :build do
+  sh 'git', 'tag', '-m', changelog, "v#{Vayacondios::VERSION}"
+  branch = `git branch | awk -F '/* ' '{print $2}'`
+  sh "git push origin #{branch}"
+  sh "git push origin v#{Qu::VERSION}"
+  sh "ls pkg/*.gem | xargs -n 1 gem push"
+end
 
 require 'rspec/core'
 require 'rspec/core/rake_task'
