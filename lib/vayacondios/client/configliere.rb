@@ -1,11 +1,6 @@
-require 'configliere'
-require 'gorillib/hash/deep_compact'
-require 'gorillib/hash/deep_merge'
-require 'gorillib/hash/keys'
-require 'vayacondios/http_client'
-
 class Vayacondios
   module Configliere
+
     def load_from_vayacondios(organization, id, options = {})
       options.symbolize_keys!.deep_merge!(organization: organization)
 

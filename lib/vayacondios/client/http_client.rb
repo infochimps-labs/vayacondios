@@ -1,6 +1,3 @@
-require 'net/http'
-require 'json'
-
 class Vayacondios
   class HttpClient
     include Gorillib::Builder
@@ -27,7 +24,7 @@ class Vayacondios
       id   ||= document.delete(:_id)   || document.delete('_id')
       type ||= document.delete(:_type) || document.delete('_type')
       
-      request(:post, type, id, document.to_json)
+      request(:post, type, id, MultiJson.dump(document))
     end
     
   private
@@ -42,7 +39,7 @@ class Vayacondios
       response = http.send *params
 
       if Net::HTTPSuccess === response
-        JSON.parse(response.body) rescue response.body
+        MultiJson.load(response.body) rescue response.body
       else
         raise Error.new("Error (#{response.code}) while #{method.to_s == 'get' ? 'fetching' : 'inserting'} document: " + response.body)
       end

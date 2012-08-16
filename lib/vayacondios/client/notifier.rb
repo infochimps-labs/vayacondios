@@ -1,10 +1,3 @@
-require 'gorillib/builder'
-require 'gorillib/configurable'
-require 'gorillib/exception/raisers'
-require 'gorillib/logger/log'
-require 'gorillib/metaprogramming/class_attribute'
-require 'vayacondios/http_client'
-
 class Vayacondios
 
   class_attribute :notifier
