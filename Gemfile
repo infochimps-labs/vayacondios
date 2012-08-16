@@ -1,5 +1,10 @@
 source 'http://rubygems.org'
 
-gem    'gorillib', git: 'https://github.com/infochimps-labs/gorillib.git', branch: '0.0.2'
+gemspec name: 'vayacondios-client'
+gemspec name: 'vayacondios-server'
 
-gemspec
+group :development do
+  gem 'rake'
+  gem 'rspec'
+  gem 'yard'
+end
