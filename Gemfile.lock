@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    vayacondios (0.0.2)
+    vayacondios (0.0.3)
       bson_ext (~> 1.6)
       configliere (>= 0.4.13)
       em-http-request (~> 1.0)
@@ -10,7 +10,7 @@ PATH
       goliath (~> 0.9.2)
       gorillib (= 0.4.0pre)
       yajl-ruby (~> 1.1)
-    vayacondios-client (0.0.2)
+    vayacondios-client (0.0.3)
       configliere (>= 0.4.16)
       gorillib (= 0.4.0pre)
       multi_json (~> 1.1)
