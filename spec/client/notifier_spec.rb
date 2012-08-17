@@ -1,9 +1,4 @@
-require 'spec_helper'
-require 'gorillib/builder'
-require 'configliere'
-
-require_relative '../../configurable/lib/gorillib_configurable_model'
-require 'vayacondios/notifier'
+require 'vayacondios-client'
 
 class FakeModel
   include Vayacondios::Notifications
@@ -19,7 +14,7 @@ describe FakeModel do
     it 'adds a configurable attribute :notifier with default' do
       subject.notifier.should be_instance_of(Vayacondios.default_notifier.class)
     end
-    
+
   end
 end
 
@@ -42,9 +37,9 @@ describe Vayacondios::Notifier do
       it 'raises an ArgumentError' do
         expect{ subject.prepare(bad_arg) }.to raise_error(ArgumentError, /Cannot notify.*#{bad_arg}.*require a hash-like object/)
       end
-    end    
+    end
   end
-  
+
 end
 
 describe Vayacondios::HttpNotifier do
@@ -57,8 +52,8 @@ describe Vayacondios::HttpNotifier do
     let(:topic)       { 'weeeeeeeeeee' }
     let(:cargo)       { Hash.new       }
 
-    before do 
-      subject.stub(:client).and_return(test_client) 
+    before do
+      subject.stub(:client).and_return(test_client)
       subject.stub(:prepare).and_return(cargo)
     end
 
@@ -79,7 +74,7 @@ describe Vayacondios::LogNotifier do
     let(:topic)       { 'weeeeeeeeeee' }
     let(:cargo)       { Hash.new       }
 
-    before do 
+    before do
       subject.stub(:client).and_return(test_client)
       subject.stub(:prepare).and_return(cargo)
     end
@@ -99,13 +94,13 @@ describe Vayacondios::NotifierFactory do
         described_class.receive(type: 'http').should be_instance_of(Vayacondios::HttpNotifier)
       end
     end
-    
+
     context 'given :log' do
       it 'builds a LogNotifier' do
         described_class.receive(type: 'log').should be_instance_of(Vayacondios::LogNotifier)
       end
     end
-    
+
     context 'given a bad argument' do
       it 'raises an ArgumentError' do
         expect{ described_class.receive(type: 'bad') }.to raise_error(ArgumentError, /not a valid build option/)
@@ -115,7 +110,7 @@ describe Vayacondios::NotifierFactory do
 end
 
 describe Vayacondios do
-  
+
   it 'has a class method notify()' do
     described_class.should respond_to(:notify)
   end
