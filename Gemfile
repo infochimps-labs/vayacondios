@@ -1,28 +1,8 @@
 source 'http://rubygems.org'
 
-gem   'yajl-ruby',       "~> 1.1"
+gemspec name: 'vayacondios-client'
+gemspec name: 'vayacondios-server'
 
-# # TODO: swap out yajl for preferred setup:
-# gem   'multi_json',  ">= 1.1"
-# gem 'oj',          ">= 1.2", :platform => [:mri, :rbx]
-# gem 'json',                  :platform => :jruby
-
-gem   'gorillib',        :git => 'https://github.com/infochimps-labs/gorillib.git', :branch => '0.0.2'
-gem   'configliere'
-# gem   'wukong-flume', '0.0.2', git: 'https://github.com/infochimps/wukong-flume.git', branch: '0.0.2'
-
-gem   'goliath',         :git => 'https://github.com/postrank-labs/goliath.git'
-gem   'eventmachine',    :git => 'https://github.com/eventmachine/eventmachine.git'
-gem   'em-synchrony',    "~> 1.0"
-gem   'em-http-request', "~> 1.0"
-
-gem   'em-mongo',        "~> 0.4.2"
-gem   'bson_ext',        "~> 1.6"
-
-gem   'foreman'
-
-# Add dependencies to develop your gem here.
-# Include everything needed to run rake, tests, features, etc.
 group :development do
   gem 'bundler',     "~> 1.1"
   gem 'rake'
