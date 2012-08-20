@@ -18,18 +18,6 @@ config[:server] = {
   :pid      => Process.pid,
 }
 
-config[:statsd_receiver] = {
-  :graphite_host => '0.0.0.0',
-  :graphite_port => '2003',
-  :debug         => true,
-  :dump_messages => true,
-  :port          => 8125,
-  :flush_interval => 2.0,
-  :debug_interval => 2.0,
-}
-
-config[:statsd_logger] = Settings[:statsd_logger]
-
 config[:activity_stream] = Settings[:activity_stream]
 
 DB_NAME = Settings[:mongo][:database]
