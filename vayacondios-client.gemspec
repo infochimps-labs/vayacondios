@@ -23,5 +23,4 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('rake')
   gem.add_development_dependency('yard', '>= 0.7')
   gem.add_development_dependency('rspec', '>= 2.8')
-  gem.add_development_dependency('cucumber', '~> 1.2')
 end

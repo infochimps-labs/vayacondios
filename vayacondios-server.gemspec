@@ -26,6 +26,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency('foreman')
 
   gem.add_development_dependency('rake')
-  gem.add_development_dependency('cucumber', '~> 1.2')
   gem.add_development_dependency('mongo')
 end
