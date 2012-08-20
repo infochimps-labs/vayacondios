@@ -3,7 +3,7 @@ require 'em-mongo'
 require 'em-http'
 require 'em-synchrony/em-http'
 require 'em-synchrony/em-mongo'
-#
+
 require 'gorillib/object/blank'
 require 'gorillib/enumerable/sum'
 require 'gorillib/hash/deep_merge'

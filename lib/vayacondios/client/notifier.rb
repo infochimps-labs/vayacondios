@@ -1,7 +1,7 @@
 class Vayacondios
 
   class_attribute :notifier
-      
+
   class Notifier < Vayacondios
     attr_accessor :client
 
@@ -14,18 +14,18 @@ class Vayacondios
         raise ArgumentError.new("Cannot notify '#{obj.inspect}' -- require a hash-like object.")
       end
     end
-    
+
     def notify(topic, cargo = {})
       NoMethodError.unimplemented_method(self)
     end
   end
-  
+
   class LogNotifier < Notifier
-    
+
     def initialize(options = {})
       @client = options[:log] || Log
     end
-    
+
     def notify(topic, cargo = {})
       prepped  = prepare(cargo)
       level    = prepped.delete(:level) || :info
@@ -37,18 +37,18 @@ class Vayacondios
   end
 
   class HttpNotifier < Notifier
-    
+
     def initialize(options = {})
       @client = Vayacondios::HttpClient.receive(options)
     end
-    
+
     def notify(topic, cargo = {})
       prepped = prepare(cargo)
       client.insert(prepped, :event, topic)
       nil
     end
   end
-  
+
   class NotifierFactory
     def self.receive(attrs = {})
       type = attrs.delete(:type)
@@ -58,25 +58,25 @@ class Vayacondios
       else
         raise ArgumentError, "<#{type}> is not a valid build option"
       end
-    end    
-  end  
-  
+    end
+  end
+
   def self.default_notifier() NotifierFactory.receive(type: 'http') ; end
-  
-  module Notifications 
+
+  module Notifications
     extend Gorillib::Concern
     include Gorillib::Configurable
-    
+
     def notify(topic, cargo = {})
       notifier.notify(topic, cargo)
     end
-    
+
     included do
       class_eval do
         config(:notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier)
       end
     end
-    
+
   end
 
   extend Notifications
