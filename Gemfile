@@ -4,11 +4,9 @@ gemspec name: 'vayacondios-client'
 gemspec name: 'vayacondios-server'
 
 group :development do
-  gem 'bundler',     "~> 1.1"
   gem 'rake'
   gem 'yard',        ">= 0.7"
   gem 'rspec',       ">= 2.8"
-  gem 'jeweler',     ">= 1.6"
 end
 
 group :docs do
@@ -19,7 +17,7 @@ end
 
 # Gems for testing and coverage
 group :test do
-  gem 'simplecov',   ">= 0.5",   :platform => :ruby_19
+  gem 'simplecov', :require => false
 end
 
 # Gems you would use if hacking on this gem (rather than with it)
