@@ -1,5 +1,7 @@
 require 'vayacondios-client'
 
+require 'spec_helper'
+
 class FakeModel
   include Vayacondios::Notifications
 end

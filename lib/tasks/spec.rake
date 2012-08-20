@@ -3,7 +3,8 @@ task :watchr do
   sh %{bundle exec watchr .watchr}
 end
 
-desc "Run Spork"
-task :spork do
-  sh %{bundle exec spork rspec}
+namespace :spec do
+  RSpec::Core::RakeTask.new :coverage do
+    ENV['COVERAGE'] = "true"
+  end
 end
