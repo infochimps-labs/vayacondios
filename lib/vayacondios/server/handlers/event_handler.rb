@@ -1,7 +1,7 @@
 class Vayacondios
   class EventHandler < Hash
     TIMESTAMP_RE = /^\d+(?:\.\d+)?$/
-    
+
     def self.get(options)
       sanitize_options!(options)
 
@@ -13,7 +13,7 @@ class Vayacondios
       collection   = collection(bucket)
 
       result = collection.find_one({_id: id})
-      
+
       if result
         result["_timestamp"] = result.delete("t")
         result.merge!(result.delete("d")) if result["d"].present?
@@ -52,11 +52,11 @@ class Vayacondios
     end
 
   private
-  
+
       def to_mongo
         document  = { d: self.dup }
         id        = document[:d].delete(:_id)
-        
+
         timestamp = document[:d].delete(:_timestamp) || Time.now.to_f
 
         raise ArgumentError, "Invalid _timestamp in seconds" unless timestamp.to_s.match(TIMESTAMP_RE)
@@ -67,7 +67,7 @@ class Vayacondios
 
         document
       end
-      
+
       def self.format_id(id)
         if (id.is_a?(Hash) && id["$oid"].present?)
           id = BSON::ObjectId(id["$oid"])
@@ -76,7 +76,7 @@ class Vayacondios
           id = BSON::ObjectId(id) if id.match(/^[a-f0-9]{24}$/)
         end
       end
-      
+
       def self.symbolize_keys!(hash)
         hash.keys.each do |key|
           obj = hash.delete(key)
@@ -87,19 +87,19 @@ class Vayacondios
 
       def self.sanitize_options!(options)
         symbolize_keys!(options)
-        
+
         topic = options[:topic].gsub(/\W+/, '_')
         id    = format_id(options[:id])
 
         options.merge!(topic: topic, id: id)
       end
-    
+
       def self.bucket(organization, topic)
         [organization, topic, 'events'].join('_')
       end
-      
+
       def self.collection(bucket)
-        ::DB.collection(bucket)
+        env.mongo.collection(bucket)
       end
   end
 end

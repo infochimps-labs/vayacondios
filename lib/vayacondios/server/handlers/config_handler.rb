@@ -25,12 +25,12 @@ class Vayacondios
     attr_reader :organization, :topic, :field
     def initialize(document, options={})
       self.class.sanitize_options!(options)
-      
+
       @options      = options
       @organization = options[:organization]
       @topic        = options[:topic]
       @field        = options[:field]
-      
+
       if !document.is_a?(Hash)
         document = {@field.split(/\W/).last.to_sym => document}
       end
@@ -47,7 +47,7 @@ class Vayacondios
       if self.topic.present?
         existing_document = self.class.get(@options)
         document = existing_document.deep_merge(document) if existing_document.present?
-        
+
         fields   = {field => document} if field.present?
         fields ||= document
 
@@ -64,9 +64,9 @@ class Vayacondios
 
       def self.sanitize_options!(options)
         options.symbolize_keys!
-        
+
         topic = options[:topic]
-        
+
         if (topic.is_a?(Hash) && topic["$oid"].present?)
           topic = BSON::ObjectId(topic["$oid"])
         elsif topic.is_a?(String)
@@ -80,13 +80,13 @@ class Vayacondios
 
         options.merge!(topic: topic, field: field)
       end
-    
+
       def self.bucket(organization)
         [organization.to_s, 'config'].join('.')
       end
-      
+
       def self.collection(bucket)
-        ::DB.collection(bucket)
+        env.mongo.collection(bucket)
       end
   end
 end

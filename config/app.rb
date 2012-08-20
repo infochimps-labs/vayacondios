@@ -20,26 +20,18 @@ config[:server] = {
 
 config[:activity_stream] = Settings[:activity_stream]
 
-DB_NAME = Settings[:mongo][:database]
-
 environment(:production) do
   Settings[:environment] = config[:environment] = 'production'
-  ::DB = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
+  config['mongo'] = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
     conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
-    conn.db(DB_NAME)
+    conn.db(Settings[:mongo][:database])
   end
 end
 
 environment(:development) do
   Settings[:environment] = config[:environment] = 'development'
   conn = EM::Mongo::Connection.new(Settings[:mongo][:host],Settings[:mongo][:port], 1, {:reconnect_in => 1})
-  ::DB = conn.db(DB_NAME)
-end
-
-environment(:test) do
-  Settings[:environment] = config[:environment] = 'test'
-  conn = EM::Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port], 1, {:reconnect_in => 1})
-  ::DB = conn(DB_NAME)
+  config['mongo'] = conn.db(Settings[:mongo][:database])
 end
 
 def config.inspect
