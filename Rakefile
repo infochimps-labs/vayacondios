@@ -24,14 +24,7 @@ Dir['*.gemspec'].each do |gemspec|
   end
 end
 
-require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new :spec
-
-task :default => :spec
-
-require 'yard'
-YARD::Rake::YardocTask.new
-
 # App-specific tasks
 Dir[File.dirname(__FILE__)+'/lib/tasks/**/*.rake'].sort.each{|f| load f }
 
+task :default => [:spec, :cucumber]
