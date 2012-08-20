@@ -1,6 +1,5 @@
 require 'goliath'
 require 'em-mongo'
-require 'em-http'
 require 'em-synchrony/em-http'
 require 'em-synchrony/em-mongo'
 
@@ -10,7 +9,7 @@ require 'gorillib/hash/deep_merge'
 require 'gorillib/hash/keys'
 require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
-require 'yajl/json_gem'
+require 'multi_json'
 
-require 'vayacondios/handlers/config_handler'
-require 'vayacondios/handlers/event_handler'
+require 'vayacondios/server/handlers/config_handler'
+require 'vayacondios/server/handlers/event_handler'

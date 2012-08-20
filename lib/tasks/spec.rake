@@ -1,10 +1,9 @@
-desc "Run Watchr"
-task :watchr do
-  sh %{bundle exec watchr .watchr}
-end
+require 'rspec/core/rake_task'
+
+RSpec::Core::RakeTask.new
 
 namespace :spec do
-  RSpec::Core::RakeTask.new :coverage do
-    ENV['COVERAGE'] = "true"
-  end
+  # RSpec::Core::RakeTask.new :coverage do
+  #   ENV['COVERAGE'] = "true"
+  # end
 end
