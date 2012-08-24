@@ -2,9 +2,9 @@
 
 > "Data goes in. The right thing happens."
 
-Simple enough to use in a shell script, performant enough to use everywhere. Why the hell *wouldn't* you record that metric, ese?
+Simple enough to use in a shell script, performant enough to use everywhere.
 
-You can chuck the following into Vaya con Dios from ruby, the shell, over HTTP, or in a repeated polling loop:
+You can chuck the following into Vaya con Dios from Ruby, the shell, over HTTP, or in a repeated polling loop:
 
 * *value*   -- 'there are 3 cups of coffee remaining':
 * *timing*  -- 'this response took 100ms'
@@ -13,27 +13,39 @@ You can chuck the following into Vaya con Dios from ruby, the shell, over HTTP, 
 
 ### Design goals
 
-* *Decentralized* &mdash; Any (authorized) system can dispatch facts or metrics using an arbitrary namespace and schema. Nothing needs to be created in advance.
-* *Bulletproof* &mdash; UDP clients will never fail because of network loss or timeout.
-* *Fast* &mdash; UDP clients are non-blocking and happily dispatch thousands of requests per second.
-* *Minimal Dependency* &mdash; Ruby clients uses nothing outside of the standard libraries.
-* *Ubiquitous* &mdash; Can send facts from the shell (with nothing besides , from ruby, from
-* *writes are simple, reads are clever* &mdash; A writer gets to chuck things in according to its conception of the world.
+* *Decentralized* -- Any (authorized) system can dispatch facts or metrics using an arbitrary namespace and schema. Nothing needs to be created in advance.
+* *Bulletproof* -- UDP clients will never fail because of network loss or timeout.
+* *Fast* -- UDP clients are non-blocking and happily dispatch thousands of requests per second.
+* *Minimal Dependency* -- Ruby clients uses nothing outside of the standard libraries.
+* *Ubiquitous* -- Can send facts from the shell (with nothing besides `curl`)
+* *writes are simple, reads are clever* -- A writer gets to chuck things in according to its conception of the world.
 
 See also [Coda Hale's metrics](https://github.com/codahale/metrics/).
 
-## API
-
-### namespacing
+## Namespacing
 
 The first path segment defines a collection, and the remainder defines a [materialized path](http://www.mongodb.org/display/DOCS/Trees+in+MongoDB#TreesinMongoDB-MaterializedPaths%28FullPathinEachNode%29).
-All hashes within a given path should always have the same structure (so, don't record a "George download" and a "George signup" in the same scope).
+All hashes within a given path should always have the same structure. Writes to an overlapping key will overwrite.
 
-For example a `POST` to `http://vayacondios.whatever.com/code/commit` with
+A full Vaya con Dios path is broken down into specific segments.
+
+`/:organization/(event|config)/:topic.format`
+
+* `:organization` is the top level collection that all info is contained in.
+* `(event|config)` changes the context of the message. Events are timestamped and scope destructive. Config is merged with the current configuration.
+* `topic` is the materialized path we referred to that specifies its unique location.
+* `format` will change the serialization format for the data. Only JSON is currently supported.
+
+### Events
+
+Events are the primary piece of information stored. An event is anything that happened that you'd want to write down.
+
+
+For example a `POST` to `http://vayacondios.whatever.com/v1/code/commit` with the
 ```
 {
   "_id":     "f93f2f08a0e39648fe64",     # commit SHA as unique id
-  "_path":   "code/commit",              # materialized path
+  "_path":   "code.commit",              # materialized path
   "_ts":     "20110614104817",           # utc flat time
   "repo":    "infochimps/wukong"
   "message": "...",
@@ -42,7 +54,7 @@ For example a `POST` to `http://vayacondios.whatever.com/code/commit` with
 }
 ```
 
-will write the hash as shown into the `code` collection. Vaya con Dios fills in the _path always, and the _id and _ts if missing. This can be queried with path of "^commit/infochimps" or "^commit/.*".
+Will write the hash as shown into the `code` collection. Vaya con Dios fills in the _path always, and the _id and _ts if missing. This can be queried with path of "^commit/infochimps" or "^commit/.*".
 
 The hash will contain:
 
@@ -70,7 +82,7 @@ The hash will contain:
 
 * Path components must be ASCII strings matching `[a-z][a-z0-9_]+` -- that is,  start with [a-z] and contain only lowercase alphanumeric or underscore. Components starting with a '_' have reserved meanings. The only valid underscored fields that a request can fill in are _id, _ts and _path.
 
-* Vaya con Dios reserves the right to read and write paths in /vayacondios, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
+* Vaya con Dios reserves the right to read and write paths in `/vayacondios`, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
 
 * tree_merge rules:
 
@@ -115,7 +127,7 @@ what do we need to provide the 'I got next' feature (to distribute resources uni
 
 #### Auth
 
-`/_vayacondios/_auth/` holds one hash giving public key.
+`/vayacondios/_auth/` holds one hash giving public key.
 * walk down the hash until you see _tok
 * can only auth at first or second level?
 * or by wildcard?
@@ -127,22 +139,32 @@ GET latest
 GET all
 GET next
 
+## Configuration
+
+All organizations have a special topic called, "config" that allows for storage and retrieval of configuration data via standard [CRUD requests](http://en.wikipedia.org/wiki/Create,_read,_update_and_delete).
+
+### Writing config data
+
+A `POST` request can be made to a full URL such as: `http://vayacondios:9000/organization/topic/some/deep/key`
+
+Vaya con Dios stores configuration data in special collections (`"#{organization}.config"`). The topic acts as the primary key while `/some/deep/key` acts as a materialized path for selection.
+
 ## Notes
 
 ### When to use HTTP vs UDP
 
-h4. HTTP is Connectionful
+#### HTTP is connectionful
 
-HTTP is connectionful:
 * you get acknowledgement that a metric was recorded (this is good).
 * if the network is down, your code will break (this is bad). (Well, usually. For some accounting and auditing metrics one might rather serve nothing at all than something unrecorded. Vayacondios doesn't address this use case.)
 
-h4. UDP has Packet Size limitations
+#### UDP has Packet Size limitations
 
 If you're using UDP for facts, you need to be *very* careful about payload size.
 
-From the "EventMachine docs":http://eventmachine.rubyforge.org/EventMachine/Connection.html#M000298
-bq.  You may not send an arbitrarily-large data packet because your operating system will enforce a platform-specific limit on the size of the outbound packet. (Your kernel will respond in a platform-specific way if you send an overlarge packet: some will send a truncated packet, some will complain, and some will silently drop your request). On LANs, it’s usually OK to send datagrams up to about 4000 bytes in length, but to be really safe, send messages smaller than the Ethernet-packet size (typically about 1400 bytes). Some very restrictive WANs will either drop or truncate packets larger than about 500 bytes.
+From the [EventMachine docs](http://eventmachine.rubyforge.org/EventMachine/Connection.html#M000298)
+
+> You may not send an arbitrarily-large data packet because your operating system will enforce a platform-specific limit on the size of the outbound packet. (Your kernel will respond in a platform-specific way if you send an overlarge packet: some will send a truncated packet, some will complain, and some will silently drop your request). On LANs, it’s usually OK to send datagrams up to about 4000 bytes in length, but to be really safe, send messages smaller than the Ethernet-packet size (typically about 1400 bytes). Some very restrictive WANs will either drop or truncate packets larger than about 500 bytes.
 
 ## Colophon
 
@@ -158,4 +180,4 @@ bq.  You may not send an arbitrarily-large data packet because your operating sy
 
 ### Copyright
 
-Copyright (c) 2011, 2012 Infochimps. See [LICENSE.md] for further details.
+Copyright (c) 2011, 2012 Infochimps. See [LICENSE.md](LICENSE.md) for further details.
