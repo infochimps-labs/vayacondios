@@ -18,8 +18,6 @@ config[:server] = {
   :pid      => Process.pid,
 }
 
-config[:activity_stream] = Settings[:activity_stream]
-
 environment(:production) do
   Settings[:environment] = config[:environment] = 'production'
   config['mongo'] = EventMachine::Synchrony::ConnectionPool.new(:size => 20) do
@@ -34,6 +32,12 @@ environment(:development) do
   config['mongo'] = conn.db(Settings[:mongo][:database])
 end
 
-def config.inspect
-  self.reject{|k, v| /#{DB_NAME}/ =~ k.to_s}.inspect
+environment(:test) do
+  Settings[:environment] = config[:environment] = 'test'
+  conn = EM::Mongo::Connection.new(Settings[:mongo][:host],Settings[:mongo][:port], 1, {:reconnect_in => 1})
+  config['mongo'] = conn.db(Settings[:mongo][:database])
 end
+
+# def config.inspect
+#   self.reject{|k, v| /#{DB_NAME}/ =~ k.to_s}.inspect
+# end
