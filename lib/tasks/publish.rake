@@ -17,7 +17,7 @@ Dir['*.gemspec'].each do |gemspec|
     sh 'git', 'tag', '-m', "releasing #{gem_name}", "#{gem_name}-v#{Vayacondios::VERSION}"
     branch = `git branch | awk -F '/* ' '{print $2}'`.strip
     sh "git push origin #{branch}"
-    sh "git push origin v#{Vayacondios::VERSION}"
+    sh "git push origin vayacondios-#{branch}-v#{Vayacondios::VERSION}"
     sh "ls pkg/#{gem_name}*.gem | xargs -n 1 gem push"
   end
 end
