@@ -29,11 +29,7 @@ class Vayacondios
     def self.find(mongodb, options)
       existing_document = ConfigDocument.find(mongodb, options)
       return nil unless existing_document
-      {
-        topic: existing_document.topic,
-        cargo: existing_document.body,
-        status: :success
-      }
+      existing_document.body
     end
   end
 end
