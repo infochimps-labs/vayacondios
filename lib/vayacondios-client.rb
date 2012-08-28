@@ -17,6 +17,4 @@ require 'gorillib/string/inflections'
 
 require 'vayacondios/client/http_client'
 require 'vayacondios/client/notifier'
-
-
-
+require 'vayacondios/client/configliere'
