@@ -33,16 +33,7 @@ describe HttpShim do
         post_request({
           :path => '/v1/infochimps/config/power/level',
           :body => {:level=>"awesome"}
-        }, err) do |c|
-          c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql ({
-            "topic" => "power",
-            "status" => "success",
-            "cargo" => {
-              "level" => "awesome"
-            }
-          })
-        end
+        }, err)
       end
       with_api(HttpShim) do |api|
         get_request({:path => '/v1/infochimps/config/power/level'}, err) do |c|
