@@ -4,7 +4,7 @@ $:.push File.expand_path('../lib', __FILE__)
 require 'vayacondios/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = 'vayacondios'
+  gem.name          = 'vayacondios-server'
   gem.version       = Vayacondios::VERSION
   gem.authors       = ['Philip (flip) Kromer', 'Travis Dempsey', 'Huston Hoburg', 'Logan Lowell']
   gem.homepage      = 'https://github.com/infochimps-labs/vayacondios'
