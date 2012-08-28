@@ -56,7 +56,7 @@ class Vayacondios::ConfigDocument < Vayacondios::Document
     end
 
     # Merge ourselves
-    document = deep_merge(document)
+    document = body.deep_merge(document) if body
 
     fields = document
     # fields = {@field => document} if @field.present?

@@ -61,8 +61,8 @@ describe HttpShim do
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql({
             "foo" => {
-              "bar" => 3,
-              "baz" => 7
+              "bar" => "3",
+              "baz" => "7"
             }
           })
         end
