@@ -18,7 +18,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('configliere', '>= 0.4.16')
   gem.add_dependency('multi_json',  '~> 1.1')
   # Gorillib versioning is borked
-  gem.add_dependency('gorillib',    '0.4.0pre')
+  gem.add_dependency('gorillib',    '~> 0.4.2')
 
   gem.add_development_dependency('rake')
   gem.add_development_dependency('yard', '>= 0.7')

@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
 
   gem.add_dependency('configliere',     '>= 0.4.13')
-  gem.add_dependency('gorillib',        '0.4.0pre')
+  gem.add_dependency('gorillib',        '~> 0.4.2')
   gem.add_dependency('eventmachine',    '~> 1.0.0.beta.4')
   gem.add_dependency('goliath',         '~> 1.0')
   gem.add_dependency('em-http-request', '~> 1.0')
