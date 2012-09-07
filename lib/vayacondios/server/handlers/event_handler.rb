@@ -12,6 +12,9 @@ class Vayacondios
     end
 
     def update(document, options={})
+      raise Error::BadRequest.new unless options[:topic]
+      raise Error::BadRequest.new if options[:id] && /\W/ =~ options[:id]
+
       existing_document = EventDocument.find(@mongo, options)
       if existing_document
         existing_document.update(document)
