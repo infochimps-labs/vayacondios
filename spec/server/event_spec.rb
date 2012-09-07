@@ -12,9 +12,9 @@ describe HttpShim do
   context 'Event tracking' do
     it 'requires a topic' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -23,9 +23,9 @@ describe HttpShim do
     
     it 'does not require an id' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/power',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -34,9 +34,9 @@ describe HttpShim do
 
     it 'will accept an id' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -45,9 +45,9 @@ describe HttpShim do
 
     it 'rejects deep IDs' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/power/level/is/invalid',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -60,12 +60,11 @@ describe HttpShim do
 
     it 'stores events' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql ({"level" => "awesome"})
         end
         
         get_mongo_db do |db|
@@ -80,12 +79,11 @@ describe HttpShim do
     it 'retrieves events' do
       current_time = Time.now
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => {:level=>"awesome", :_timestamp => current_time}
+          :body => MultiJson.dump({:level=>"awesome", :_timestamp => current_time})
         }, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql ({"level" => "awesome", "_timestamp" => current_time.to_s})
         end
       end
       with_api(HttpShim) do |api|

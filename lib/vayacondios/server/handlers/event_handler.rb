@@ -26,8 +26,8 @@ class Vayacondios
 
     def self.find(mongodb, options)
       existing_document = EventDocument.find(mongodb, options)
-      return nil unless existing_document
-      existing_document.body
+      raise Error::NotFound.new unless existing_document
+      existing_document
     end
   end
 end
