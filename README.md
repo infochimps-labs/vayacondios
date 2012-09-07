@@ -1,3 +1,5 @@
+# WARNING! THIS DOCUMENT IS OUTDATED AND MAY NOT REFLECT ACTUAL CODE! GO READ THE SPECS FOR BEHAVIORS!
+
 # Vaya con Dios
 
 > "Data goes in. The right thing happens."
