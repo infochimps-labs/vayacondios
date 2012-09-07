@@ -12,9 +12,9 @@ describe HttpShim do
   context 'Configuration management' do
     it 'requires a topic' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -23,9 +23,9 @@ describe HttpShim do
     
     it 'requires an id' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/power',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -34,19 +34,11 @@ describe HttpShim do
     
     it 'stores configuration' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/power/level',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql ({
-            "topic" => "power",
-            "id" => "level",
-            "status" => "success",
-            "cargo" => {
-              "level" => "awesome"
-            }
-          })
         end
         
         get_mongo_db do |db|
@@ -57,9 +49,9 @@ describe HttpShim do
     
     it 'rejects deep IDs' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/power/level/is/invalid',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -72,9 +64,9 @@ describe HttpShim do
     
     it 'retrieves configuration' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/power/level',
-          :body => {:level=>"awesome"}
+          :body => MultiJson.dump({:level=>"awesome"})
         }, err)
       end
       with_api(HttpShim) do |api|
@@ -87,15 +79,15 @@ describe HttpShim do
     
     it 'merge deep configuration' do
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/merge/test',
-          :body => { :foo => { :bar => 3 } }
+          :body => MultiJson.dump({ :foo => { :bar => 3 } })
         }, err)
       end
       with_api(HttpShim) do |api|
-        post_request({
+        put_request({
           :path => '/v1/infochimps/config/merge/test',
-          :body => { :foo => { :baz => 7 } }
+          :body => MultiJson.dump({ :foo => { :baz => 7 } })
         }, err)
       end
       with_api(HttpShim) do |api|
@@ -103,8 +95,8 @@ describe HttpShim do
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql({
             "foo" => {
-              "bar" => "3",
-              "baz" => "7"
+              "bar" => 3,
+              "baz" => 7
             }
           })
         end

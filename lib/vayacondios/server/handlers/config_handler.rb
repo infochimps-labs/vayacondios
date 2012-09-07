@@ -21,19 +21,12 @@ class Vayacondios
       else
         existing_document = ConfigDocument.create(@mongo, document, options)
       end
-
-      {
-        topic: existing_document.topic,
-        id: existing_document.id,
-        cargo: existing_document.body,
-        status: :success
-      }
     end
 
     def self.find(mongodb, options)
       existing_document = ConfigDocument.find(mongodb, options)
-      return nil unless existing_document
-      existing_document.body
+      raise Error::NotFound.new unless existing_document
+      existing_document
     end
   end
 end
