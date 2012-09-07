@@ -67,7 +67,7 @@ class HttpShim < Goliath::API
   # Determine the organization, type of action (config or event), the topic,
   # id, and format for the request.
   def parse_path path
-    path_regex = /^\/v1\/(?<organization>[a-z]\w+)\/(?<type>config|event)(\/(?<topic>\w+)(\/(?<id>(\w+\/?)+))?)?(\/|\.(?<format>json))?$/i
+    path_regex = /^\/v1\/(?<organization>[a-z]\w+)\/(?<type>config|event|itemset)(\/(?<topic>\w+)(\/(?<id>(\w+\/?)+))?)?(\/|\.(?<format>json))?$/i
     if (match = path_regex.match(path))
       {}.tap do |segments|
         match.names.each do |segment|
