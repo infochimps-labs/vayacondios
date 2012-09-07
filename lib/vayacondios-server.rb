@@ -11,6 +11,8 @@ require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
 require 'multi_json'
 
+require 'vayacondios/server/errors/bad_request'
+
 require 'vayacondios/server/model/config_document'
 require 'vayacondios/server/model/event_document'
 

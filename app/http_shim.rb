@@ -12,34 +12,31 @@ class HttpShim < Goliath::API
   use Goliath::Rack::Render, 'json'     # auto-negotiate response format
 
   def response(env)
+    # Validate path_params
     path_params = parse_path(env[Goliath::Request::REQUEST_PATH])
+    return [400, {}, {error: "Bad Request"}] if !path_params.present?
+      
+    # Look up handler using inflection
+    klass = ('vayacondios/' + path_params[:type] + '_handler').camelize.constantize
 
-    if path_params.present?
-      klass = ('vayacondios/' + path_params[:type] + '_handler').camelize.constantize
-
-      if method_name == :get && !path_params[:topic].present?
-        return [400, {}, {error: "Bad Request"}]
-      end
-      begin
+    begin
       if method_name == :update
         record = klass.new(mongo).update(env.params, path_params)
       elsif method_name == :get
         record = klass.find(mongo, path_params)
       end
-
-      rescue Exception => ex
-        puts ex
-        ex.backtrace.each{|l| puts l}
-      end
-
-      if record.present?
-        [200, {}, record]
-      else
-        [404, {}, {error: "Not Found"}]
-      end
-    else
-      [400, {}, {error: "Bad Request"}]
+    rescue Vayacondios::Error::BadRequest => ex
+      return [400, {}, {error: "Bad Request"}]
+    rescue Exception => ex
+      puts ex
+      ex.backtrace.each{|l| puts l}
     end
+
+    if !record.present?
+      [404, {}, {error: "Not Found"}]
+    end
+      
+    [200, {}, record]
   end
 
   private

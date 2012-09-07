@@ -12,6 +12,9 @@ class Vayacondios
     end
 
     def update(document, options={})
+      raise Error::BadRequest.new unless options[:topic] && options[:id]
+      raise Error::BadRequest.new if /\W/ =~ options[:id]
+      
       existing_document = ConfigDocument.find(@mongo, options)
       if existing_document
         existing_document.update(document)
@@ -21,6 +24,7 @@ class Vayacondios
 
       {
         topic: existing_document.topic,
+        id: existing_document.id,
         cargo: existing_document.body,
         status: :success
       }

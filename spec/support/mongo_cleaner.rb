@@ -8,11 +8,17 @@ Settings.define 'mongo.port', :default => '27017',       :description => 'Mongo 
 Settings.read(File.join File.dirname(__FILE__), '..', '..', 'config', 'vayacondios.yaml')
 Settings.resolve!
 
-def clean_mongo
+def get_mongo_db &block
+  fail unless block
   conn = Mongo::Connection.new(Settings[:mongo][:host],Settings[:mongo][:port])
-  mongo = conn.db(Settings[:mongo][:database])
-  mongo.collections.select {|c| c.name !~ /system/ }.each { |c| c.drop }
+  yield conn.db(Settings[:mongo][:database])
   conn.close
+end
+
+def clean_mongo
+  get_mongo_db do |db|
+    db.collections.select {|c| c.name !~ /system/ }.each { |c| c.drop }
+  end
 end
 
 RSpec.configure do |config|

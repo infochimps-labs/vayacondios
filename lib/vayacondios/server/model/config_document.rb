@@ -10,12 +10,13 @@ require 'vayacondios/server/model/document'
 # work while Goliath is in a streaming context.
 
 class Vayacondios::ConfigDocument < Vayacondios::Document
-  attr_reader :organization, :topic, :body
+  attr_reader :organization, :topic, :body, :id
 
   def initialize(mongodb, options = {})
     super options
     @mongo = mongodb
     options = sanitize_options(options)
+    @id = options[:id]
 
     @body         = nil
     @field        = options[:field] ||= options[:id]
@@ -34,10 +35,8 @@ class Vayacondios::ConfigDocument < Vayacondios::Document
   end
 
   def find
-    fields = {}
-    fields[@field] = 1 if @field
+    result = @collection.find_one({_id: @topic})
 
-    result = @collection.find_one({_id: @topic}, {fields: @fields})
     if result.present?
       result.delete("_id")
       @body = result
@@ -49,11 +48,7 @@ class Vayacondios::ConfigDocument < Vayacondios::Document
   end
 
   def update(document)
-    # MongoDB always wants a Hash. If we POST to /org/topic/users/jim/username
-    # with "jimmy", we transform the document to {username: "jimmy"}
-    if !document.is_a?(Hash)
-      document = {@field.split(/\W/).last.to_sym => document}
-    end
+    raise Error::BadRequest.new if !document.is_a?(Hash)
 
     # Merge ourselves
     document = body.deep_merge(document) if body
