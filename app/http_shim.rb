@@ -1,42 +1,65 @@
 #!/usr/bin/env ruby
 
 require 'vayacondios-server'
-require 'time'
+require 'multi_json'
 
 class HttpShim < Goliath::API
-  use Goliath::Rack::Heartbeat          # respond to /status with 200, OK (monitoring, etc)
   use Goliath::Rack::Tracer, 'X-Tracer' # log trace statistics
-  use Goliath::Rack::Params             # parse & merge query and body parameters
-
   use Goliath::Rack::DefaultMimeType    # cleanup accepted media types
-  use Goliath::Rack::Render, 'json'     # auto-negotiate response format
+  use Goliath::Rack::Formatters::JSON   # JSON output formatter
+  use Goliath::Rack::Render             # auto-negotiate response format
+  use Goliath::Rack::Heartbeat          # respond to /status with 200, OK (monitoring, etc)
 
   def response(env)
     # Validate path_params
     path_params = parse_path(env[Goliath::Request::REQUEST_PATH])
-    return [400, {}, {error: "Bad Request"}] if !path_params.present?
-      
+    return [400, {}, MultiJson.dump({error: "Bad Request"})] if !path_params.present? || method_name(env).nil?
+
+    # TODO refactor a middlware
+    # Decode the document body
+    body = nil
+    begin
+      if env['rack.input']
+        body = env['rack.input'].read
+        body = MultiJson.decode(body) if !body.blank?
+        env['rack.input'].rewind
+      end
+    rescue MultiJson::DecodeError => ex
+      return [400, {}, MultiJson.dump({error: "Bad Request"})]
+    end
     # Look up handler using inflection
     klass = ('vayacondios/' + path_params[:type] + '_handler').camelize.constantize
 
     begin
-      if method_name == :update
-        record = klass.new(mongo).update(env.params, path_params)
-      elsif method_name == :get
+      case method_name(env)
+
+      when :show
         record = klass.find(mongo, path_params)
+        [200, {}, MultiJson.dump(record.body)]
+
+      when :update
+        record = klass.new(mongo).update(body, path_params)
+        [200, {}, nil]
+        
+      when :patch
+        record = klass.new(mongo).patch(body, path_params)
+        [200, {}, nil]
+
+      when :delete
+        record = klass.find(mongo, path_params).destroy(body)
+        [200, {}, MultiJson.dump(record.body)]
+      
+      when :create
+        return [405, ({'Allow' => "GET PUT PATCH DELETE"}), nil]
       end
+    rescue Vayacondios::Error::NotFound => ex
+      return [404, {}, MultiJson.dump({error: "Not Found"})]
     rescue Vayacondios::Error::BadRequest => ex
-      return [400, {}, {error: "Bad Request"}]
+      return [400, {}, MultiJson.dump({error: "Bad Request"})]
     rescue Exception => ex
       puts ex
       ex.backtrace.each{|l| puts l}
     end
-
-    if !record.present?
-      [404, {}, {error: "Not Found"}]
-    end
-      
-    [200, {}, record]
   end
 
   private
@@ -54,11 +77,22 @@ class HttpShim < Goliath::API
     end
   end
 
-  def method_name
-    if %{PUT POST}.include?(env['REQUEST_METHOD'].upcase)
-      :update
-    elsif env['REQUEST_METHOD'].downcase == 'get'
-      :get
+  def method_name env
+    case env['REQUEST_METHOD'].upcase
+    when "GET"
+      :show
+    when "PUT"
+      if env['HTTP_X_METHOD'] && env['HTTP_X_METHOD'].upcase == 'PATCH'
+        :patch
+      else
+        :update
+      end
+    when "POST"
+      :create
+    when "PATCH"
+      :patch
+    when "DELETE"
+      :delete
     end
   end
 end
