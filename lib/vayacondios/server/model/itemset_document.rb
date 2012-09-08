@@ -46,6 +46,10 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def update(document)
+    if !document.is_a?(Array)
+      puts "not an array: #{document}"
+    end
+
     raise Vayacondios::Error::BadRequest.new if !document.is_a?(Array)
 
     @body = document
