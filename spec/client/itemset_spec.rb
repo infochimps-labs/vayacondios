@@ -13,11 +13,12 @@ describe Vayacondios::Client::ItemSet do
 
   context "after instantiation" do
 
+    itemset = Vayacondios::Client::ItemSet.new("foohost", 9999, "fooorg", "footopic", "fooid")
+    ary = ["foo", "bar", "baz"]
+
     # Actually testing internals here to avoid 
 
     it "generates a put request without a patch header when asked to create" do
-      itemset = Vayacondios::Client::ItemSet.new("foohost", 9999, "fooorg", "footopic", "fooid")
-      ary = ["foo", "bar", "baz"]
       req = itemset._req :create, ary
 
       req.method.should eql('PUT')
@@ -27,8 +28,6 @@ describe Vayacondios::Client::ItemSet do
     end
 
     it "generates a put request with a patch header when asked to update" do
-      itemset = Vayacondios::Client::ItemSet.new("foohost", 9999, "fooorg", "footopic", "fooid")
-      ary = ["foo", "bar", "baz"]
       req = itemset._req :update, ary
 
       req.method.should eql('PUT')
@@ -38,13 +37,19 @@ describe Vayacondios::Client::ItemSet do
     end
 
     it "generates a get request when asked to fetch" do
-      itemset = Vayacondios::Client::ItemSet.new("foohost", 9999, "fooorg", "footopic", "fooid")
       req = itemset._req :fetch
 
       req.method.should eql('GET')
       req.body.should be_nil
       req.path.should eql('/v1/fooorg/itemset/footopic/fooid')
     end
+
+    it "generates a delete request when asked to remove" do
+      req = itemset._req :remove
+
+      req.method.should eql('DELETE')
+      req.body.should eql(ary.to_json)
+      req.path.should eql('/v1/fooorg/itemset/footopic/fooid')
+    end
   end
 end
-    

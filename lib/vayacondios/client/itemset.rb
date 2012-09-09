@@ -15,14 +15,15 @@ class Vayacondios
       def _req type, ary = nil
         case type
         when :fetch  then
-          Net::HTTP::Get.new(@path)
+          req = Net::HTTP::Get.new(@path)
         when :create then
           (req = Net::HTTP::Put.new(@path)).body = MultiJson.encode(ary)
-          req
         when :update then
           (req = Net::HTTP::Put.new(@path, [["http_x_method", "PATCH"]])).body = MultiJson.encode(ary)
-          req
+        when :delete then
+          (req = Net::HTTP::Delete.new(@path)).body = MultiJson.encode(ary)
         end
+        req
       end
 
       def fetch
@@ -36,6 +37,11 @@ class Vayacondios
       def create ary
         execute_request(_req(:create, ary))
       end
+
+      def delete ary
+        execute_request(_req(:delete, ary))
+      end
+
 
       private
 

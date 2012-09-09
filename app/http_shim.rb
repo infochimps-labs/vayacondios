@@ -25,7 +25,6 @@ class HttpShim < Goliath::API
         env['rack.input'].rewind
       end
     rescue MultiJson::DecodeError => ex
-      puts "got bad body: #{body}"
       return [400, {}, MultiJson.dump({error: "Bad Request"})]
     end
     # Look up handler using inflection
@@ -56,7 +55,6 @@ class HttpShim < Goliath::API
     rescue Vayacondios::Error::NotFound => ex
       return [404, {}, MultiJson.dump({error: "Not Found"})]
     rescue Vayacondios::Error::BadRequest => ex
-      puts "???"
       return [400, {}, MultiJson.dump({error: "Bad Request"})]
     rescue Exception => ex
       puts ex
