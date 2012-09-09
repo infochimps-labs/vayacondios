@@ -49,7 +49,8 @@ class Vayacondios
         resp = Net::HTTP.start(@host, @port) do |http|
           http.request(req)
         end.body
-        MultiJson.decode(resp) unless resp.nil? or resp.empty?
+        result = MultiJson.decode(resp) unless resp.nil? or resp.empty?
+        (result.respond_to?(:has_key?) and result.has_key? "error") ? nil : result
       end
     end
   end
