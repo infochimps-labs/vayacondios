@@ -45,7 +45,7 @@ describe Vayacondios::Client::ItemSet do
     end
 
     it "generates a delete request when asked to remove" do
-      req = itemset._req :remove
+      req = itemset._req :remove, ary
 
       req.method.should eql('DELETE')
       req.body.should eql(ary.to_json)
