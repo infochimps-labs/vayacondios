@@ -57,6 +57,7 @@ class HttpShim < Goliath::API
     rescue Vayacondios::Error::BadRequest => ex
       return [400, {}, MultiJson.dump({error: "Bad Request"})]
     rescue StandardError => ex
+      puts ex
       ex.backtrace.each{|l| puts l}
     end
   end
