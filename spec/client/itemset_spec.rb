@@ -24,7 +24,7 @@ describe Vayacondios::Client::ItemSet do
       req.method.should eql('PUT')
       req.body.should eql(ary.to_json)
       req.path.should eql('/v1/fooorg/itemset/footopic/fooid')
-      req.each_header.to_a.should_not include(["http_x_method", "PATCH"])
+      req.each_header.to_a.should_not include(["x_method", "PATCH"])
     end
 
     it "generates a put request with a patch header when asked to update" do
@@ -33,7 +33,7 @@ describe Vayacondios::Client::ItemSet do
       req.method.should eql('PUT')
       req.body.should eql(ary.to_json)
       req.path.should eql('/v1/fooorg/itemset/footopic/fooid')
-      req.each_header.to_a.should include(["http_x_method", "PATCH"])
+      req.each_header.to_a.should include(["x-method", "PATCH"])
     end
 
     it "generates a get request when asked to fetch" do

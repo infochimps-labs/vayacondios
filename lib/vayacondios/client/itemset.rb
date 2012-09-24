@@ -19,7 +19,7 @@ class Vayacondios
         when :create then
           (req = Net::HTTP::Put.new(@path)).body = MultiJson.encode(ary)
         when :update then
-          (req = Net::HTTP::Put.new(@path, [["http_x_method", "PATCH"]])).body = MultiJson.encode(ary)
+          (req = Net::HTTP::Put.new(@path, {"x-method" => "PATCH"})).body = MultiJson.encode(ary)
         when :remove then
           (req = Net::HTTP::Delete.new(@path)).body = MultiJson.encode(ary)
         end
