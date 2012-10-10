@@ -1,7 +1,4 @@
-require 'bundler'
-
-Bundler.setup
-Bundler.require
+require 'bundler/setup' ; Bundler.require
 
 Dir["spec/support/**/*.rb"].each {|f| require File.join(File.dirname(__FILE__), '..', f) }
 
