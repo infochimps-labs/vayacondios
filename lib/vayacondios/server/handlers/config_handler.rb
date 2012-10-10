@@ -12,8 +12,8 @@ class Vayacondios
     end
 
     def update(document, options={})
-      raise Error::BadRequest.new unless options[:topic] && options[:id]
-      raise Error::BadRequest.new if /\W/ =~ options[:id]
+      raise Vayacondios::Error::BadRequest.new unless options[:topic] && options[:id]
+      raise Vayacondios::Error::BadRequest.new if /\W/ =~ options[:id]
       
       existing_document = ConfigDocument.find(@mongo, options)
       if existing_document
@@ -25,7 +25,7 @@ class Vayacondios
 
     def self.find(mongodb, options)
       existing_document = ConfigDocument.find(mongodb, options)
-      raise Error::NotFound.new unless existing_document
+      raise Vayacondios::Error::NotFound.new unless existing_document
       existing_document
     end
   end
