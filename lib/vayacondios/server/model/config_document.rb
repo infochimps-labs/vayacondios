@@ -48,7 +48,7 @@ class Vayacondios::ConfigDocument < Vayacondios::Document
   end
 
   def update(document)
-    raise Error::BadRequest.new if !document.is_a?(Hash)
+    raise Vayacondios::Error::BadRequest.new if !document.is_a?(Hash)
 
     # Merge ourselves
     document = body.deep_merge(document) if body
