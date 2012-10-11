@@ -14,7 +14,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/',
-          :body => MultiJson.dump(["foo"])
+          :body => MultiJson.dump({:contents =>["foo"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -25,7 +26,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power',
-          :body => MultiJson.dump(["foo"])
+          :body => MultiJson.dump({:contents =>["foo"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -40,7 +42,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level/is/invalid',
-          :body => MultiJson.dump(["foo"])
+          :body => MultiJson.dump({:contents =>["foo"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -53,13 +56,14 @@ describe HttpShim do
   end
     
   context 'handles PUT requests' do
-    it 'only accepts arrays' do
+    it 'only accepts hashes' do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => {"foo" => "bar"}
+          :body => MultiJson.dump(['foo', 'bar']),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
-          c.response_header.status.should == 400
+          c.response_header.status.should == 500
         end
         
         get_mongo_db do |db|
@@ -69,7 +73,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => "foo"
+          :body => "foo",
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -84,7 +89,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"]).to_s
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 201 Created
           c.response.should eql ""
@@ -100,7 +106,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["chimpanzee", "bonobo"])
+          :body => MultiJson.dump({:contents =>["chimpanzee", "bonobo"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 204 No content
           c.response.should eql ""
@@ -115,7 +122,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"])
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
           c.response.should eql ""
@@ -142,7 +150,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"])
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err)
       end
       with_api(HttpShim) do |api|
@@ -159,7 +168,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         post_request({
           :path => '/v1/infochimps/itemset/post/unsupported',
-          :body => MultiJson.dump({ :totally => :ignored })
+          :body => MultiJson.dump({ :totally => :ignored }),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should eql 405
           c.response_header["ALLOW"].should_not be_nil
@@ -173,8 +183,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :head => ({'X-Method' => 'PATCH'}),
-          :body => MultiJson.dump(["bar"])
+          :head => ({'X-Method' => 'PATCH', :content_type => 'application/json' }),
+          :body => MultiJson.dump({:contents =>["bar"]})
         }, err) do |c|
           c.response_header.status.should eql 200 # TODO Make this 201 Created
           c.response.should eql ""
@@ -191,14 +201,15 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/merge/test',
-          :body => MultiJson.dump(["foo"])
+          :body => MultiJson.dump({:contents =>["foo"]}),
+          :head => { :content_type => 'application/json' }
         }, err)
       end
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/merge/test',
-          :head => ({'X-Method' => 'PATCH'}),
-          :body => MultiJson.dump(["bar"])
+          :head => ({'X-Method' => 'PATCH', :content_type => 'application/json' }),
+          :body => MultiJson.dump({:contents =>["bar"]})
         }, err)
       end
       with_api(HttpShim) do |api|
@@ -215,18 +226,20 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/merge/test',
-          :body => MultiJson.dump(["bar"])
+          :body => MultiJson.dump({:contents =>["bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 404
         end
       end
     end
       
-    it "will be ok to delete items that are don't exist" do
+    it "will be ok to delete items that don't exist" do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo"])
+          :body => MultiJson.dump({:contents =>["foo"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 201 Created
         end
@@ -234,18 +247,20 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["bar"])
+          :body => MultiJson.dump({:contents =>["bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 204 No content
         end
       end
     end
     
-    it "will be delete items that exist" do
+    it "will delete items that do exist" do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"])
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Makes this 201 Created
         end
@@ -253,7 +268,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["bar"])
+          :body => MultiJson.dump({:contents =>["bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 204 No content
         end
@@ -265,12 +281,13 @@ describe HttpShim do
         end
       end
     end
-    # 
+    
     it "leaves behind an empty array if everything is deleted" do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"])
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Makes this 201 Created
         end
@@ -278,7 +295,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
-          :body => MultiJson.dump(["foo", "bar"])
+          :body => MultiJson.dump({:contents =>["foo", "bar"]}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200 # TODO Make this 204 No content
         end

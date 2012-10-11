@@ -46,13 +46,10 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def update(document)
-    if !document.is_a?(Array)
-      puts "not an array: #{document}"
-    end
+    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
 
-    raise Vayacondios::Error::BadRequest.new if !document.is_a?(Array)
+    @body = document['contents']
 
-    @body = document
 
     @collection.update({:_id => @id}, {:_id => @id, 'd' => @body }, {upsert: true})
     
@@ -60,19 +57,19 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def patch(document)
-    raise Vayacondios::Error::BadRequest.new if !document.is_a?(Array)
+    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
 
     # Merge ourselves
     if @body
-      @body = body + document
+      @body = body + document['contents']
     else
-      @body = document
+      @body = document['contents']
     end
 
     @collection.update({:_id => @id}, {
       '$addToSet' => {
         'd' => {
-          '$each'=> document
+          '$each'=> document['contents']
         }
       }
     }, {upsert: true})
@@ -81,13 +78,13 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def destroy(document)
-    raise Vayacondios::Error::BadRequest.new if !document.is_a?(Array)
+    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
 
-    @body -= document
+    @body -= document['contents']
     
     @collection.update({:_id => @id}, {
       '$pullAll' => {
-        'd' => document
+        'd' => document['contents']
       }
     })
     
