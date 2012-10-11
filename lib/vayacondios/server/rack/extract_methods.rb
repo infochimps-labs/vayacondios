@@ -9,6 +9,7 @@ class Vayacondios
       end
       
       def extract_method env        
+        return unless env['REQUEST_METHOD']
         case env['REQUEST_METHOD'].upcase
         when 'PUT'    then
           (env['HTTP_X_METHOD'] && env['HTTP_X_METHOD'].upcase == 'PATCH') ? :patch : :update
@@ -16,6 +17,7 @@ class Vayacondios
         when 'POST'   then :create
         when 'PATCH'  then :patch
         when 'DELETE' then :delete
+        else nil
         end
       end
     end
