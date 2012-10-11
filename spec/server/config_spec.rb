@@ -14,7 +14,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -25,7 +26,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/power',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -36,7 +38,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/power/level',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -51,7 +54,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/power/level/is/invalid',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -66,7 +70,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/power/level',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err)
       end
       with_api(HttpShim) do |api|
@@ -81,13 +86,15 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/merge/test',
-          :body => MultiJson.dump({ :foo => { :bar => 3 } })
+          :body => MultiJson.dump({ :foo => { :bar => 3 } }),
+          :head => { :content_type => 'application/json' }
         }, err)
       end
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/config/merge/test',
-          :body => MultiJson.dump({ :foo => { :baz => 7 } })
+          :body => MultiJson.dump({ :foo => { :baz => 7 } }),
+          :head => { :content_type => 'application/json' }
         }, err)
       end
       with_api(HttpShim) do |api|

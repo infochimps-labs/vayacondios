@@ -13,7 +13,7 @@ describe HttpShim do
     with_api(HttpShim) do |api|
       get_request({}, err) do |c|
         c.response_header.status.should == 400
-        MultiJson.load(c.response).should eql({"error" => "Bad Request"})
+        MultiJson.load(c.response).should eql({"error" => "Bad Request. Format path is <host>/v1/<org>/event/<topic>"})
       end
     end
   end

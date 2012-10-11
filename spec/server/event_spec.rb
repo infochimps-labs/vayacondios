@@ -8,13 +8,14 @@ describe HttpShim do
   include Goliath::TestHelper
 
   let(:err) { Proc.new{ |c| fail "HTTP Request Failed #{c.response}" } }
-
+  
   context 'Event tracking' do
     it 'requires a topic' do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -25,7 +26,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/power',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -36,7 +38,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -47,7 +50,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level/is/invalid',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 400
         end
@@ -62,7 +66,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => MultiJson.dump({:level=>"awesome"})
+          :body => MultiJson.dump({:level=>"awesome"}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
         end
@@ -81,7 +86,8 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
-          :body => MultiJson.dump({:level=>"awesome", :_timestamp => current_time})
+          :body => MultiJson.dump({:level=>"awesome", :_timestamp => current_time}),
+          :head => { :content_type => 'application/json' }
         }, err) do |c|
           c.response_header.status.should == 200
         end
