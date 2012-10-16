@@ -22,7 +22,6 @@ Gem::Specification.new do |gem|
   gem.add_dependency('goliath',         '~> 1.0')
   gem.add_dependency('em-http-request', '~> 1.0')
   gem.add_dependency('em-mongo',        '~> 0.4.3')
-  gem.add_dependency('bson_ext',        '~> 1.6')
   gem.add_dependency('foreman')
 
   gem.add_development_dependency('rake')
