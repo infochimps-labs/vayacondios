@@ -26,10 +26,10 @@ module Vayacondios
 
     def init_settings
       return if defined? @settings
-      
+
       @settings = Configliere::Param.new
       @settings.use :env_var, :config_file, :commandline
-      
+
       @settings.define(:sleep_seconds,
                        default: 5,
                        description: "Time to sleep in main loops")
@@ -60,8 +60,8 @@ module Vayacondios
       @settings.define(:machine_stats_size,
                        default: 100 * (1 << 20),
                        description: ("Size (in bytes) of machine stats collection"))
-      
-      @settings.resolve!
+
+      @settings.load_configuration_in_order!('hadoop_monitor')
 
       @logger = Logger.new(STDERR)
       @logger.level = Logger.const_get(@settings.log_level.upcase.to_sym)
