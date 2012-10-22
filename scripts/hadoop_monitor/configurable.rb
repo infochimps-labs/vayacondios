@@ -30,6 +30,8 @@ module Vayacondios
       @settings = Configliere::Param.new
       @settings.use :env_var, :config_file, :commandline
 
+      @settings.define(:config_file,
+                       description: "Config file location")
       @settings.define(:sleep_seconds,
                        default: 5,
                        description: "Time to sleep in main loops")
@@ -61,7 +63,12 @@ module Vayacondios
                        default: 100 * (1 << 20),
                        description: ("Size (in bytes) of machine stats collection"))
 
-      @settings.load_configuration_in_order!('hadoop_monitor')
+      @settings.resolve!
+
+      if @settings.config_file
+        @settings.read(@settings.config_file)
+        @settings.resolve!
+      end
 
       @logger = Logger.new(STDERR)
       @logger.level = Logger.const_get(@settings.log_level.upcase.to_sym)
