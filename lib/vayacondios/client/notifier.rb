@@ -20,6 +20,11 @@ class Vayacondios
     end
   end
 
+  class NullNotifier < Notifier
+    def notify topic, cargo={}
+    end
+  end
+
   class LogNotifier < Notifier
 
     def initialize(options = {})
@@ -53,15 +58,16 @@ class Vayacondios
     def self.receive(attrs = {})
       type = attrs.delete(:type)
       case type
-      when 'http' then HttpNotifier.new(attrs)
-      when 'log'  then LogNotifier.new(attrs)
+      when 'http'        then HttpNotifier.new(attrs)
+      when 'log'         then LogNotifier.new(attrs)
+      when 'none','null' then NullNotifier.new(attrs)
       else
         raise ArgumentError, "<#{type}> is not a valid build option"
       end
     end
   end
 
-  def self.default_notifier() NotifierFactory.receive(type: 'http') ; end
+  def self.default_notifier() NotifierFactory.receive(type: 'log') ; end
 
   module Notifications
     extend Gorillib::Concern
