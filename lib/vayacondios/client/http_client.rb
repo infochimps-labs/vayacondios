@@ -1,6 +1,6 @@
 class Vayacondios
   class HttpClient
-    include Gorillib::Builder
+    include Gorillib::Model
 
     field :host,         String,  :default => 'localhost'
     field :port,         Integer, :default => 8000
