@@ -67,19 +67,27 @@ class Vayacondios
     end
   end
 
-  def self.default_notifier() NotifierFactory.receive(type: 'log') ; end
+  def self.default_notifier(log = nil) NotifierFactory.receive(type: 'log', log: log) ; end
 
   module Notifications
-    extend Gorillib::Concern
-    include Gorillib::Configurable
 
     def notify(topic, cargo = {})
       notifier.notify(topic, cargo)
     end
 
-    included do
-      class_eval do
-        config(:notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier)
+    def self.included klass
+      if klass.ancestors.include? Gorillib::Model
+        klass.class_eval do
+          field :notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier
+          
+          def receive_notifier params
+            params.merge!(log: try(:log)) if params[:type] == 'log'
+            @notifier = Vayacondios::NotifierFactory.receive(params)
+          end
+        end
+      else
+        klass.class_attribute :notifier
+        klass.notifier = Vayacondios.default_notifier try(:log)
       end
     end
 
