@@ -2,9 +2,9 @@ class Vayacondios
   class HttpClient
     include Gorillib::Model
 
-    field :host,         String,  :default => 'localhost'
-    field :port,         Integer, :default => 8000
-    field :organization, String,  :default => 'infochimps'
+    field :host,         String, :default => 'localhost'
+    field :port,         String, :default => '8000'
+    field :organization, String, :default => 'infochimps'
     
     class Error < StandardError; end
 
