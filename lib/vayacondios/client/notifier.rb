@@ -21,6 +21,8 @@ class Vayacondios
   end
 
   class NullNotifier < Notifier
+    def initialize(*args) ; end
+    
     def notify topic, cargo={}
     end
   end
