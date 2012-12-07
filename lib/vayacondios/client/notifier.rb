@@ -58,7 +58,7 @@ class Vayacondios
 
   class NotifierFactory
     def self.receive(attrs = {})
-      type = attrs.delete(:type)
+      type = attrs[:type]
       case type
       when 'http'        then HttpNotifier.new(attrs)
       when 'log'         then LogNotifier.new(attrs)
