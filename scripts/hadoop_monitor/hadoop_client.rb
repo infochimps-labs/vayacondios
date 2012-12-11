@@ -22,7 +22,7 @@ module Vayacondios
       logger.info "Connecting to job tracker."
       @job_client = JobClient.new JobConf.new(get_hadoop_conf)
     end
-    
+
     #
     # (Equality doesn't work for jobs, so - will not work as intended
     # on arrays of jobs.)
@@ -34,7 +34,7 @@ module Vayacondios
     #
     # Returns the jobs with the specified state. States are specified
     # by constants in this class.
-    # 
+    #
     def jobs_with_state state
       jobs_by_state[state] || []
     end
@@ -58,7 +58,7 @@ module Vayacondios
     end
 
   private
-    
+
     #
     # Returns a hash JobStatus::<SOME_STATE> => <array of jobs>
     #
@@ -81,26 +81,33 @@ module Vayacondios
     #
     def parse_job job_id, finish_time
       job = @job_client.get_job job_id
-      job_status = @job_client.get_all_jobs.select{|j| j.get_job_id.to_s == job_id.to_s}.first
+      job_status = job.get_job_status
       finished_status = [:FAILED, :KILLED, :COMPLETE]
       failed_status   = [:FAILED]
 
+      start_time      = Time.at(job_status.get_start_time / 1000)
+      reduce_progress = job.reduce_progress
+      run_duration    = finish_time - start_time
+
       job_data = {
-        
+
         _id:              job_id.to_s,
+        name:             get_job_name.to_s,
 
                           # not sure what is what. I'm guessing
                           # JobStatus.getStartTime corresponds to the
                           # launch time in the logs, but I'm going to
                           # go ahead and use it twice here.
 
-        launch_time:      Time.at(job_status.get_start_time / 1000),
-        submit_time:      Time.at(job_status.get_start_time / 1000),
-
+        launch_time:      start_time,
+        submit_time:      start_time,
         finish_time:      finish_time,
 
+        run_duration:     run_duration,
+        eta:              reduce_progress && reduce_progress > 0.0 ? (start_time + (run_duration / reduce_progress)) : nil
+
         job_status:       case job_status.get_run_state
-                          when JobStatus::FAILED    then :FAILED 
+                          when JobStatus::FAILED    then :FAILED
                           when JobStatus::KILLED    then :KILLED
                           when JobStatus::PREP      then :PREP
                           when JobStatus::RUNNING   then :RUNNING
@@ -118,7 +125,7 @@ module Vayacondios
       }
 
       job_progress = {
-        
+
         parent_id:        job.job_id,
         type:             :job_progress,
                           # report time in milliseconds for consistency
@@ -140,7 +147,7 @@ module Vayacondios
          reduce_task_data.map{|task| parse_task          task, "REDUCE", job_id },
          reduce_task_data.map{|task| parse_task_progress task, "REDUCE"         },
         ]
-      
+
       [job_data, job_progress] + m_reports + r_reports + m_progress_reports + r_progress_reports
     end
 
@@ -174,25 +181,31 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       {
-        _id:              task_report.get_task_id.to_s,
-        parent_id:        parent_job_id,
-        task_type:        task_type,
-        task_status:      task_report.get_current_status.to_s,
-        start_time:       Time.at(task_report.get_start_time / 1000),
-        finish_time:      Time.at(task_report.get_finish_time / 1000),
-        counters:         parse_counters(task_report.get_counters),
-        type:             :task,
-        diagnostics:      task_report.get_diagnostics.map(&:to_s),
-        running_attempts: task_report.get_running_task_attempts.map(&:to_s),
+        _id:                task_report.get_task_id.to_s,
+        parent_id:          parent_job_id,
+        task_type:          task_type,
+        task_status:        task_report.get_current_status.to_s,
+        start_time:         Time.at(task_report.get_start_time / 1000),
+        finish_time:        Time.at(task_report.get_finish_time / 1000),
+        counters:           parse_counters(task_report.get_counters),
+        type:               :task,
+        diagnostics:        task_report.get_diagnostics.map(&:to_s),
+        successful_attempt: task_report.get_successful_task_attempt.to_s,
+        '$addToSet' => {
+          attempts: {
+            '$each' => task_report.get_running_task_attempts.map(&:to_s)
+          }
+        }
       }
     end
 
     def parse_task_progress task_report, task_type
       {
-        parent_id:   task_report.get_task_id.to_s,
-        time:        Time.now,
-        type:        :task_progress,
-        progress:    task_report.get_progress,
+        parent_id:          task_report.get_task_id.to_s,
+        time:               Time.now,
+        type:               :task_progress,
+        progress:           task_report.get_progress,
+        running_attempts:   task_report.get_running_task_attempts.map(&:to_s)
       }
     end
 
