@@ -15,9 +15,9 @@ module Vayacondios
   class HadoopMonitor
     def initialize
       init_settings
-      
+
       @hadoop = HadoopClient.new
-      
+
       @monitored_jobs = []
 
       logger.debug "Creating mongo collections."
@@ -36,7 +36,7 @@ module Vayacondios
 
     def run
       loop do
-        
+
         logger.debug "In main event loop."
 
         cur_running_jobs  = @hadoop.jobs_with_state HadoopClient::RUNNING
@@ -75,17 +75,17 @@ module Vayacondios
     def update_job_properties job
       properties = @hadoop.job_properties job
       logger.debug "upserting #{JSON.generate properties}"
-      @job_logs.save(properties, upsert: true, safe: true)
+      @job_logs.update(_id: properties[:_id], properties, upsert: true, safe: true)
     end
 
     def update_job_stats job, finish_time = nil
       @hadoop.job_stats(job, finish_time || Time.now).each do |job_stat|
         logger.debug "upserting #{JSON.generate job_stat}"
-        @job_logs.save(job_stat, upsert: true, safe: true)
+        @job_logs.update(_id: job_stat[:_id], job_stat, upsert: true, safe: true)
       end
     end
 
   end
-end  
+end
 
 Vayacondios::HadoopMonitor.new.run
