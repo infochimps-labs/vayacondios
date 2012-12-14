@@ -66,12 +66,6 @@ module Vayacondios
 
     include Configurable
 
-    def update_job_properties job
-      properties = @hadoop.job_properties job
-      logger.debug "upserting #{JSON.generate properties}"
-      @collection[:jobs].update(_id: properties[:job_id], { properties: properties[:properties] }, upsert: true)
-    end
-
     def update_job_stats job, finish_time = nil, include_properties = false
       stats = @hadoop.job_stats(job, finish_time)
 
