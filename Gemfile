@@ -4,8 +4,9 @@ gemspec name: 'vayacondios-server'
 gemspec name: 'vayacondios-client'
 
 group :hadoop_monitor do
-  gem 'mongo'
-  gem 'mongo'
+  gem 'mongo',    '~> 1.8'
   gem 'gorillib', require: 'gorillib/hash/slice'
   gem 'json'
+  gem 'nokogiri', '~> 1.5'
+  gem 'nibbler',  '~> 1.3'
 end

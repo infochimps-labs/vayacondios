@@ -22,16 +22,21 @@ module Vayacondios
 
       logger.debug "Creating mongo collections."
       @conn = Mongo::Connection.new settings.mongo_ip
-      @db = @conn[settings.mongo_jobs_db]
-      @job_logs = @db.create_collection(settings.mongo_job_logs_collection)
+      @db = @conn[settings.mongo_db]
 
-      # After we create the job_events database, one of the machine
-      # monitors will create the machine stats databse.
-      @job_events = @db.create_collection(settings.mongo_job_events_collection,
-                                          :capped => true,
-                                          :size => settings.job_events_size)
+      capped_collection_opts = {
+        :capped => true,
+        :size => settings.mongo_collection_size
+      }
 
-      @cluster_state = CLUSTER_QUIET
+      @collections = {
+        jobs:     @db.create_collection('jobs'),
+        tasks:    @db.create_collection('job_tasks'),
+        attempts: @db.create_collection('job_task_attempts'),
+
+        job_events:     @db.create_collection('job_events',       capped_collection_opts),
+        task_events:    @db.create_collection('job_tasks_events', capped_collection_opts),
+      }
     end
 
     def run
@@ -39,22 +44,18 @@ module Vayacondios
 
         logger.debug "In main event loop."
 
-        cur_running_jobs  = @hadoop.jobs_with_state HadoopClient::RUNNING
-        cur_cluster_state = (cur_running_jobs.size > 0) ? CLUSTER_BUSY : CLUSTER_QUIET
+        running_jobs  = @hadoop.jobs_with_state HadoopClient::RUNNING
+        started_jobs  = @hadoop.subtract(running_jobs, @monitored_jobs)
+        finished_jobs = @hadoop.subtract(@monitored_jobs, running_jobs)
 
-        @hadoop.subtract(@monitored_jobs, cur_running_jobs).each do |job|
+        finished_jobs.each do |job|
           logger.debug "#{job.get_id.to_s} is complete."
           update_job_stats job, Time.now
         end
-        @hadoop.subtract(cur_running_jobs, @monitored_jobs).each do |job|
-          logger.debug "#{job.get_id.to_s} started."
-          update_job_properties job
-        end
 
-        (@monitored_jobs + cur_running_jobs).each{|job| update_job_stats job}
+        running_jobs.each{|job| update_job_stats job, nil, @hadoop.subtract([job], started_jobs).empty? }
 
-        @monitored_jobs = cur_running_jobs
-        update_cluster_state cur_cluster_state
+        @monitored_jobs = running_jobs
 
         sleep settings.sleep_seconds
 
@@ -65,23 +66,38 @@ module Vayacondios
 
     include Configurable
 
-    def update_cluster_state new_state
-      return if new_state == @cluster_state
-      @cluster_state = new_state
-      logger.info "Cluster state changed to #{@cluster_state}"
-      @job_events.insert(EVENT => @cluster_state, TIME => Time.now.to_i)
-    end
-
     def update_job_properties job
       properties = @hadoop.job_properties job
       logger.debug "upserting #{JSON.generate properties}"
-      @job_logs.update(_id: properties[:_id], properties, upsert: true, safe: true)
+      @collection[:jobs].update(_id: properties[:job_id], { properties: properties[:properties] }, upsert: true)
     end
 
-    def update_job_stats job, finish_time = nil
-      @hadoop.job_stats(job, finish_time || Time.now).each do |job_stat|
-        logger.debug "upserting #{JSON.generate job_stat}"
-        @job_logs.update(_id: job_stat[:_id], job_stat, upsert: true, safe: true)
+    def update_job_stats job, finish_time = nil, include_properties = false
+      stats = @hadoop.job_stats(job, finish_time)
+
+      if include_properties
+        stats[:job][:properties] = @hadoop.job_properties job
+      end
+
+      logger.debug "upserting job #{JSON.generate stats[:job]}"
+      @collections[:jobs].update(_id: stats[:job][:_id], stats[:job], upsert: true)
+
+      logger.debug "upserting job_event #{JSON.generate stats[:job_event]}"
+      @collections[:job_event].insert(stats[:job_event])
+
+      logger.debug "upserting tasks #{JSON.generate stats[:tasks]}"
+      stats[:tasks].each do |task|
+        @collections[:tasks].update(_id: task[:_id], task, upsert: true)
+      end
+
+      logger.debug "upserting task_events #{JSON.generate stats[:task_events]}"
+      stats[:task_events].each do |task_event|
+        @collections[:task_events].insert(task_event)
+      end
+
+      logger.debug "upserting attempts #{JSON.generate stats[:attempts]}"
+      stats[:attempts].each do |attempt|
+        @collections[:attempts].update(_id: attempt[:_id], attempt, upsert: true)
       end
     end
 

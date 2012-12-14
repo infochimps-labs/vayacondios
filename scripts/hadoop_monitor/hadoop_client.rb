@@ -1,5 +1,7 @@
 require_relative 'configurable'
 require_relative 'hadoopable'
+require_relative 'hadoop_attempt_scraper'
+
 require 'json'
 require 'optparse'
 require 'ostruct'
@@ -46,8 +48,8 @@ module Vayacondios
       host_port = job.get_tracking_url[/^(http:\/\/)?[^\/]*/]
       job_id = job.get_id.to_s
       conf_uri = "#{host_port}/logs/#{job_id}_conf.xml"
-      properties = parse_properties(open conf_uri)
-      recordize_properties(properties, job_id.to_s)
+
+      parse_properties(open conf_uri)
     end
 
     #
@@ -87,7 +89,10 @@ module Vayacondios
 
       start_time      = Time.at(job_status.get_start_time / 1000)
       reduce_progress = job.reduce_progress
-      run_duration    = finish_time - start_time
+      run_duration    = (finish_time || Time.now) - start_time
+
+      map_eta    = map_progress    && map_progress    > 0.0 ? (start_time + (run_duration / map_progress))    : nil
+      reduce_eta = reduce_progress && reduce_progress > 0.0 ? (start_time + (run_duration / reduce_progress)) : nil
 
       job_data = {
 
@@ -104,7 +109,10 @@ module Vayacondios
         finish_time:      finish_time,
 
         run_duration:     run_duration,
-        eta:              reduce_progress && reduce_progress > 0.0 ? (start_time + (run_duration / reduce_progress)) : nil
+
+        map_eta:          map_eta,
+        reduce_eta:       reduce_eta,
+        eta:              reduce_eta,
 
         job_status:       case job_status.get_run_state
                           when JobStatus::FAILED    then :FAILED
@@ -124,39 +132,45 @@ module Vayacondios
 
       }
 
-      job_progress = {
-
-        parent_id:        job.job_id,
-        type:             :job_progress,
-                          # report time in milliseconds for consistency
-        time:             Time.now,
-        cleanup_progress: job.cleanup_progress,
-        map_progress:     job.map_progress,
-        reduce_progress:  job.reduce_progress,
-        setup_progress:   job.setup_progress,
-
+      job_event = {
+        t:                Time.now,
+        d: {
+          job_id:           job.job_id,
+          cleanup_progress: job.cleanup_progress,
+          map_progress:     job.map_progress,
+          reduce_progress:  job.reduce_progress,
+          setup_progress:   job.setup_progress,
+        }
       }
 
-      map_task_data    = @job_client.get_map_task_reports    job_id
-      reduce_task_data = @job_client.get_reduce_task_reports job_id
+      setup_task_data   = @job_client.get_setup_task_reports    job_id
+      map_task_data     = @job_client.get_map_task_reports      job_id
+      reduce_task_data  = @job_client.get_reduce_task_reports   job_id
+      cleanup_task_data = @job_client.get_cleanup_task_reports  job_id
 
-      m_reports, m_progress_reports, r_reports, r_progress_reports =
-        [
-         map_task_data   .map{|task| parse_task          task, "MAP",    job_id },
-         map_task_data   .map{|task| parse_task_progress task, "MAP"            },
-         reduce_task_data.map{|task| parse_task          task, "REDUCE", job_id },
-         reduce_task_data.map{|task| parse_task_progress task, "REDUCE"         },
-        ]
+      setup_reports       = setup_task_data.map{|task| parse_task task, "SETUP", job_id }
+      setup_event_reports = setup_task_data.map{|task| parse_task_progress task, "SETUP" }
 
-      [job_data, job_progress] + m_reports + r_reports + m_progress_reports + r_progress_reports
-    end
+      map_reports       = map_task_data.map{|task| parse_task task, "MAP", job_id }
+      map_event_reports = map_task_data.map{|task| parse_task_progress task, "MAP" }
 
-    def recordize_properties properties, job_id
+      reduce_reports       = reduce_task_data.map{|task| parse_task task, "REDUCE", job_id }
+      reduce_event_reports = reduce_task_data.map{|task| parse_task_progress task, "REDUCE" }
+
+      cleanup_reports       = cleanup_task_data.map{|task| parse_task task, "CLEANUP", job_id }
+      cleanup_event_reports = cleanup_task_data.map{|task| parse_task_progress task, "CLEANUP" }
+
+      tasks = setup_reports + map_reports + reduce_reports + cleanup_reports
+      task_events = setup_event_reports + map_event_reports + reduce_event_reports + cleanup_event_reports
+
+      attempt_reports = tasks.map{|task| HadoopAttemptScraper.scrape_task(task["_id"]) }
+
       {
-        parent_id:  job_id,
-        type:       :conf,
-        properties: properties,
-        _id:        [job_id, "_properties"].join
+        job: job_data,
+        job_event: job_event,
+        tasks: tasks,
+        task_events: task_events,
+        attempts: attempt_reports
       }
     end
 
@@ -181,31 +195,26 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       {
-        _id:                task_report.get_task_id.to_s,
-        parent_id:          parent_job_id,
-        task_type:          task_type,
-        task_status:        task_report.get_current_status.to_s,
-        start_time:         Time.at(task_report.get_start_time / 1000),
-        finish_time:        Time.at(task_report.get_finish_time / 1000),
-        counters:           parse_counters(task_report.get_counters),
-        type:               :task,
-        diagnostics:        task_report.get_diagnostics.map(&:to_s),
-        successful_attempt: task_report.get_successful_task_attempt.to_s,
-        '$addToSet' => {
-          attempts: {
-            '$each' => task_report.get_running_task_attempts.map(&:to_s)
-          }
-        }
+        _id:                   task_report.get_task_id.to_s,
+        job_id:                parent_job_id,
+        task_type:             task_type,
+        task_status:           task_report.get_current_status.to_s,
+        start_time:            Time.at(task_report.get_start_time / 1000),
+        finish_time:           task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil,
+        counters:              parse_counters(task_report.get_counters),
+        diagnostics:           task_report.get_diagnostics.map(&:to_s),
+        successful_attempt_id: task_report.get_successful_task_attempt.to_s
       }
     end
 
     def parse_task_progress task_report, task_type
       {
-        parent_id:          task_report.get_task_id.to_s,
-        time:               Time.now,
-        type:               :task_progress,
-        progress:           task_report.get_progress,
-        running_attempts:   task_report.get_running_task_attempts.map(&:to_s)
+        t: Time.now
+        d: {
+          job_id:              task_report.get_task_id.to_s,
+          progress:            task_report.get_progress,
+          running_attempt_ids: task_report.get_running_task_attempts.map(&:to_s)
+        }
       }
     end
 
