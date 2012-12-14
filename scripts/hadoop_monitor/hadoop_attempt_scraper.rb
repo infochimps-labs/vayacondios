@@ -1,17 +1,21 @@
 require 'open-uri'
 require 'nibbler'
+require 'socket'
 
 class HadoopAttemptScraper < Nibbler
+  attr_accessor :task_id
+
   def self.scrape_task(task_id)
-    url    = "http://localhost:50030/taskdetails.jsp?tipid=#{task_id}"
-    scrape = parse(open(url))
+    task_id = task_id.to_s
+
+    url     = "http://#{Socket.gethostname}:50030/taskdetails.jsp?tipid=#{task_id}"
+    scrape  = parse(open(url))
     scrape.task_id = task_id
 
     scrape
   end
 
-  attr_accessor :task_id
-  elements 'table.jobtasks tbody > tr' => :attempts do
+    elements 'table.jobtasks tbody > tr' => :attempts do
     element 'td:nth-child(1)' => 'attempt_id'
     element 'td:nth-child(2) a/@href' => 'machine'
     element 'td:nth-child(3)' => 'status'
@@ -30,7 +34,7 @@ class HadoopAttemptScraper < Nibbler
         status:      attempt.status,
         progress:    attempt.progress.to_f / 100.0,
         start_time:  Time.parse(attempt.start_time),
-        finish_time: Time.parse(attempt.finish_time),
+        finish_time: attempt.finish_time.length > 0 ? Time.parse(attempt.finish_time) : nil,
         errors:      attempt.errors
       }
     end

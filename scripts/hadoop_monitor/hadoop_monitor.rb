@@ -74,14 +74,14 @@ module Vayacondios
       end
 
       logger.debug "upserting job #{JSON.generate stats[:job]}"
-      @collections[:jobs].update(_id: stats[:job][:_id], stats[:job], upsert: true)
+      @collections[:jobs].update({_id: stats[:job][:_id]}, stats[:job], upsert: true)
 
       logger.debug "upserting job_event #{JSON.generate stats[:job_event]}"
-      @collections[:job_event].insert(stats[:job_event])
+      @collections[:job_events].insert(stats[:job_event])
 
       logger.debug "upserting tasks #{JSON.generate stats[:tasks]}"
       stats[:tasks].each do |task|
-        @collections[:tasks].update(_id: task[:_id], task, upsert: true)
+        @collections[:tasks].update({_id: task[:_id]}, task, upsert: true)
       end
 
       logger.debug "upserting task_events #{JSON.generate stats[:task_events]}"
@@ -91,7 +91,7 @@ module Vayacondios
 
       logger.debug "upserting attempts #{JSON.generate stats[:attempts]}"
       stats[:attempts].each do |attempt|
-        @collections[:attempts].update(_id: attempt[:_id], attempt, upsert: true)
+        @collections[:attempts].update({_id: attempt[:_id]}, attempt, upsert: true)
       end
     end
 

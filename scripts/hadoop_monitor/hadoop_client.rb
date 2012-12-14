@@ -56,7 +56,7 @@ module Vayacondios
     # Returns the stats for the current job as a hash.
     #
     def job_stats job, finish_time
-      parse_job job.get_id.to_s, finish_time
+      parse_job job.get_id, finish_time
     end
 
   private
@@ -82,13 +82,14 @@ module Vayacondios
     # object that represents it.
     #
     def parse_job job_id, finish_time
-      job = @job_client.get_job job_id
-      job_status = job.get_job_status
+      job             = @job_client.get_job job_id
+      job_status      = @job_client.get_all_jobs.select{|j| j.get_job_id.to_s == job_id.to_s}.first
       finished_status = [:FAILED, :KILLED, :COMPLETE]
       failed_status   = [:FAILED]
 
       start_time      = Time.at(job_status.get_start_time / 1000)
       reduce_progress = job.reduce_progress
+      map_progress    = job.map_progress
       run_duration    = (finish_time || Time.now) - start_time
 
       map_eta    = map_progress    && map_progress    > 0.0 ? (start_time + (run_duration / map_progress))    : nil
@@ -97,7 +98,7 @@ module Vayacondios
       job_data = {
 
         _id:              job_id.to_s,
-        name:             get_job_name.to_s,
+        name:             job.get_job_name.to_s,
 
                           # not sure what is what. I'm guessing
                           # JobStatus.getStartTime corresponds to the
@@ -163,7 +164,7 @@ module Vayacondios
       tasks = setup_reports + map_reports + reduce_reports + cleanup_reports
       task_events = setup_event_reports + map_event_reports + reduce_event_reports + cleanup_event_reports
 
-      attempt_reports = tasks.map{|task| HadoopAttemptScraper.scrape_task(task["_id"]) }
+      attempt_reports = tasks.map{|task| HadoopAttemptScraper.scrape_task(task[:_id]).to_attempts }.flatten
 
       {
         job: job_data,
@@ -209,7 +210,7 @@ module Vayacondios
 
     def parse_task_progress task_report, task_type
       {
-        t: Time.now
+        t: Time.now,
         d: {
           job_id:              task_report.get_task_id.to_s,
           progress:            task_report.get_progress,
