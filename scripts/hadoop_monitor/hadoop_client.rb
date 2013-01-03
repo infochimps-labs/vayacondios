@@ -193,7 +193,7 @@ module Vayacondios
     #
     def parse_task task_report, task_type, parent_job_id
       start_time    = Time.at(task_report.get_start_time / 1000)
-      finished_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil,
+      finish_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil,
 
       {
         _id:                   task_report.get_task_id.to_s,
