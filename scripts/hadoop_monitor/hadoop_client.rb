@@ -192,12 +192,12 @@ module Vayacondios
     # object that represents it.
     #
     def parse_task task_report, task_type, parent_job_id
-      start_time    = Time.at(task_report.get_start_time / 1000)
-      finish_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil,
+      start_time  = Time.at(task_report.get_start_time / 1000)
+      finish_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil
 
       {
         _id:                   task_report.get_task_id.to_s,
-        job_id:                parent_job_id,
+        job_id:                parent_job_id.to_s,
         type:                  task_type,
         status:                task_report.get_current_status.to_s,
         start_time:            start_time,
