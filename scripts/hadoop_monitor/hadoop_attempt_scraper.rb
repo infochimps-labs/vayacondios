@@ -37,7 +37,7 @@ class HadoopAttemptScraper < Nibbler
         progress:    attempt.progress.to_f / 100.0,
         start_time:  start_time,
         finish_time: finish_time,
-        duration:    start_time ? (finish_time || Time.now) - start_time : nil
+        duration:    start_time ? (finish_time || Time.now) - start_time : nil,
         errors:      attempt.errors
       }
     end

@@ -9,4 +9,5 @@ group :hadoop_monitor do
   gem 'json'
   gem 'nokogiri', '~> 1.5'
   gem 'nibbler',  '~> 1.3'
+  gem "swineherd-fs", "~> 0.0.3"
 end
