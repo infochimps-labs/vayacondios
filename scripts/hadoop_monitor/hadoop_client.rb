@@ -10,7 +10,7 @@ require 'pp'
 require 'gorillib/string/inflections'
 require 'swineherd-fs'
 
-module Vayacondios
+class Vayacondios
 
   class HadoopClient
 
@@ -108,7 +108,7 @@ module Vayacondios
         start_time:       start_time,
         finish_time:      finish_time,
 
-        duration:     run_duration,
+        duration:         run_duration,
 
         map_eta:          map_eta,
         reduce_eta:       reduce_eta,
@@ -192,7 +192,7 @@ module Vayacondios
     # object that represents it.
     #
     def parse_task task_report, task_type, parent_job_id
-      start_time  = Time.at(task_report.get_start_time / 1000)
+      start_time  = task_report.get_start_time > 0  ? Time.at(task_report.get_start_time  / 1000) : nil
       finish_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil
 
       {
@@ -202,7 +202,7 @@ module Vayacondios
         status:                task_report.get_current_status.to_s,
         start_time:            start_time,
         finish_time:           finish_time,
-        duration:              (finish_time || Time.now) - start_time,
+        duration:              start_time ? (finish_time || Time.now) - start_time : nil,
         counters:              parse_counters(task_report.get_counters),
         diagnostics:           task_report.get_diagnostics.map(&:to_s),
         successful_attempt_id: task_report.get_successful_task_attempt.to_s

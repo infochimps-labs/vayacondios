@@ -27,14 +27,17 @@ class HadoopAttemptScraper < Nibbler
 
   def to_attempts
     attempts.map do |attempt|
+      start_time  = Time.parse(attempt.start_time) rescue nil
+      finish_time = attempt.finish_time.length > 0 ? Time.parse(attempt.finish_time) : nil
       {
         _id:         attempt.attempt_id.to_s,
         task_id:     task_id,
         host:        attempt.machine.to_s.gsub(/^http:\/\//, '').gsub(/:[0-9]+$/, ''),
         status:      attempt.status,
         progress:    attempt.progress.to_f / 100.0,
-        start_time:  Time.parse(attempt.start_time),
-        finish_time: attempt.finish_time.length > 0 ? Time.parse(attempt.finish_time) : nil,
+        start_time:  start_time,
+        finish_time: finish_time,
+        duration:    start_time ? (finish_time || Time.now) - start_time : nil
         errors:      attempt.errors
       }
     end

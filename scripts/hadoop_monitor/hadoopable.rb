@@ -1,12 +1,12 @@
 require 'stringio'
 
-module Vayacondios
+class Vayacondios
 
   module Hadoopable
 
     include Configurable
 
-    #--------------------------------------------------------------------------------    
+    #--------------------------------------------------------------------------------
     # Initialize jruby and tell it about hadoop.
     #--------------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ module Vayacondios
 
     $CLASSPATH << File.join(File.join(hadoop_home, 'conf') || ENV['HADOOP_CONF_DIR'],
                             '') # add trailing slash
-    
+
     Dir["#{hadoop_home}/{hadoop*.jar,lib/*.jar}"].each{|jar| require jar}
 
     include_class org.apache.hadoop.mapred.JobConf

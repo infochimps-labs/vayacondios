@@ -10,7 +10,7 @@ require 'thread'
 require 'open-uri'
 require 'json'
 
-module Vayacondios
+class Vayacondios
 
   class HadoopMonitor
     def initialize
