@@ -56,11 +56,23 @@ class Vayacondios
     end
   end
 
+  class CubeNotifier < Notifier
+    def initialize(options={})
+      @client = Vayacondios::CubeClient.receive(options)
+    end
+    def notify topic, cargo={}
+      prepped = prepare(cargo)
+      client.event(topic, prepped)
+      nil
+    end
+  end
+
   class NotifierFactory
     def self.receive(attrs = {})
       type = attrs[:type]
       case type
       when 'http'        then HttpNotifier.new(attrs)
+      when 'cube'        then CubeNotifier.new(attrs)
       when 'log'         then LogNotifier.new(attrs)
       when 'none','null' then NullNotifier.new(attrs)
       else
@@ -80,7 +92,7 @@ class Vayacondios
     def self.included klass
       if klass.ancestors.include? Gorillib::Model
         klass.class_eval do
-          field :notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier
+          field :notifier, Vayacondios::NotifierFactory, default: Vayacondios.default_notifier, :doc => "Notifier used to notify out of band data"
           
           def receive_notifier params
             params.merge!(log: try(:log)) if params[:type] == 'log'
