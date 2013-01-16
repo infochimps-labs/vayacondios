@@ -10,7 +10,7 @@ require 'thread'
 require 'open-uri'
 require 'json'
 
-module Vayacondios
+class Vayacondios
 
   class HadoopMonitor
     def initialize
@@ -34,8 +34,8 @@ module Vayacondios
         tasks:    @db.create_collection('job_tasks'),
         attempts: @db.create_collection('job_task_attempts'),
 
-        job_events:     @db.create_collection('job_events',       capped_collection_opts),
-        task_events:    @db.create_collection('job_tasks_events', capped_collection_opts),
+        job_events:     @db.create_collection('job_events',      capped_collection_opts),
+        task_events:    @db.create_collection('job_task_events', capped_collection_opts),
       }
     end
 

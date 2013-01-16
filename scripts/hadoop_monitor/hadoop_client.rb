@@ -10,7 +10,7 @@ require 'pp'
 require 'gorillib/string/inflections'
 require 'swineherd-fs'
 
-module Vayacondios
+class Vayacondios
 
   class HadoopClient
 
@@ -87,6 +87,11 @@ module Vayacondios
       finished_status = [:FAILED, :KILLED, :COMPLETE]
       failed_status   = [:FAILED]
 
+
+      # not sure what is what. I'm guessing
+      # JobStatus.getStartTime corresponds to the
+      # launch time in the logs
+
       start_time      = Time.at(job_status.get_start_time / 1000)
       reduce_progress = job.reduce_progress
       map_progress    = job.map_progress
@@ -100,22 +105,16 @@ module Vayacondios
         _id:              job_id.to_s,
         name:             job.get_job_name.to_s,
 
-                          # not sure what is what. I'm guessing
-                          # JobStatus.getStartTime corresponds to the
-                          # launch time in the logs, but I'm going to
-                          # go ahead and use it twice here.
-
-        launch_time:      start_time,
-        submit_time:      start_time,
+        start_time:       start_time,
         finish_time:      finish_time,
 
-        run_duration:     run_duration,
+        duration:         run_duration,
 
         map_eta:          map_eta,
         reduce_eta:       reduce_eta,
         eta:              reduce_eta,
 
-        job_status:       case job_status.get_run_state
+        status:       case job_status.get_run_state
                           when JobStatus::FAILED    then :FAILED
                           when JobStatus::KILLED    then :KILLED
                           when JobStatus::PREP      then :PREP
@@ -128,9 +127,7 @@ module Vayacondios
         failed_maps:      num_tasks(job_id, :map,    failed_status),
         failed_reduces:   num_tasks(job_id, :reduce, failed_status),
 
-        counters:         parse_counters(job.get_counters),
-        type:             :job,
-
+        counters:         parse_counters(job.get_counters)
       }
 
       job_event = {
@@ -195,13 +192,17 @@ module Vayacondios
     # object that represents it.
     #
     def parse_task task_report, task_type, parent_job_id
+      start_time  = task_report.get_start_time > 0  ? Time.at(task_report.get_start_time  / 1000) : nil
+      finish_time = task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil
+
       {
         _id:                   task_report.get_task_id.to_s,
-        job_id:                parent_job_id,
-        task_type:             task_type,
-        task_status:           task_report.get_current_status.to_s,
-        start_time:            Time.at(task_report.get_start_time / 1000),
-        finish_time:           task_report.get_finish_time > 0 ? Time.at(task_report.get_finish_time / 1000) : nil,
+        job_id:                parent_job_id.to_s,
+        type:                  task_type,
+        status:                task_report.get_current_status.to_s,
+        start_time:            start_time,
+        finish_time:           finish_time,
+        duration:              start_time ? (finish_time || Time.now) - start_time : nil,
         counters:              parse_counters(task_report.get_counters),
         diagnostics:           task_report.get_diagnostics.map(&:to_s),
         successful_attempt_id: task_report.get_successful_task_attempt.to_s
@@ -212,7 +213,7 @@ module Vayacondios
       {
         t: Time.now,
         d: {
-          job_id:              task_report.get_task_id.to_s,
+          task_id:             task_report.get_task_id.to_s,
           progress:            task_report.get_progress,
           running_attempt_ids: task_report.get_running_task_attempts.map(&:to_s)
         }

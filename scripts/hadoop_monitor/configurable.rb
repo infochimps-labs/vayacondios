@@ -1,7 +1,7 @@
 require 'configliere'
 require 'logger'
 
-module Vayacondios
+class Vayacondios
 
   module Configurable
 

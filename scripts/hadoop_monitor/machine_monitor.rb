@@ -7,7 +7,7 @@ require 'scanf'
 require 'json'
 require 'mongo'
 
-module Vayacondios
+class Vayacondios
 
   class StatServer
 
@@ -60,7 +60,7 @@ module Vayacondios
 
       # main loop
       loop do
-        
+
         logger.debug "In main event loop. Waiting to see if the cluster is busy."
 
         # Get up-to-date on the state of the cluster.
