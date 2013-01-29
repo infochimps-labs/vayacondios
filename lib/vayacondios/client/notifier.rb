@@ -67,12 +67,23 @@ class Vayacondios
     end
   end
 
+  class ZabbixNotifier < Notifier
+    def initialize options={}
+      @client = Vayacondios::ZabbixClient.receive(options)
+    end
+    def notify(topic, cargo={})
+      prepped = prepare(cargo)
+      client.insert(topic, prepped)
+    end
+  end
+  
   class NotifierFactory
     def self.receive(attrs = {})
       type = attrs[:type]
       case type
       when 'http'        then HttpNotifier.new(attrs)
       when 'cube'        then CubeNotifier.new(attrs)
+      when 'zabbix'      then ZabbixNotifier.new(attrs)
       when 'log'         then LogNotifier.new(attrs)
       when 'none','null' then NullNotifier.new(attrs)
       else
