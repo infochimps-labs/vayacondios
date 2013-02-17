@@ -16,8 +16,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
 
   gem.add_dependency('configliere', '>= 0.4.16')
-  gem.add_dependency('multi_json',  '~> 1.1')
-  gem.add_dependency('gorillib',    '~> 0.4.2')
+  gem.add_dependency('multi_json',  '>= 1.3.6')
+  gem.add_dependency('gorillib',    '>= 0.4.2')
 
   gem.add_development_dependency('rake')
   gem.add_development_dependency('yard', '>= 0.7')
