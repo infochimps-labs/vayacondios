@@ -41,7 +41,6 @@ class Vayacondios
       validate_options options
       
       existing_document = ItemsetDocument.find(@mongo, options)
-      puts "destroy existing"
       existing_document.destroy(document)
     end
 
