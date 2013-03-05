@@ -13,7 +13,8 @@ class Vayacondios
       end
 
       def fetch organization=nil, topic=nil, id=nil
-        execute_request(_req(:fetch, nil, organization, topic, id))
+        resp = execute_request(_req(:fetch, nil, organization, topic, id)) and
+          resp["contents"]
       end
 
       def update ary, organization=nil, topic=nil, id=nil
