@@ -157,7 +157,7 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200 
-          MultiJson.load(c.response).should eql(["foo", "bar"])
+          MultiJson.load(c.response).should eql({"contents" => ["foo", "bar"]})
         end
       end
     end
@@ -215,7 +215,7 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         get_request({:path => '/v1/infochimps/itemset/merge/test'}, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql(["foo", "bar"])
+          MultiJson.load(c.response).should eql({"contents" => ["foo", "bar"]})
         end
       end
     end
@@ -277,7 +277,7 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql ["foo"]
+          MultiJson.load(c.response).should eql({"contents" => ["foo"]})
         end
       end
     end
@@ -304,7 +304,7 @@ describe HttpShim do
       with_api(HttpShim) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql []
+          MultiJson.load(c.response).should eql({"contents" => []})
         end
       end
     end

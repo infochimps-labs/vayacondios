@@ -10,7 +10,7 @@ require 'vayacondios/server/model/document'
 # work while Goliath is in a streaming context.
 
 class Vayacondios::ItemsetDocument < Vayacondios::Document
-  attr_reader :organization, :topic, :body, :id
+  attr_reader :organization, :topic, :id
 
   def initialize(mongodb, options = {})
     super options
@@ -31,6 +31,10 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
 
   def self.find(mongodb, options={})
     self.new(mongodb, options).find
+  end
+
+  def body
+    {contents: @body}
   end
 
   def find
@@ -61,7 +65,7 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
 
     # Merge ourselves
     if @body
-      @body = body + document['contents']
+      @body = @body + document['contents']
     else
       @body = document['contents']
     end
