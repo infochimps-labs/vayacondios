@@ -6,10 +6,10 @@ import java.util.Collection;
  * An organization is the last commmon class in the Vayacondios
  * hierarchy between the itemset and stash interface.
  */
-public class Organization extends VayacondiosServer {
+public class Organization extends VayacondiosClient {
   public Organization(PathBuilder delegate) { super(delegate); }
 
-  public Organization(VayacondiosServer server, String organization) {
+  public Organization(VayacondiosClient server, String organization) {
     super(server);
     _server = server;
     _organization = organization;
@@ -33,10 +33,10 @@ public class Organization extends VayacondiosServer {
   }
 
   protected int getPort() {
-    return ((VayacondiosServer)getDelegate()).getPort();
+    return ((VayacondiosClient)getDelegate()).getPort();
   }
   protected String getServerName() {
-    return ((VayacondiosServer)getDelegate()).getServerName();
+    return ((VayacondiosClient)getDelegate()).getServerName();
   }
   String getOrganization() { return _organization; }
 
@@ -44,6 +44,6 @@ public class Organization extends VayacondiosServer {
   // fields
   //----------------------------------------------------------------------------
 
-  private VayacondiosServer _server;
+  private VayacondiosClient _server;
   private String _organization;
 }

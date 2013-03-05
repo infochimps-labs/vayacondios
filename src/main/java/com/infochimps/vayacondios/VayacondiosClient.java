@@ -12,16 +12,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * VayacondiosServer is the root of the Vayacondios hierarchy. It
+ * VayacondiosClient is the root of the Vayacondios hierarchy. It
  * communicates with a Vayacondios server via its HTTP API. Currently
  * only Vayacondios itemsets are supported.
  */
-public class VayacondiosServer extends PathBuilder {
+public class VayacondiosClient extends PathBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(CurrentClass.get());
 
-  public VayacondiosServer(PathBuilder delegate) { super(delegate); }
+  public VayacondiosClient(PathBuilder delegate) { super(delegate); }
 
-  public VayacondiosServer(String serverName, int port) {
+  public VayacondiosClient(String serverName, int port) {
     _serverName = serverName;
     _port       = port;
   }
