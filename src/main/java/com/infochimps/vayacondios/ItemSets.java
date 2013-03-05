@@ -1,17 +1,27 @@
 package com.infochimps.vayacondios;
 
+import static com.infochimps.util.CurrentClass.getLogger;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import org.slf4j.Logger;
 
 /**
  * This is the first level of the Vayacondios path-building hierarchy
  * that is capable of directly manipulating itemsets.
  */
 public class ItemSets extends Organization {
-  private static String PATH_COMPONENT = "itemset";
-
   public ItemSets(PathBuilder delegate) { super(delegate); }
 
   public ItemSets(Organization org) {
@@ -46,9 +56,37 @@ public class ItemSets extends Organization {
    */
   public Collection<Item> fetch(String topic, String id) throws IOException {
     BufferedReader reader = openUrl(urlString(PATH_COMPONENT, topic, id));
-    String line;
-    while ((line = reader.readLine()) != null) System.err.println(line);
-    return new ArrayList();
+    String line = reader.readLine();
+    JsonElement response;
+    JsonElement itemSet;
+
+    ArrayList<Item> result = new ArrayList<Item>();
+
+    // assume Vayacondios response comes in a single line
+    if (line != null &&
+	(response = PARSER.parse(line)).isJsonObject() &&
+	(itemSet = (response.getAsJsonObject().get("contents"))).isJsonArray()) {
+      for (JsonElement elem : itemSet.getAsJsonArray()) {
+	if (!elem.isJsonPrimitive()) {
+	  LOG.warn("ignoring non-primitive in itemset: " + elem);
+	  continue;
+	}
+
+	JsonPrimitive item = elem.getAsJsonPrimitive();
+	if (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
+	if (item.isNumber())  result.add(new Item(item.getAsNumber()));
+	if (item.isString())  result.add(new Item(item.getAsString()));
+
+	else LOG.warn("ignoring unrecognized type in itemset: " + item);
+      }
+    }
+    
+    if ((line = reader.readLine()) != null)
+      LOG.warn("expected eof but saw " + line);
+
+    reader.close();
+
+    return result;
   }
 
   //----------------------------------------------------------------------------
@@ -64,6 +102,10 @@ public class ItemSets extends Organization {
   //----------------------------------------------------------------------------
 
   private Organization _org;
+
+  private static final JsonParser PARSER	= new JsonParser();
+  private static final Logger LOG		= getLogger();
+  private static final String PATH_COMPONENT    = "itemset";
 
   //============================================================================
   // Topic
@@ -178,12 +220,15 @@ public class ItemSets extends Organization {
   //============================================================================
 
   /**
-   * A Vayacondios item can be either a number or a string.
+   * A Vayacondios item can be a boolean, a number, or a string.
    */
   public static class Item {
-    public enum TYPE {
-      NUMBER, STRING
-	}
+    public enum TYPE {BOOLEAN, NUMBER, STRING}
+
+    public Item(Boolean b) {
+      _item = b;
+      _type = TYPE.BOOLEAN;
+    }
 
     public Item(Number n) {
       _item = n;
@@ -193,6 +238,12 @@ public class ItemSets extends Organization {
     public Item(String s) {
       _item = s;
       _type = TYPE.STRING;
+    }
+
+    public Boolean getAsBoolean() {
+      if (_type != TYPE.BOOLEAN)
+	throw new ClassCastException("item is not a boolean");
+      return (Boolean)_item;
     }
 
     public Number getAsNumber() {
@@ -210,6 +261,10 @@ public class ItemSets extends Organization {
     public Object getObject() { return _item; }
 
     public TYPE getType() { return _type; }
+
+    public String toString() {
+      return _item.toString() + ":" + _type;
+    }
 
     private Object _item;
     private TYPE _type;

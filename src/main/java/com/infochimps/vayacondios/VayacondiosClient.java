@@ -1,5 +1,7 @@
 package com.infochimps.vayacondios;
 
+import static com.infochimps.util.CurrentClass.getLogger;
+
 import com.infochimps.util.CurrentClass;
 import com.infochimps.util.HttpHelper;
 
@@ -9,7 +11,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * VayacondiosClient is the root of the Vayacondios hierarchy. It
@@ -17,8 +18,6 @@ import org.slf4j.LoggerFactory;
  * only Vayacondios itemsets are supported.
  */
 public class VayacondiosClient extends PathBuilder {
-  private static final Logger LOG = LoggerFactory.getLogger(CurrentClass.get());
-
   public VayacondiosClient(PathBuilder delegate) { super(delegate); }
 
   public VayacondiosClient(String serverName, int port) {
@@ -84,4 +83,6 @@ public class VayacondiosClient extends PathBuilder {
 
   private String _serverName;
   private int    _port;
+
+  private static final Logger LOG = getLogger();
 }
