@@ -4,42 +4,28 @@ require 'multi_json'
 class Vayacondios
   class Client
     class ItemSet
-      def initialize host, port, organization, topic, id
-        @host = host
-        @port = port
-
-        @path = "/v1/#{organization}/itemset/#{topic}/#{id}"
+      def initialize host, port, organization=nil, topic=nil, id=nil
+        @host         = host
+        @port         = port
+        @organization = organization
+        @topic        = topic
+        @id           = id
       end
 
-      # Exposed for testing.
-      def _req type, ary = nil
-        case type
-        when :fetch  then
-          req = Net::HTTP::Get.new(@path)
-        when :create then
-          (req = Net::HTTP::Put.new(@path)).body = MultiJson.encode(ary)
-        when :update then
-          (req = Net::HTTP::Put.new(@path, {"x-method" => "PATCH"})).body = MultiJson.encode(ary)
-        when :remove then
-          (req = Net::HTTP::Delete.new(@path)).body = MultiJson.encode(ary)
-        end
-        req
+      def fetch organization=nil, topic=nil, id=nil
+        execute_request(_req(:fetch, nil, organization, topic, id))
       end
 
-      def fetch
-        execute_request(_req(:fetch))
+      def update ary, organization=nil, topic=nil, id=nil
+        execute_request(_req(:update, ary, organization, topic, id))
       end
 
-      def update ary
-        execute_request(_req(:update, ary))
+      def create ary, organization=nil, topic=nil, id=nil
+        execute_request(_req(:create, ary, organization, topic, id))
       end
 
-      def create ary
-        execute_request(_req(:create, ary))
-      end
-
-      def remove ary
-        execute_request(_req(:remove, ary))
+      def remove ary, organization=nil, topic=nil, id=nil
+        execute_request(_req(:remove, ary, organization, topic, id))
       end
 
 
@@ -51,6 +37,34 @@ class Vayacondios
         end.body
         result = MultiJson.decode(resp) unless resp.nil? or resp.empty?
         (result.respond_to?(:has_key?) and result.has_key? "error") ? nil : result
+      end
+
+      def path organization, topic, id
+        if ((the_organization = (organization || @organization)).nil? ||
+            (the_topic        = (topic        || @topic       )).nil? ||
+            (the_id           = (id           || @id          )).nil?)
+          raise ArgumentError.new("must provide organization, topic, and id!")
+        end
+
+        ['/v1', the_organization, 'itemset', the_topic, the_id].join("/")
+      end
+
+      # This is the only private method that is tested.
+      def _req type, ary=nil, organization=nil, topic=nil, id=nil
+
+        the_path = path(organization, topic, id)
+        headers = {"content-type" => "application/json"}
+        headers.merge!("x-method" => "PATCH") if type == :update
+ 
+        case type
+        when :fetch  then Net::HTTP::Get
+        when :create then Net::HTTP::Put
+        when :update then Net::HTTP::Put
+        when :remove then Net::HTTP::Delete
+        else         raise ArgumentError.new("invalid type: #{type}")
+        end.new(the_path, headers).tap do |req|
+          req.body = MultiJson.encode(contents: ary) unless type == :fetch
+        end
       end
     end
   end

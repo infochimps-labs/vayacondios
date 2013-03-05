@@ -22,6 +22,7 @@ require 'vayacondios/server/handlers/config_handler'
 require 'vayacondios/server/handlers/event_handler'
 require 'vayacondios/server/handlers/itemset_handler'
 
+require 'vayacondios/server/rack/assume_json'
 require 'vayacondios/server/rack/extract_methods'
 require 'vayacondios/server/rack/path'
 require 'vayacondios/server/rack/path_validation'
