@@ -223,8 +223,6 @@ public class ItemSets extends Organization {
    * A Vayacondios item can be a boolean, a number, or a string.
    */
   public static class Item {
-    public enum TYPE {BOOLEAN, NUMBER, STRING}
-
     public Item(Boolean b) {
       _item = b;
       _type = TYPE.BOOLEAN;
@@ -258,6 +256,10 @@ public class ItemSets extends Organization {
       return (String)_item;
     }
 
+    public Boolean isBoolean() { return (_type == TYPE.BOOLEAN); }
+    public Boolean  isNumber() { return (_type == TYPE.NUMBER ); }
+    public Boolean  isString() { return (_type == TYPE.STRING ); }
+
     public Object getObject() { return _item; }
 
     public TYPE getType() { return _type; }
@@ -266,7 +268,12 @@ public class ItemSets extends Organization {
       return _item.toString() + ":" + _type;
     }
 
+    //--------------------------------------------------------------------------
+    // fields
+    //--------------------------------------------------------------------------
+
     private Object _item;
     private TYPE _type;
-  }
+    private enum TYPE {BOOLEAN, NUMBER, STRING}
+ }
 }
