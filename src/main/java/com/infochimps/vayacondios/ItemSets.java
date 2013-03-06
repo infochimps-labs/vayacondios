@@ -266,28 +266,28 @@ public class ItemSets extends Organization {
     //--------------------------------------------------------------------------
 
     /**
-     * @see #ItemSets.fetch
+     * @see ItemSets::fetch
      */
     public List<Item> fetch(String id) throws IOException {
       return fetch(getTopic(), id);
     }
 
     /**
-     * @see #ItemSets.create
+     * @see ItemSets::create
      */
     public void create(List<Item> items, String id) throws IOException {
       create(items, getTopic(), id);
     }
 
     /**
-     * @see #ItemSets.remove
+     * @see ItemSets::remove
      */
     public void remove(List<Item> items, String id) throws IOException {
       remove(items, getTopic(), id);
     }
 
     /**
-     * @see #ItemSets.update
+     * @see ItemSets::update
      */
     public void update(List<Item> items, String id) throws IOException {
       update(items, getTopic(), id);
@@ -329,28 +329,28 @@ public class ItemSets extends Organization {
     //--------------------------------------------------------------------------
 
     /**
-     * @see ItemSets.fetch
+     * @see ItemSets::fetch
      */
     public List<Item> fetch() throws IOException {
       return fetch(getId());
     }
 
     /**
-     * @see ItemSets.create
+     * @see ItemSets::create
      */
     public void create(List<Item> items) throws IOException {
       create(items, getId());
     }
 
     /**
-     * @see ItemSets.remove
+     * @see ItemSets::remove
      */
     public void remove(List<Item> items) throws IOException {
       remove(items, getId());
     }
 
     /**
-     * @see ItemSets.update
+     * @see ItemSets::update
      */
     public void update(List<Item> items) throws IOException {
       update(items, getId());
