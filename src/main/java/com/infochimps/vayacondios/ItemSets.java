@@ -1,6 +1,7 @@
 package com.infochimps.vayacondios;
 
 import static com.infochimps.util.CurrentClass.getLogger;
+import com.infochimps.util.DebugUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -102,6 +103,39 @@ public class ItemSets extends Organization {
   }
 
   /**
+   * Creates a new itemset with the specified topic and id, clobbering
+   * any existing itemset with the same topic and id.
+   * 
+   * @param items items whose existence should be ensured in the set.
+   * @param topic A Vayacondios topic has many ids. See vayacondios
+   *              documentation for further details.
+   * @param id A Vayacondios id, together with the server,
+   *           organization, and topic, specifies a unique
+   *           itemset.
+   */
+  public void create(List<Item> items,
+		     String topic,
+		     String id) throws IOException {
+    mutate("PUT", items, topic, id);
+  }
+
+  /**
+   * Ensures the absence of the specified items from the specified itemset.q
+   * 
+   * @param items items whose absence should be ensured in the set.
+   * @param topic A Vayacondios topic has many ids. See vayacondios
+   *              documentation for further details.
+   * @param id A Vayacondios id, together with the server,
+   *           organization, and topic, specifies a unique
+   *           itemset.
+   */
+  public void remove(List<Item> items,
+		     String topic,
+		     String id) throws IOException {
+    mutate("DELETE", items, topic, id);
+  }
+
+  /**
    * Updates the current value of an itemset, ensuring the existence
    * of the specified items.
    * 
@@ -115,7 +149,7 @@ public class ItemSets extends Organization {
   public void update(List<Item> items,
 		     String topic,
 		     String id) throws IOException {
-    mutate("PUT", true, items, topic, id);
+    mutate("PATCH", items, topic, id);
   }
 
   //----------------------------------------------------------------------------
@@ -129,7 +163,6 @@ public class ItemSets extends Organization {
   //----------------------------------------------------------------------------
 
   protected void mutate(String method,
-			boolean patch,
 			List<Item> items,
 			String topic,
 			String id) throws IOException {
@@ -138,23 +171,39 @@ public class ItemSets extends Organization {
     HashMap content = new HashMap();
     content.put("contents", items);
     String body = GSON.toJson(content);
-    LOG.debug("updating config: " + body);
-
     // connect to our standard path
+    URL url = new URL(urlString(PATH_COMPONENT, topic, id));
     HttpURLConnection connection = (HttpURLConnection)
-      new URL(urlString(PATH_COMPONENT, topic, id)).openConnection();
+      ((Boolean.valueOf(System.getProperty("ics.http.use_charles"))) ? 
+       url.openConnection(DebugUtil.useCharles()) : url.openConnection());
 
     // configure connection
     connection.setDoOutput(true);
 
-    connection.setDoInput(false); // ignore response for now
-    connection.setRequestMethod(method);
-    if (patch) connection.setRequestProperty("X-Method", "PATCH");
+    // NOTE: Uncommenting this (and not calling
+    // connection.getInputStream()) causes Java to hang without
+    // sending its payload.
+
+    // connection.setDoInput(false);
+
+    if (method.equals("DELETE")) {
+      connection.setRequestMethod("PUT");
+      connection.setRequestProperty("X-Method", "DELETE");
+    } else if (method.equals("PATCH")) {
+      connection.setRequestMethod("PUT");
+      connection.setRequestProperty("X-Method", "PATCH");
+    } else connection.setRequestMethod(method);
     connection.setRequestProperty("Content-Type", "application/json"); 
     connection.setRequestProperty("Accept", "*/*");
     connection.setRequestProperty("Content-Length",
 				  Integer.toString(body.getBytes().length));
     connection.setUseCaches(false);
+
+    LOG.debug("sending: " + body);
+    LOG.debug("via " +
+	      connection.getRequestMethod() +
+	      " to " +
+	      urlString(PATH_COMPONENT, topic, id));
 
     // connect and write
     OutputStream os = connection.getOutputStream();
@@ -162,9 +211,17 @@ public class ItemSets extends Organization {
     os.flush();
     os.close();
 
+    // ignore reponse
+    InputStream is = connection.getInputStream();
+
+    LOG.trace("ignoring response from Vayacondios.");
+    byte buf[] = new byte[256];
+    while (is.read(buf) != -1);
+    LOG.trace("response ignored.");
+    is.close();
+
     // fin.
     connection.disconnect();
-
   }
 
   private Organization _org;
@@ -209,25 +266,28 @@ public class ItemSets extends Organization {
     //--------------------------------------------------------------------------
 
     /**
-     * Fetches the current value of an itemset.
-     * 
-     * @param id A Vayacondios id, together with the server,
-     *           organization, and topic, specifies a unique
-     *           itemset.
-     * @return a collection of items
+     * @see #ItemSets.fetch
      */
     public List<Item> fetch(String id) throws IOException {
       return fetch(getTopic(), id);
     }
 
     /**
-     * Updates the current value of an itemset, ensuring the existence
-     * of the specified items.
-     * 
-     * @param items items whose existence should be ensured in the set.
-     * @param id A Vayacondios id, together with the server,
-     *           organization, and topic, specifies a unique
-     *           itemset.
+     * @see #ItemSets.create
+     */
+    public void create(List<Item> items, String id) throws IOException {
+      create(items, getTopic(), id);
+    }
+
+    /**
+     * @see #ItemSets.remove
+     */
+    public void remove(List<Item> items, String id) throws IOException {
+      remove(items, getTopic(), id);
+    }
+
+    /**
+     * @see #ItemSets.update
      */
     public void update(List<Item> items, String id) throws IOException {
       update(items, getTopic(), id);
@@ -269,19 +329,28 @@ public class ItemSets extends Organization {
     //--------------------------------------------------------------------------
 
     /**
-     * Fetches the current value of this itemset.
-     * 
-     * @return a collection of items
+     * @see ItemSets.fetch
      */
     public List<Item> fetch() throws IOException {
       return fetch(getId());
     }
 
     /**
-     * Updates the current value of an itemset, ensuring the existence
-     * of the specified items.
-     * 
-     * @param items items whose existence should be ensured in the set.
+     * @see ItemSets.create
+     */
+    public void create(List<Item> items) throws IOException {
+      create(items, getId());
+    }
+
+    /**
+     * @see ItemSets.remove
+     */
+    public void remove(List<Item> items) throws IOException {
+      remove(items, getId());
+    }
+
+    /**
+     * @see ItemSets.update
      */
     public void update(List<Item> items) throws IOException {
       update(items, getId());
@@ -369,6 +438,11 @@ public class ItemSets extends Organization {
 
     public String toString() {
       return _item.toString() + ":" + _type;
+    }
+
+    public boolean equals(Object other) {
+      return (Item.class.isAssignableFrom(other.getClass())) ? 
+	_item.equals(((Item)other).getObject()) : _item.equals(other);
     }
 
     //--------------------------------------------------------------------------

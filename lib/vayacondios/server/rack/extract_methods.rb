@@ -12,7 +12,17 @@ class Vayacondios
         return unless env['REQUEST_METHOD']
         case env['REQUEST_METHOD'].upcase
         when 'PUT'    then
-          (env['HTTP_X_METHOD'] && env['HTTP_X_METHOD'].upcase == 'PATCH') ? :patch : :update
+          if env.has_key? 'HTTP_X_METHOD'
+            if env['HTTP_X_METHOD'].upcase == 'PATCH'
+              :patch
+            elsif env['HTTP_X_METHOD'].upcase == 'DELETE'
+              :delete
+            else
+              :update
+            end
+          else
+            :update
+          end
         when 'GET'    then :show
         when 'POST'   then :create
         when 'PATCH'  then :patch
