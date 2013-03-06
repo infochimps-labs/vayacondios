@@ -2,18 +2,30 @@ package com.infochimps.vayacondios;
 
 import static com.infochimps.util.CurrentClass.getLogger;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.BufferedReader;
+import java.util.HashMap;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
+
+import java.net.URL;
 
 import org.slf4j.Logger;
 
@@ -54,7 +66,7 @@ public class ItemSets extends Organization {
    *           itemset.
    * @return a collection of items
    */
-  public Collection<Item> fetch(String topic, String id) throws IOException {
+  public List<Item> fetch(String topic, String id) throws IOException {
     BufferedReader reader = openUrl(urlString(PATH_COMPONENT, topic, id));
     String line = reader.readLine();
     JsonElement response;
@@ -73,9 +85,9 @@ public class ItemSets extends Organization {
 	}
 
 	JsonPrimitive item = elem.getAsJsonPrimitive();
-	if (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
-	if (item.isNumber())  result.add(new Item(item.getAsNumber()));
-	if (item.isString())  result.add(new Item(item.getAsString()));
+	if      (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
+	else if (item.isNumber())  result.add(new Item(item.getAsNumber()));
+	else if (item.isString())  result.add(new Item(item.getAsString()));
 
 	else LOG.warn("ignoring unrecognized type in itemset: " + item);
       }
@@ -89,6 +101,23 @@ public class ItemSets extends Organization {
     return result;
   }
 
+  /**
+   * Updates the current value of an itemset, ensuring the existence
+   * of the specified items.
+   * 
+   * @param items items whose existence should be ensured in the set.
+   * @param topic A Vayacondios topic has many ids. See vayacondios
+   *              documentation for further details.
+   * @param id A Vayacondios id, together with the server,
+   *           organization, and topic, specifies a unique
+   *           itemset.
+   */
+  public void update(List<Item> items,
+		     String topic,
+		     String id) throws IOException {
+    mutate("PUT", true, items, topic, id);
+  }
+
   //----------------------------------------------------------------------------
   // API HTTP path components
   //----------------------------------------------------------------------------
@@ -98,14 +127,54 @@ public class ItemSets extends Organization {
   }
 
   //----------------------------------------------------------------------------
-  // fields
-  //----------------------------------------------------------------------------
+
+  protected void mutate(String method,
+			boolean patch,
+			List<Item> items,
+			String topic,
+			String id) throws IOException {
+
+    // serialize the items
+    HashMap content = new HashMap();
+    content.put("contents", items);
+    String body = GSON.toJson(content);
+    LOG.debug("updating config: " + body);
+
+    // connect to our standard path
+    HttpURLConnection connection = (HttpURLConnection)
+      new URL(urlString(PATH_COMPONENT, topic, id)).openConnection();
+
+    // configure connection
+    connection.setDoOutput(true);
+
+    connection.setDoInput(false); // ignore response for now
+    connection.setRequestMethod(method);
+    if (patch) connection.setRequestProperty("X-Method", "PATCH");
+    connection.setRequestProperty("Content-Type", "application/json"); 
+    connection.setRequestProperty("Accept", "*/*");
+    connection.setRequestProperty("Content-Length",
+				  Integer.toString(body.getBytes().length));
+    connection.setUseCaches(false);
+
+    // connect and write
+    OutputStream os = connection.getOutputStream();
+    os.write(body.getBytes("UTF-8"));
+    os.flush();
+    os.close();
+
+    // fin.
+    connection.disconnect();
+
+  }
 
   private Organization _org;
 
   private static final JsonParser PARSER	= new JsonParser();
   private static final Logger LOG		= getLogger();
   private static final String PATH_COMPONENT    = "itemset";
+  private static final Gson GSON                = new GsonBuilder().
+    registerTypeAdapter(Item.class, new Item.Serializer()).
+    create();
 
   //============================================================================
   // Topic
@@ -147,8 +216,21 @@ public class ItemSets extends Organization {
      *           itemset.
      * @return a collection of items
      */
-    public Collection<Item> fetch(String id) throws IOException {
+    public List<Item> fetch(String id) throws IOException {
       return fetch(getTopic(), id);
+    }
+
+    /**
+     * Updates the current value of an itemset, ensuring the existence
+     * of the specified items.
+     * 
+     * @param items items whose existence should be ensured in the set.
+     * @param id A Vayacondios id, together with the server,
+     *           organization, and topic, specifies a unique
+     *           itemset.
+     */
+    public void update(List<Item> items, String id) throws IOException {
+      update(items, getTopic(), id);
     }
 
     //--------------------------------------------------------------------------
@@ -191,8 +273,18 @@ public class ItemSets extends Organization {
      * 
      * @return a collection of items
      */
-    public Collection<Item> fetch() throws IOException {
+    public List<Item> fetch() throws IOException {
       return fetch(getId());
+    }
+
+    /**
+     * Updates the current value of an itemset, ensuring the existence
+     * of the specified items.
+     * 
+     * @param items items whose existence should be ensured in the set.
+     */
+    public void update(List<Item> items) throws IOException {
+      update(items, getId());
     }
 
     //--------------------------------------------------------------------------
@@ -223,6 +315,17 @@ public class ItemSets extends Organization {
    * A Vayacondios item can be a boolean, a number, or a string.
    */
   public static class Item {
+    static class Serializer implements JsonSerializer {
+      public JsonElement serialize(Object item,
+				   Type typeOfId,
+				   JsonSerializationContext context) {
+	return GSON.toJsonTree(Item.class.isAssignableFrom(item.getClass()) ? 
+			       ((Item)item).getObject() : item);
+      }
+      private static final Gson GSON = new Gson();
+      private static final Logger LOG = getLogger();
+    }
+
     public Item(Boolean b) {
       _item = b;
       _type = TYPE.BOOLEAN;

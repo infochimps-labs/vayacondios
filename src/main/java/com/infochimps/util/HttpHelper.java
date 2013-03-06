@@ -103,7 +103,7 @@ public class HttpHelper {
     InputStreamReader istream_reader = new InputStreamReader(in, inputCharset);
     BufferedReader reader = new BufferedReader(istream_reader);
 
-    log.info("successfully opened connection to {} with character encoding {}",
+    log.debug("successfully opened connection to {} with character encoding {}",
 	      con.getURL().toString(),
 	      istream_reader.getEncoding());
 
