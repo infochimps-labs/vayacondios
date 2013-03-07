@@ -17,6 +17,7 @@ import com.google.gson.JsonSyntaxException;
 
 import java.io.BufferedReader;
 import java.util.HashMap;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -68,7 +69,13 @@ public class ItemSets extends Organization {
    * @return a collection of items
    */
   public List<Item> fetch(String topic, String id) throws IOException {
-    BufferedReader reader = openUrl(urlString(PATH_COMPONENT, topic, id));
+    BufferedReader reader = null;
+    try {
+      reader = openUrl(urlString(PATH_COMPONENT, topic, id));
+    } catch (FileNotFoundException ex) {
+      // In the case of a 404, return an empty set.
+      return new ArrayList();
+    }
     String line = reader.readLine();
     JsonElement response;
     JsonElement itemSet;
