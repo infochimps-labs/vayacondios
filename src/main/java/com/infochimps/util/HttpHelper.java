@@ -86,7 +86,7 @@ public class HttpHelper {
       InputStream errorStream = con.getErrorStream();
       if (errorStream != null) {
 	BufferedReader r = new BufferedReader(new InputStreamReader(errorStream));
-	try { for (String line; (line = r.readLine()) != null; log.error(line)); }
+	try { for (String line; (line = r.readLine()) != null; log.warn(line)); }
 	catch (IOException nested_exc) {
 	  log.error("Got an exception in the exception handler: {}", nested_exc);
 	  throw e;
