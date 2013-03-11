@@ -113,50 +113,50 @@ public class ItemSets extends Organization {
    * Creates a new itemset with the specified topic and id, clobbering
    * any existing itemset with the same topic and id.
    * 
-   * @param items items whose existence should be ensured in the set.
    * @param topic A Vayacondios topic has many ids. See vayacondios
    *              documentation for further details.
    * @param id A Vayacondios id, together with the server,
    *           organization, and topic, specifies a unique
    *           itemset.
+   * @param items items whose existence should be ensured in the set.
    */
-  public void create(List<Item> items,
-		     String topic,
-		     String id) throws IOException {
-    mutate("PUT", items, topic, id);
+  public void create(String topic,
+		     String id,
+		     List<Item> items) throws IOException {
+    mutate("PUT", topic, id, items);
   }
 
   /**
    * Ensures the absence of the specified items from the specified itemset.q
    * 
-   * @param items items whose absence should be ensured in the set.
    * @param topic A Vayacondios topic has many ids. See vayacondios
    *              documentation for further details.
    * @param id A Vayacondios id, together with the server,
    *           organization, and topic, specifies a unique
    *           itemset.
+   * @param items items whose absence should be ensured in the set.
    */
-  public void remove(List<Item> items,
-		     String topic,
-		     String id) throws IOException {
-    mutate("DELETE", items, topic, id);
+  public void remove(String topic,
+		     String id,
+		     List<Item> items) throws IOException {
+    mutate("DELETE", topic, id, items);
   }
 
   /**
    * Updates the current value of an itemset, ensuring the existence
    * of the specified items.
    * 
-   * @param items items whose existence should be ensured in the set.
    * @param topic A Vayacondios topic has many ids. See vayacondios
    *              documentation for further details.
    * @param id A Vayacondios id, together with the server,
    *           organization, and topic, specifies a unique
    *           itemset.
+   * @param items items whose existence should be ensured in the set.
    */
-  public void update(List<Item> items,
-		     String topic,
-		     String id) throws IOException {
-    mutate("PATCH", items, topic, id);
+  public void update(String topic,
+		     String id,
+		     List<Item> items) throws IOException {
+    mutate("PATCH", topic, id, items);
   }
 
   //----------------------------------------------------------------------------
@@ -170,9 +170,9 @@ public class ItemSets extends Organization {
   //----------------------------------------------------------------------------
 
   protected void mutate(String method,
-			List<Item> items,
 			String topic,
-			String id) throws IOException {
+			String id,
+			List<Item> items) throws IOException {
 
     // serialize the items
     HashMap content = new HashMap();
@@ -280,24 +280,24 @@ public class ItemSets extends Organization {
     }
 
     /**
-     * @see ItemSets#create
+     * @see ItemSets::create
      */
-    public void create(List<Item> items, String id) throws IOException {
-      create(items, getTopic(), id);
+    public void create(String id, List<Item> items) throws IOException {
+      create(getTopic(), id, items);
     }
 
     /**
      * @see ItemSets#remove
      */
-    public void remove(List<Item> items, String id) throws IOException {
-      remove(items, getTopic(), id);
+    public void remove(String id, List<Item> items) throws IOException {
+      remove(getTopic(), id, items);
     }
 
     /**
      * @see ItemSets#update
      */
-    public void update(List<Item> items, String id) throws IOException {
-      update(items, getTopic(), id);
+    public void update(String id, List<Item> items) throws IOException {
+      update(getTopic(), id, items);
     }
 
     //--------------------------------------------------------------------------
@@ -346,21 +346,21 @@ public class ItemSets extends Organization {
      * @see ItemSets#create
      */
     public void create(List<Item> items) throws IOException {
-      create(items, getId());
+      create(getId(), items);
     }
 
     /**
      * @see ItemSets#remove
      */
     public void remove(List<Item> items) throws IOException {
-      remove(items, getId());
+      remove(getId(), items);
     }
 
     /**
      * @see ItemSets#update
      */
     public void update(List<Item> items) throws IOException {
-      update(items, getId());
+      update(getId(), items);
     }
 
     //--------------------------------------------------------------------------

@@ -29,9 +29,9 @@ public class ItemSetTest {
     // "foo" and "bar." The first and second exist to avoid
     // instantiating new objects repeatedly when a code path must
     // access many different topics and ids.
-    isets                                   .create(foobar, "my_topic", "my_id");
-    isets.topic("my_topic")                 .create(foobar,             "my_id");
-    isets.topic("my_topic").itemSet("my_id").create(foobar                     );
+    isets                                   .create("my_topic", "my_id", foobar);
+    isets.topic("my_topic")                 .create(            "my_id", foobar);
+    isets.topic("my_topic").itemSet("my_id").create(                     foobar);
 
     List<Item> fetched;
 
@@ -49,9 +49,9 @@ public class ItemSetTest {
 
     // Updating an itemset with a list of items ensures the presence
     // in the itemset of all of the items in the specified list.
-    isets                                   .update(bazqux, "my_topic", "my_id");
-    isets.topic("my_topic")                 .update(bazqux,             "my_id");
-    isets.topic("my_topic").itemSet("my_id").update(bazqux                     );
+    isets                                   .update("my_topic", "my_id", bazqux);
+    isets.topic("my_topic")                 .update(            "my_id", bazqux);
+    isets.topic("my_topic").itemSet("my_id").update(                     bazqux);
 
     // foo, bar, baz, and qux will all be printed.
     System.out.println("after update: " + iset.fetch());
@@ -60,9 +60,9 @@ public class ItemSetTest {
 
     // Updating an itemset with a list of items ensures the presence
     // in the itemset of all of the items in the specified list.
-    isets                                   .remove(barbaz, "my_topic", "my_id");
-    isets.topic("my_topic")                 .remove(barbaz,             "my_id");
-    isets.topic("my_topic").itemSet("my_id").remove(barbaz                     );
+    isets                                   .remove("my_topic", "my_id", barbaz);
+    isets.topic("my_topic")                 .remove(            "my_id", barbaz);
+    isets.topic("my_topic").itemSet("my_id").remove(                     barbaz);
 
     // foo and qux will now be printed
     System.out.println("after removing: " + iset.fetch());

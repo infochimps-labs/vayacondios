@@ -6,6 +6,7 @@ import static com.infochimps.util.CurrentClass.getLogger;
 
 import static com.infochimps.vayacondios.ItemSets.Item;
 import static com.infochimps.vayacondios.ItemSets.ItemSet;
+import com.infochimps.vayacondios.ItemSets;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -19,32 +20,58 @@ public class VCDIntegrationTest {
   private static final int VCD_PORT = 8000;
   private static final Logger LOG = getLogger();
 
-  private static ItemSet newSet() {
+  private static ItemSets itemSets() {
     return new VayacondiosClient("localhost", VCD_PORT).
       organization("org").
-      itemsets().
-      topic("topic").
-      itemSet("id");
+      itemsets();
   }
 
-  private static void assertEquals(String... expectedStringArr)
+  private static List<Item> buildItemList(String items[]) {
+    List<Item> result = new ArrayList<Item>();
+    for (String s : items) result.add(new Item(s));
+    return result;
+  }
+
+  private static List<String> getStrings(List<Item> items) {
+    List<String> result = new ArrayList<String>();
+    for (Item i : items) result.add(i.getAsString());
+    return result;
+  }
+
+  private static List<String> fetch() throws IOException {
+    return getStrings(itemSets().fetch("topic", "id"));
+  }
+
+  private static void create(String... items) throws IOException {
+    itemSets().create("topic", "id", buildItemList(items));
+  }
+
+  private static void remove(String... items) throws IOException {
+    itemSets().remove("topic", "id", buildItemList(items));
+  }
+
+  private static void update(String... items) throws IOException {
+    itemSets().update("topic", "id", buildItemList(items));
+  }
+
+  private static void assertEquals(String... expectedArr)
     throws IOException {
-    List<Item> items = newSet().fetch();
-    List<Item> expectedItems = new ArrayList();
-    List<Item> copy;
+    List<String> items = fetch();
+    List<String> copy = new ArrayList<String>();
+    List<String> expected = Arrays.asList(expectedArr);
 
-    for (String exp : expectedStringArr) expectedItems.add(new Item(exp));
-
-    if (!items.containsAll(expectedItems)) {
-      copy = new ArrayList(); copy.addAll(expectedItems);
+    if (!items.containsAll(expected)) {
+      copy = new ArrayList(); copy.addAll(expected);
       LOG.trace("removing items. copy change? " + copy.removeAll(items));
       System.out.println("\033[31mFAIL\033[0m: expected but absent: " + copy);
-    }
-    if (!expectedItems.containsAll(items)) {
+    } else
+      System.out.println("\033[32mSUCCESS\033[0m: all expected items present");
+    if (!expected.containsAll(items)) {
       copy = new ArrayList(); copy.addAll(items);
-      LOG.trace("removing items. copy change? " + copy.removeAll(expectedItems));
+      LOG.trace("removing items. copy change? " + copy.removeAll(expected));
       System.out.println("\033[31mFAIL\033[0m: unexpected and present: " + copy);
-    }
+    } else
+      System.out.println("\033[32mSUCCESS\033[0m: no unexpected items present");
   }
 
   public static void main(String argv[]) {
@@ -53,11 +80,13 @@ public class VCDIntegrationTest {
     System.out.println("Running Vayacondios integration test...");
 
     try {
-      newSet().create(Arrays.asList(new Item("foo"), new Item("baz"), new Item("bar"), new Item("bing")));
+      create("foo", "baz", "bar", "bing");
       assertEquals("foo", "baz", "bar", "bing");
-      newSet().update(Arrays.asList(new Item("biff")));
+
+      update("biff");
       assertEquals("foo", "baz", "bar", "bing", "biff");
-      newSet().remove(Arrays.asList(new Item("biff"), new Item("bar")));
+
+      remove("biff", "bar");
       assertEquals("foo", "baz", "bing");
       
       System.out.println("Integration test complete.");
