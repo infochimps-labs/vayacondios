@@ -1,6 +1,10 @@
-# WARNING! THIS DOCUMENT IS OUTDATED AND MAY NOT REFLECT ACTUAL CODE! GO READ THE SPECS FOR BEHAVIORS!
-
 # Vaya con Dios
+
+## Warning
+
+Some of the documentation on this page is for legacy versions of
+Vayacondios. Until this document is updated, please see the specs for
+the Ruby code or compile the javadocs for the Java API.
 
 > "Data goes in. The right thing happens."
 
