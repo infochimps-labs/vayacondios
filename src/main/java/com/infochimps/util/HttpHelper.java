@@ -35,19 +35,30 @@ public class HttpHelper {
   public static BufferedReader open(Logger log,
 				    String urlString,
 				    Charset inputCharset) throws IOException {
-    HttpURLConnection con = getConnection(urlString, log);
-    return getReader(con, log, inputCharset);
+    return getReader(openStream(log, urlString), inputCharset);
   }
 
   public static BufferedReader open(Logger log,
 				    String urlString,
 				    HashMap<String,String> extraHeaders,
 				    Charset inputCharset) throws IOException {
+    return getReader(openStream(log, urlString, extraHeaders), inputCharset);
 
+  }
+
+  public static InputStream openStream(Logger log,
+				       String urlString) throws IOException {
+    HttpURLConnection con = getConnection(urlString, log);
+    return getStream(con, log);
+  }
+
+  public static InputStream openStream(Logger log,
+				       String urlString,
+				       HashMap<String,String> extraHeaders) throws IOException {
     HttpURLConnection con = getConnection(urlString, log);
     for (Entry<String,String> header : extraHeaders.entrySet())
       con.setRequestProperty(header.getKey(), header.getValue());
-    return getReader(con, log, inputCharset);
+    return getStream(con, log);
   }
 
   private static HttpURLConnection getConnection(String urlString, Logger log) throws IOException {
@@ -71,9 +82,8 @@ public class HttpHelper {
     return con;
   }
 
-  private static BufferedReader getReader(HttpURLConnection con,
-					  Logger log,
-					  Charset inputCharset) throws IOException {
+  private static InputStream getStream(HttpURLConnection con,
+				       Logger log) throws IOException {
     InputStream in = null;
 
     try { in = con.getInputStream(); }
@@ -95,17 +105,16 @@ public class HttpHelper {
       throw e;
     }
 
+    log.debug("successfully opened connection to " + con.getURL().toString());
     String encoding = con.getContentEncoding();
     log.debug("Got HTTP stream with content encoding type '" + encoding + "'");
 
-    if (encoding != null && encoding.equals("gzip")) in = new GZIPInputStream(in);
+    return (encoding != null && encoding.equals("gzip")) ? new GZIPInputStream(in) : in;
+  }
 
+  private static BufferedReader getReader(InputStream in, Charset inputCharset) {
     InputStreamReader istream_reader = new InputStreamReader(in, inputCharset);
     BufferedReader reader = new BufferedReader(istream_reader);
-
-    log.debug("successfully opened connection to {} with character encoding {}",
-	      con.getURL().toString(),
-	      istream_reader.getEncoding());
 
     return reader;
   }
