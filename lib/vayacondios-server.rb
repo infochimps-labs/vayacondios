@@ -1,3 +1,10 @@
+class Vayacondios
+
+  IDENTIFIER_REGEXP = /^[-\w]+$/
+  
+end
+
+
 require 'goliath'
 require 'em-mongo'
 require 'em-synchrony/em-http'

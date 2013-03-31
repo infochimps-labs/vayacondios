@@ -85,7 +85,7 @@ The hash will contain:
 
 ### also
 
-* Path components must be ASCII strings matching `[a-z][a-z0-9_]+` -- that is,  start with [a-z] and contain only lowercase alphanumeric or underscore. Components starting with a '_' have reserved meanings. The only valid underscored fields that a request can fill in are _id, _ts and _path.
+* Path components must be ASCII strings matching `[a-z][a-z0-9_]+` -- that is,  start with [a-z] and contain only lowercase alphanumeric, underscore, or hyphen. Components starting with a '_' have reserved meanings. The only valid underscored fields that a request can fill in are _id, _ts and _path.
 
 * Vaya con Dios reserves the right to read and write paths in `/vayacondios`, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
 
