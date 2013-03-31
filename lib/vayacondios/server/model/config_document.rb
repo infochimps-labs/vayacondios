@@ -1,45 +1,35 @@
-require 'vayacondios/server/model/document'
-
-# The configuration model
+# ConfigDocuments are key-value paris.  In additional to the
+# `organization` and `topic` properties of the Document class they can
+# be created with arbitrary key-value data.
 #
-# Configuration documents are key-value pairs, represented in JSON. A document
-# consists of a primary key called the topic (_id in mongodb). It belongs to a
-# collection named "#{organization_name}.config"
+# Configuration documents are currently stored in MongoDB:
 #
-# Note: mongodb is passed in beacuse Goliath makes Thread lookups will not
-# work while Goliath is in a streaming context.
+#   * the collection will be "#{organization}.config"
+#   * the `topic` of the config will be used as the `_id` of the corresponding MongoDB document
+#   * all other key-value data will be stored within the corresponding MongoDB document
+#
+class Vayacondios::ConfigDocument < Vayacondios::MongoDocument
 
-class Vayacondios::ConfigDocument < Vayacondios::Document
-  attr_reader :organization, :topic, :body, :id
+  attr_reader :field
+  
+  def initialize(log, mongodb, options = {})
+    super(log, mongodb, options)
 
-  def initialize(mongodb, options = {})
-    super options
-    @mongo = mongodb
-    options = sanitize_options(options)
-    @id = options[:id]
-
-    @body         = nil
-    @field        = options[:field] ||= options[:id]
-    @mongo        = mongodb
-
-    collection_name = [organization.to_s, 'config'].join('.')
-    @collection = @mongo.collection(collection_name)
+    self.collection = self.mongo.collection(collection_name)
+    self.field  = options[:field] ||= options[:id]
   end
 
-  def self.create(mongodb, document, options={})
-    self.new(mongodb, options).update(document)
-  end
-
-  def self.find(mongodb, options={})
-    self.new(mongodb, options).find
+  def field= f
+    @field = f.to_s.gsub(/\W/, '') if f.present?
   end
 
   def find
-    result = @collection.find_one({_id: @topic})
-
-    if result.present?
+    raise Goliath::Validation::Error.new(400, "Cannot find a config without a topic") if topic.blank?
+    raise Goliath::Validation::Error.new(400, "Cannot find a config without an ID") if id.blank?
+    result = mongo_query(collection, :find_one, {_id: topic}, {fields: [id]})
+    if result.present? && result.has_key?(id)
       result.delete("_id")
-      @body = result
+      self.body = result[id]
       # @body = @field.split('.').inject(result){|acc, attr| acc = acc[attr]} if @field.present?
       self
     else
@@ -47,43 +37,41 @@ class Vayacondios::ConfigDocument < Vayacondios::Document
     end
   end
 
-  def update(document)
-    raise Vayacondios::Error::BadRequest.new if !document.is_a?(Hash)
-
-    # Merge ourselves
-    document = body.deep_merge(document) if body
-
-    fields = document
-    # fields = {@field => document} if @field.present?
-
-    @body = document
-    @collection.update({:_id => @topic}, {'$set' => fields}, {upsert: true})
-
-    self
+  def create document={}
+    raise Goliath::Validation::Error.new(400, "Must provide a topic to update") if topic.blank?
+    raise Goliath::Validation::Error.new(400, "Must provide an ID to update") if id.blank?
+    self.body = {} unless self.body
+    self.body[id] = document
+    mongo_query(collection, :update, {:_id => topic}, {'$set' => {id => document}}, {upsert: true})
+    self.body[id]
   end
 
-  def destroy(document)
-    super
+  def update(document={})
+    raise Goliath::Validation::Error.new(400, "Must provide a topic to patch") if topic.blank?
+    raise Goliath::Validation::Error.new(400, "Must provide an ID to patch") if id.blank?
+    self.body = {} unless self.body
+    self.body[id] ||= {}
+    self.body[id].deep_merge!(document)
+    update = Hash[document.map { |key, value| [[id, key].map(&:to_s).join('.'), value] }]
+    mongo_query(collection, :update, {:_id => topic}, {'$set' => update} , {upsert: true})
+    self.body[id]
+  end
+
+  def destroy
+    raise Goliath::Validation::Error.new(400, "Must provide a topic to destroy") if topic.blank?
+    raise Goliath::Validation::Error.new(400, "Must provide an ID to destroy") if id.blank?
+    mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
+    {id: self.id}
+  end
+
+  def topic= t
+    @topic = self.class.format_id(t) if t.present?
   end
 
   protected
 
-  def sanitize_options(options)
-    options = options.symbolize_keys
-
-    topic = options[:topic]
-
-    if (topic.is_a?(Hash) && topic["$oid"].present?)
-      topic = BSON::ObjectId(topic["$oid"])
-    elsif topic.is_a?(String)
-      topic = topic.gsub(/\W/,'')
-      if topic.to_s.match(/^[a-f0-9]{24}$/)
-        topic = BSON::ObjectId(topic)
-      end
-    end
-
-    field = options[:field].gsub(/\W/, '') if options[:field].present?
-
-    options.merge(topic: topic, field: field)
+  def collection_name
+    [organization.to_s, 'config'].join('.')
   end
+
 end

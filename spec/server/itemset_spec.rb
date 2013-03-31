@@ -2,16 +2,16 @@ require 'spec_helper'
 
 require 'multi_json'
 
-require File.join(File.dirname(__FILE__), '../../', 'app/http_shim')
+require 'vayacondios/server/api'
 
-describe HttpShim do
+describe Vayacondios::Server do
   include Goliath::TestHelper
 
   let(:err) { Proc.new{ |c| fail "HTTP Request Failed #{c.response}" } }
 
   context 'Basic requirements' do
     it 'requires a topic' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/',
           :body => MultiJson.dump({:contents =>["foo"]}),
@@ -23,7 +23,7 @@ describe HttpShim do
     end
     
     it 'requires an id' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power',
           :body => MultiJson.dump({:contents =>["foo"]}),
@@ -39,7 +39,7 @@ describe HttpShim do
     end
     
     it 'rejects deep IDs' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level/is/invalid',
           :body => MultiJson.dump({:contents =>["foo"]}),
@@ -57,7 +57,7 @@ describe HttpShim do
     
   context 'handles PUT requests' do
     it 'only accepts hashes' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump(['foo', 'bar']),
@@ -70,7 +70,7 @@ describe HttpShim do
           db.collection("infochimps.itemset").find_one({:_id => "power"}).should be_nil
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => "foo",
@@ -86,7 +86,7 @@ describe HttpShim do
     end
     
     it "stores the array when the resource doesn't exist" do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
@@ -103,7 +103,7 @@ describe HttpShim do
     end
     
     it "clobbers the previous array when the resource does exist" do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["chimpanzee", "bonobo"]}),
@@ -119,7 +119,7 @@ describe HttpShim do
         db.collection("infochimps.power.itemset").find_one({:_id => "level"})["d"].should eql ["chimpanzee", "bonobo"]
       end
       
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
@@ -139,7 +139,7 @@ describe HttpShim do
   
   context 'can handle GET requests' do
     it 'and return 404 for missing resources' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/itemset/missing/resource'}, err) do |c|
           c.response_header.status.should == 404
         end
@@ -147,14 +147,14 @@ describe HttpShim do
     end
     
     it 'and return an array for valid resources' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
           :head => { :content_type => 'application/json' }
         }, err)
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200 
           MultiJson.load(c.response).should eql({"contents" => ["foo", "bar"]})
@@ -165,7 +165,7 @@ describe HttpShim do
   
   context "will not handle POST requests" do
     it 'fails on POST' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         post_request({
           :path => '/v1/infochimps/itemset/post/unsupported',
           :body => MultiJson.dump({ :totally => :ignored }),
@@ -180,7 +180,7 @@ describe HttpShim do
   
   context "handles PATCH requests" do    
     it 'creates a missing resource' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :head => ({'X-Method' => 'PATCH', :content_type => 'application/json' }),
@@ -198,21 +198,21 @@ describe HttpShim do
     end
     
     it 'merges with PATCH' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/merge/test',
           :body => MultiJson.dump({:contents =>["foo"]}),
           :head => { :content_type => 'application/json' }
         }, err)
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/merge/test',
           :head => ({'X-Method' => 'PATCH', :content_type => 'application/json' }),
           :body => MultiJson.dump({:contents =>["bar"]})
         }, err)
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/itemset/merge/test'}, err) do |c|
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql({"contents" => ["foo", "bar"]})
@@ -223,7 +223,7 @@ describe HttpShim do
   
   context "will handle DELETE requests" do
     it 'will not delete a missing resource' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/merge/test',
           :body => MultiJson.dump({:contents =>["bar"]}),
@@ -235,7 +235,7 @@ describe HttpShim do
     end
       
     it "will be ok to delete items that don't exist" do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo"]}),
@@ -244,7 +244,7 @@ describe HttpShim do
           c.response_header.status.should == 200 # TODO Make this 201 Created
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["bar"]}),
@@ -256,7 +256,7 @@ describe HttpShim do
     end
     
     it "will delete items that do exist" do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
@@ -265,7 +265,7 @@ describe HttpShim do
           c.response_header.status.should == 200 # TODO Makes this 201 Created
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["bar"]}),
@@ -274,7 +274,7 @@ describe HttpShim do
           c.response_header.status.should == 200 # TODO Make this 204 No content
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql({"contents" => ["foo"]})
@@ -283,7 +283,7 @@ describe HttpShim do
     end
     
     it "leaves behind an empty array if everything is deleted" do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
@@ -292,7 +292,7 @@ describe HttpShim do
           c.response_header.status.should == 200 # TODO Makes this 201 Created
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         delete_request({
           :path => '/v1/infochimps/itemset/power/level',
           :body => MultiJson.dump({:contents =>["foo", "bar"]}),
@@ -301,7 +301,7 @@ describe HttpShim do
           c.response_header.status.should == 200 # TODO Make this 204 No content
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/itemset/power/level'}, err) do |c|
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql({"contents" => []})

@@ -11,17 +11,11 @@ class Vayacondios
       def extract_method env        
         return unless env['REQUEST_METHOD']
         case env['REQUEST_METHOD'].upcase
-        when 'PUT'    then
-          if env.has_key? 'HTTP_X_METHOD'
-            if env['HTTP_X_METHOD'].upcase == 'PATCH'
-              :patch
-            elsif env['HTTP_X_METHOD'].upcase == 'DELETE'
-              :delete
-            else
-              :update
-            end
-          else
-            :update
+        when 'PUT'
+          case env['HTTP_X_METHOD'].to_s.upcase
+          when 'PATCH'  then :patch
+          when 'DELETE' then :delete
+          else               :update
           end
         when 'GET'    then :show
         when 'POST'   then :create

@@ -1,11 +1,11 @@
 class Vayacondios
   module Rack
-    class Path
+    class Routing
       include Goliath::Rack::AsyncMiddleware
       
       def call(env)
         path_params = parse_path(env[Goliath::Request::REQUEST_PATH])
-        super env.merge(vayacondios_path: path_params)
+        super env.merge(vayacondios_route: path_params)
       end
       
       def parse_path(path)

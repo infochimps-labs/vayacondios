@@ -1,33 +1,42 @@
 # Vayacondios::EventHandler
 #
-# This handler will accept requests to update Event for an organization. All
-# updates will overwrite an existing document.
-
+# This handler will accept Events for an organization via its #update
+# method.
 class Vayacondios
 
-  class EventHandler
+  class EventHandler < DocumentHandler
 
-    def initialize(mongodb)
-      @mongo = mongodb
+    def find options={}
+      super(options)
+      raise Goliath::Validation::Error.new(400, "Cannot find an event without a 'topic'") unless options[:topic]
+      raise Goliath::Validation::Error.new(400, "Cannot find an event without an 'id'") unless options[:id]
+      (EventDocument.find(log, mongo, options) or raise Goliath::Validation::Error.new(404, "No event with ID /#{options[:topic]}/#{options[:id]}")).body
+    end
+    
+    def create(options={}, document={})
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot create an event without a 'topic'") unless options[:topic]
+      raise Goliath::Validation::Error.new(400, "IDs can only contain lowercase letters, numbers, or underscores") if options[:id] && options[:id] =~ /\W/
+      { id: EventDocument.create(log, mongo, options, document).id }
     end
 
-    def update(document, options={})
-      raise Error::BadRequest.new unless options[:topic]
-      raise Error::BadRequest.new if options[:id] && /\W/ =~ options[:id]
-
-      existing_document = EventDocument.find(@mongo, options)
-      if existing_document
-        existing_document.update(document)
-      else
-        existing_document = EventDocument.create(@mongo, document, options)
-      end
-      existing_document.body
+    def update(options={}, document={})
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot update an event without a 'topic'") unless options[:topic]
+      raise Goliath::Validation::Error.new(400, "Cannot update an event without an 'id'")   unless options[:id]
+      raise Goliath::Validation::Error.new(400, "IDs can only contain lowercase letters, numbers, or underscores") if options[:id] =~ /\W/
+      { id: EventDocument.update(log, mongo, options, document).id }
+    end
+    
+    def patch options={}, document={}
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot patch events")
     end
 
-    def self.find(mongodb, options)
-      existing_document = EventDocument.find(mongodb, options)
-      raise Error::NotFound.new unless existing_document
-      existing_document
+    def delete options={}
+      super(options)
+      raise Goliath::Validation::Error.new(400, "Cannot delete events")
     end
+    
   end
 end

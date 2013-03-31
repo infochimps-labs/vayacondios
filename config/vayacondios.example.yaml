@@ -1,4 +1,4 @@
 mongo:
   host:         localhost
   port:         27017
-  database:     vayacondios_dev
+  database:     vayacondios_development

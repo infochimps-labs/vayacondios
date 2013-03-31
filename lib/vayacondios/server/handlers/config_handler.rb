@@ -5,28 +5,43 @@
 
 class Vayacondios
 
-  class ConfigHandler
+  class ConfigHandler < DocumentHandler
 
-    def initialize(mongodb)
-      @mongo = mongodb
+    def find options={}
+      super(options)
+      raise Goliath::Validation::Error.new(400, "Cannot find a config without a 'topic'") unless options[:topic]
+      raise Goliath::Validation::Error.new(400, "Cannot find a config without an 'id'")   unless options[:id]
+      (ConfigDocument.find(log, mongo, options) or raise Goliath::Validation::Error.new(404, "No config for /#{options[:topic]}/#{options[:id]}")).body
     end
 
-    def update(document, options={})
-      raise Vayacondios::Error::BadRequest.new unless options[:topic] && options[:id]
-      raise Vayacondios::Error::BadRequest.new if /\W/ =~ options[:id]
-      
-      existing_document = ConfigDocument.find(@mongo, options)
-      if existing_document
-        existing_document.update(document)
-      else
-        existing_document = ConfigDocument.create(@mongo, document, options)
-      end
+    def create(options={}, document={})
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot create a config without a 'topic'") unless options[:topic] && options[:id]
+      raise Goliath::Validation::Error.new(400, "Cannot create a config without an 'id'")   unless options[:id]
+      raise Goliath::Validation::Error.new(400, "An 'id' cannot contain any whitespace")    if     options[:id] =~ /\W/
+      ConfigDocument.create(log, mongo, options, document)
     end
 
-    def self.find(mongodb, options)
-      existing_document = ConfigDocument.find(mongodb, options)
-      raise Vayacondios::Error::NotFound.new unless existing_document
-      existing_document
+    def update(options={}, document={})
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot update a config without a 'topic'") unless options[:topic] && options[:id]
+      raise Goliath::Validation::Error.new(400, "Cannot update a config without an 'id'")   unless options[:id]
+      raise Goliath::Validation::Error.new(400, "An 'id' cannot contain any whitespace")    if     options[:id] =~ /\W/
+      ConfigDocument.update(log, mongo, options, document)
     end
+
+    def patch options={}, document={}
+      super(options, document)
+      raise Goliath::Validation::Error.new(400, "Cannot patch a config without a 'topic'") unless options[:topic] && options[:id]
+      raise Goliath::Validation::Error.new(400, "Cannot patch a config without an 'id'")   unless options[:id]
+      raise Goliath::Validation::Error.new(400, "An 'id' cannot contain any whitespace")    if     options[:id] =~ /\W/
+      ConfigDocument.patch(log, mongo, options, document)
+    end
+
+    def delete options={}
+      super(options)
+      ConfigDocument.destroy(log, mongo, options)
+    end
+    
   end
 end

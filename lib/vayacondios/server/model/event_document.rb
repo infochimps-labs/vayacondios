@@ -1,87 +1,78 @@
-require 'vayacondios/server/model/document'
-
-# The event model
+# Events also have the following properties, assigned automatically at
+# creation if not present:
 #
-# Event documents are key-value pairs, represented in JSON. A document
-# consists of a primary key called the topic (_id in mongodb). It belongs to a
-# collection named "#{organization_name}.#{topic}.events"
+#   * a String `id` used to find and replace events atomically
+#   * a String `timestamp` in the default Ruby time format
 #
-# Note: mongodb is passed in beacuse Goliath makes Thread lookups will not
-# work while Goliath is in a streaming context.
+# They also can contain any other arbitrary key-value data.  When
+# events are replaced, all their data is replaced atomically.
+#
+# @example Event representing a build of your app
+#
+#   EventDocument.new(mongo_database, organization: "my_company", topic: "my_app-builds")
+#   
+# @example Same event but using the git SHA of the code built as the `id` attribute of the event
+#
+#   EventDocument.new(mongo_database, organization: "my_company", topic: "my_app-builds", id: "b14e1705c304a2166da847479492ebe59436b2a1")
+#
+# @example Same event but specified at a different time than "right now"
+#
+#   EventDocument.new(mongo_database, organization: "my_company", topic: "my_app-builds", timestamp: Time.mktime(2011,12,25))
+#
+# @example Including the build status and other information in the event.
+#
+#   EventDocument.new(mongo_database, organization: "my_company", topic: "my_app-builds", status: "Failed", error: "Could not find ...")
+#
+# Events are currently stored in MongoDB:
+#
+#   * the collection will be "#{organization}.#{topic}.events"
+#   * the `id` will be stored as the `_id` of the corresponding MongoDB document
+#   * the `timestamp` will be stored as the `t` of the corresponding MongoDB document
+#   * all other values will be stored under the key `d` within the corresponding MongoDB document
+#   
+class Vayacondios::EventDocument < Vayacondios::MongoDocument
 
-class Vayacondios::EventDocument < Vayacondios::Document
-  attr_reader :organization, :topic, :body
-
-  def initialize(mongodb, options = {})
-    super options
-    @mongo = mongodb
-    options = sanitize_options(options)
-
-    @body   = nil
-    @id     = format_id(options[:id])
-    @mongo  = mongodb
-
-    collection_name = [organization, topic, 'events'].join('.')
-    @collection = @mongo.collection(collection_name)
+  def initialize(log, mongodb, options = {})
+    super(log, mongodb, options)
+    self.collection = self.mongo.collection(collection_name)
   end
-
-  def self.create(mongodb, document, options={})
-    self.new(mongodb, options).update(document)
-  end
-
-  def self.find(mongodb, options={})
-    self.new(mongodb, options).find
-  end
-
+  
   def find
-    result = @collection.find_one({_id: @id})
+    raise Golaith::Validation::Error.new(400, "Cannot find an event without an ID") if id.blank?
+    result = mongo_query(collection, :find_one, {_id: id})
     if result.present?
-      result.delete("_id")
-      result['_timestamp'] = result.delete("t")
-      result.merge! result.delete("d") if result["d"].present?
-      @body = result
+      self.id        = result.delete("_id")
+      self.timestamp = result['_timestamp'] = result.delete("t")
+      result.merge! result.delete("d")
+      self.body      = result
       self
     else
       nil
     end
   end
 
-  def update(document)
+  def create(document)
     document = to_mongo(document)
 
     @body = document[:d]
-    if @id
-      @collection.update({:_id => @id}, document, {upsert: true})
+    if id
+      mongo_query(collection, :update, {:_id => id}, document, {upsert: true})
     else
-      @collection.insert(document)
+      response = mongo_query(collection, :insert, document)
+      self.id = response
     end
 
     self
   end
-
-  def destroy(document)
-    super
+  
+  def topic= t
+    @topic = t.to_s.gsub(/\W+/, '_')
   end
 
   protected
 
-  def sanitize_options(options)
-    options = options.symbolize_keys
-
-    topic = options[:topic].gsub(/\W+/, '_')
-    id = format_id options[:id]
-
-    options.merge!(topic: topic, id: id)
-  end
-
-  def format_id(id)
-    if (id.is_a?(Hash) && id["$oid"].present?)
-      id = BSON::ObjectId(id["$oid"])
-    else
-      id = id.to_s.gsub(/\W/,'')
-      id = BSON::ObjectId(id) if id.match(/^[a-f0-9]{24}$/)
-    end
-    id
+  def collection_name
+    [organization, topic, 'events'].join('.')
   end
 
   def to_mongo(document)

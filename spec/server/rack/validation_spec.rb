@@ -1,7 +1,6 @@
 require 'spec_helper'
-require 'vayacondios/server/rack/path_validation'
 
-describe Vayacondios::Rack::PathValidation do
+describe Vayacondios::Rack::Validation do
   let(:env){ { 'CONTENT_TYPE' => 'application/x-www-form-urlencoded; charset=utf-8' } }               
   let(:app){ mock('app').as_null_object }
   subject  { described_class.new(app)   }     

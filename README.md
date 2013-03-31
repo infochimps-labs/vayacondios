@@ -46,7 +46,6 @@ A full Vaya con Dios path is broken down into specific segments.
 
 Events are the primary piece of information stored. An event is anything that happened that you'd want to write down.
 
-
 For example a `POST` to `http://vayacondios.whatever.com/v1/code/commit` with the
 ```
 {

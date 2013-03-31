@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'vayacondios-client'
+require 'vayacondios/client/cli'
+Vayacondios::CLI.run

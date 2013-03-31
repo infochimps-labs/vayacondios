@@ -2,16 +2,16 @@ require 'spec_helper'
 
 require 'multi_json'
 
-require File.join(File.dirname(__FILE__), '../../', 'app/http_shim')
+require 'vayacondios/server/api'
 
-describe HttpShim do
+describe Vayacondios::Server do
   include Goliath::TestHelper
 
   let(:err) { Proc.new{ |c| fail "HTTP Request Failed #{c.response}" } }
   
   context 'Event tracking' do
     it 'requires a topic' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/',
           :body => MultiJson.dump({:level=>"awesome"}),
@@ -23,7 +23,7 @@ describe HttpShim do
     end
     
     it 'does not require an id' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/power',
           :body => MultiJson.dump({:level=>"awesome"}),
@@ -35,7 +35,7 @@ describe HttpShim do
     end
 
     it 'will accept an id' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
           :body => MultiJson.dump({:level=>"awesome"}),
@@ -47,7 +47,7 @@ describe HttpShim do
     end
 
     it 'rejects deep IDs' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level/is/invalid',
           :body => MultiJson.dump({:level=>"awesome"}),
@@ -63,7 +63,7 @@ describe HttpShim do
     end
 
     it 'stores events' do
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
           :body => MultiJson.dump({:level=>"awesome"}),
@@ -83,7 +83,7 @@ describe HttpShim do
 
     it 'retrieves events' do
       current_time = Time.now
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         put_request({
           :path => '/v1/infochimps/event/power/level',
           :body => MultiJson.dump({:level=>"awesome", :_timestamp => current_time}),
@@ -92,7 +92,7 @@ describe HttpShim do
           c.response_header.status.should == 200
         end
       end
-      with_api(HttpShim) do |api|
+      with_api(Vayacondios::Server) do |api|
         get_request({:path => '/v1/infochimps/event/power/level'}, err) do |c|
           c.response_header.status.should == 200
           MultiJson.load(c.response).should eql ({"level" => "awesome", "_timestamp" => current_time.to_s})

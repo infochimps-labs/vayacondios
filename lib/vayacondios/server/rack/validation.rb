@@ -1,14 +1,15 @@
 class Vayacondios
   module Rack   
-    class PathValidation
+    class Validation
       include Goliath::Rack::AsyncMiddleware
       
       def initialize(app, opts = {})
-        @app = app ; @opts = opts
+        @app  = app
+        @opts = opts
       end
       
       def call(env)
-        return [400, {}, MultiJson.dump({ error: "Bad Request. Format path is <host>/v1/<org>/event/<topic>" })] unless valid_paths? env[:vayacondios_path]
+        raise Goliath::Validation::Error.new(400, "All requests must be sent to a path like /v1/ORG/(EVENT|CONFIG)/TOPIC[/ID]") unless valid_paths? env[:vayacondios_route]
         @app.call(env)
       end
       
