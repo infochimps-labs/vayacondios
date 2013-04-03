@@ -83,9 +83,6 @@ class Vayacondios
         @poll_wait_sec = poll_wait_sec
       end
 
-      def setup() end
-      def teardown() end
-
       def run
         setup
         loop do
@@ -103,6 +100,20 @@ class Vayacondios
         end
         teardown
       end
+
+      protected
+
+      def add_items
+        raise NoMethodError.new("class #{self.class.name} must override add_items")
+      end
+
+      def remove_items
+        raise NoMethodError.new("class #{self.class.name} must override remove_items")
+      end
+
+      def setup() end
+      def teardown() end
+
     end
   end
 end
