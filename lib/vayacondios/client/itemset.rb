@@ -33,11 +33,17 @@ class Vayacondios
       private
 
       def execute_request req
-        resp = Net::HTTP.start(@host, @port) do |http|
-          http.request(req)
-        end.body
-        result = MultiJson.decode(resp) unless resp.nil? or resp.empty?
-        (result.respond_to?(:has_key?) and result.has_key? "error") ? nil : result
+        begin
+          resp = Net::HTTP.start(@host, @port) do |http|
+            http.request(req)
+          end.body
+          result = MultiJson.decode(resp) unless resp.nil? or resp.empty?
+          (result.respond_to?(:has_key?) and result.has_key? "error") ? nil : result
+        rescue StandardError => ex
+          Log.warn("problem contacting vayacondios: #{ex.message}")
+          Log.debug(ex.backtrace.join("\n"))
+          nil
+        end
       end
 
       def path organization, topic, id
