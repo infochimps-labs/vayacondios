@@ -56,7 +56,20 @@ class Vayacondios
 
       log.debug("#{method.to_s.upcase} http://#{uri.host}:#{uri.port}#{path}")
       
-      http.send *params
+      handle_response(http.send(*params))
     end
+
+    def handle_response response
+      log.debug("#{response.code} -- #{response.class}")
+      case response
+      when Net::HTTPOK
+        MultiJson.load(response.body)
+      when Net::HTTPNotFound
+      else
+        log.error(response.body)
+      end
+      
+    end
+    
   end
 end

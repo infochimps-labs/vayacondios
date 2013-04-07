@@ -100,19 +100,13 @@ class Vayacondios
       end
     end
 
-    def handle_response response
-      log.debug("#{response.code} -- #{response.class}")
-      case response
-      when Net::HTTPOK
-        if settings.pretty && response.body && (!response.body.empty?)
-          pretty = (MultiJson.dump(MultiJson.load(response.body), pretty: true) rescue response.body)
-          puts pretty
-        else
-          puts response.body
-        end
-      when Net::HTTPNotFound
+    def handle_response doc
+      case
+      when doc && settings.pretty
+        puts MultiJson.dump(doc, pretty: true)
+      when doc
+        puts MultiJson.dump(doc)
       else
-        log.error(response.body)
       end
     end
 
