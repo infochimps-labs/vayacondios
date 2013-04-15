@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'gorillib/logger/log'
 require 'vayacondios-server'
 
 class HttpShim < Goliath::API
@@ -16,6 +17,9 @@ class HttpShim < Goliath::API
   def response(env)
     path_params = env[:vayacondios_path]
     klass = ('vayacondios/' + path_params[:type] + '_handler').camelize.constantize
+
+    Log.info("received request #{env['REQUEST_METHOD']} #{env['REQUEST_URI']}")
+    Log.info("params: #{env['params']}")
 
     begin
       case env[:vayacondios_method]
