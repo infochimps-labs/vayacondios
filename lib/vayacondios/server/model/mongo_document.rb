@@ -24,7 +24,6 @@ class Vayacondios::MongoDocument < Vayacondios::Document
     when (id.is_a?(Hash) && id["$oid"].present?)
       BSON::ObjectId(id["$oid"])
     when !id.to_s.empty?
-      id = id.to_s.gsub(/\W/,'')
       id.match(/^[a-f0-9]{24}$/) ? BSON::ObjectId(id) : id
     else
       id

@@ -5,7 +5,7 @@
 # Configuration documents are currently stored in MongoDB:
 #
 #   * the collection will be "#{organization}.config"
-#   * the `topic` of the config will be used as the `_id` of the corresponding MongoDB document
+#   * the `topic` of the config will be used as the `_topic` of the corresponding MongoDB document
 #   * all other key-value data will be stored within the corresponding MongoDB document
 #
 class Vayacondios::ConfigDocument < Vayacondios::MongoDocument
@@ -25,43 +25,63 @@ class Vayacondios::ConfigDocument < Vayacondios::MongoDocument
 
   def find
     raise Goliath::Validation::Error.new(400, "Cannot find a config without a topic") if topic.blank?
-    raise Goliath::Validation::Error.new(400, "Cannot find a config without an ID") if id.blank?
-    result = mongo_query(collection, :find_one, {_id: topic}, {fields: [id]})
-    if result.present? && result.has_key?(id)
-      result.delete("_id")
-      self.body = result[id]
-      # @body = @field.split('.').inject(result){|acc, attr| acc = acc[attr]} if @field.present?
-      self
+    if id.blank?
+      result = mongo_query(collection, :find_one, {_id: topic})
+      if result.present?
+        result.delete("_id")
+        self.body = result
+      end
     else
-      nil
+      result = mongo_query(collection, :find_one, {_id: topic}, {fields: [id]})
+      if result.present? && result.has_key?(id)
+        result.delete("_id")
+        self.body = result[id]
+      end
     end
+    self if self.body
   end
 
   def create document={}
-    raise Goliath::Validation::Error.new(400, "Must provide a topic to update") if topic.blank?
-    raise Goliath::Validation::Error.new(400, "Must provide an ID to update") if id.blank?
-    self.body = {} unless self.body
-    self.body[id] = document
-    mongo_query(collection, :update, {:_id => topic}, {'$set' => {id => document}}, {upsert: true})
-    self.body[id]
+    raise Goliath::Validation::Error.new(400, "Must provide a topic to create") if topic.blank?
+    if id.blank?
+      result = mongo_query(collection, :find_one, {_id: topic})
+      mongo_query(collection, :update, {:_id => topic}, document.merge(_id: topic), {upsert: true})
+      self.body = document
+    else
+      mongo_query(collection, :update, {:_id => topic}, {'$set' => {id => document, _id => topic}}, {upsert: true})
+      self.body = {} unless self.body
+      self.body[id] = document
+    end
+    self
   end
 
   def update(document={})
-    raise Goliath::Validation::Error.new(400, "Must provide a topic to patch") if topic.blank?
-    raise Goliath::Validation::Error.new(400, "Must provide an ID to patch") if id.blank?
-    self.body = {} unless self.body
-    self.body[id] ||= {}
-    self.body[id].deep_merge!(document)
-    update = Hash[document.map { |key, value| [[id, key].map(&:to_s).join('.'), value] }]
-    mongo_query(collection, :update, {:_id => topic}, {'$set' => update} , {upsert: true})
-    self.body[id]
+    raise Goliath::Validation::Error.new(400, "Must provide a topic to update") if topic.blank?
+    find
+    if id.blank?
+      self.body ||= {}
+      self.body.deep_merge!(document)
+      mongo_query(collection, :update, {_id: topic}, self.body.merge(_id: topic), {upsert: true})
+      self.body
+    else
+      self.body     ||= {}
+      self.body[id] ||= {}
+      self.body[id].deep_merge!(document)
+      update = Hash[document.map { |key, value| [[id, key].map(&:to_s).join('.'), value] }].merge(_id: topic)
+      mongo_query(collection, :update, {_id: topic}, {'$set' => update} , {upsert: true})
+      self.body[id]
+    end
   end
 
   def destroy
     raise Goliath::Validation::Error.new(400, "Must provide a topic to destroy") if topic.blank?
-    raise Goliath::Validation::Error.new(400, "Must provide an ID to destroy") if id.blank?
-    mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
-    {id: self.id}
+    if id.blank?
+      mongo_query(collection, :delete, {:_id => topic})
+      {topic: topic}
+    else
+      mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
+      {topic: topic, id: id}
+    end
   end
 
   def topic= t

@@ -9,13 +9,18 @@ class Vayacondios
       end
       
       def call(env)
-        raise Goliath::Validation::Error.new(400, "All requests must be sent to a path like /v1/ORG/(EVENT|CONFIG)/TOPIC[/ID]") unless valid_paths? env[:vayacondios_route]
+        validate_route(env[:vayacondios_route])
         @app.call(env)
       end
       
-      def valid_paths?(path)
-        # use @opts for validation later
-        path.nil? ? false : true
+      def validate_route(route)
+        raise Goliath::Validation::Error.new(400, "All requests must be sent to a path like /v1/ORG/(event|config)/TOPIC[/ID]") unless route
+        case route[:type]
+        when 'config'
+          # FIXME add validation for configs
+        when 'event'
+          # FIXME add validation for events
+        end
       end
       
     end

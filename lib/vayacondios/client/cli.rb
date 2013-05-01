@@ -1,3 +1,4 @@
+require 'configliere'
 class Vayacondios
 
   class CLI
@@ -172,9 +173,6 @@ class Vayacondios
     def log
       return @log if @log
       require 'logger'
-      @log = Logger.new(log_output).tap do |l|
-        l.level = Logger.const_get(settings.log_level.to_s.upcase)
-      end
     end
     
   end

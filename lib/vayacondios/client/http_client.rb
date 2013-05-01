@@ -1,74 +1,72 @@
+require 'net/http'
+
 class Vayacondios
-  class HttpClient
+  class HttpClient < Client
 
     Error = Class.new(StandardError)
 
-    attr_accessor :log
     attr_accessor :host
     attr_accessor :port
     attr_accessor :organization
 
-    def initialize log, host, port, organization
-      self.log          = log
-      self.host         = host
-      self.port         = port
-      self.organization = organization
+    def initialize options={}
+      super(options)
+      self.host         = (options[:host] || 'localhost').to_s
+      self.port         = (options[:port] || 9000).to_i
+      self.organization = options[:organization].to_s
     end
 
-    def uri
-      return @uri if @uri
-      uri_str  = "http://#{host}:#{port}/v1/#{organization}"
-      @uri ||= URI(uri_str)
-    end
-    
-    def event(topic, id)
-      request(:get, 'event', topic, id)
+    def perform_announce topic, event, id=nil
+      request(:post, 'event', topic, id, event)
     end
 
-    def config(topic, id)
+    def perform_get topic, id
       request(:get, 'config', topic, id)
     end
 
-    def event! topic, document={}, id=nil
-      request(:post, 'event', topic, id, document)
+    def perform_set topic, id, config
+      request(:put, 'config', topic, id, config)
     end
 
-    def config! topic, id, document={}
-      request(:post, 'config', topic, id, document)
+    def perform_set! topic, id, config
+      request(:post, 'config', topic, id, config)
     end
 
-    def set_config topic, id, document={}
-      request(:put, 'config', topic, id, document)
-    end
-
-    def delete_config topic, id
+    def perform_delete topic, id
       request(:delete, 'config', topic, id)
     end
     
-    private
-    
-    def request(method, type, topic, id = nil, document = nil)
-      path    = File.join(uri.path.to_s, type.to_s, topic.to_s, id.to_s)
-      http    = Net::HTTP.new(uri.host, uri.port)
-
-      params  = [method.to_sym, path]
-      params += [MultiJson.dump(document), {'Content-Type' => 'application/json'}] unless document.nil?
-
-      log.debug("#{method.to_s.upcase} http://#{uri.host}:#{uri.port}#{path}")
+    def request(method, *args)
+      document = args.pop if args.last.is_a?(Hash)
       
-      handle_response(http.send(*params))
-    end
+      path    = File.join('/v1', organization, *args.compact.map(&:to_s))
+      params  = [method.to_sym, path]
+      params += [MultiJson.dump(document), {'Content-Type' => 'application/json'}] if document
 
-    def handle_response response
-      log.debug("#{response.code} -- #{response.class}")
+      log.debug("#{method.to_s.upcase} http://#{host}:#{port}#{path}")
+      make_request(params)
+    end
+    
+    protected
+
+    def make_request params
+      begin
+        handle_response(Net::HTTP.new(host, port).send(*params), options)
+      rescue Errno::ECONNREFUSED => e
+        log.error("Could not connect to http://#{host}:#{port}")
+      end
+    end
+      
+    def handle_response response, options={}
       case response
       when Net::HTTPOK
         MultiJson.load(response.body)
       when Net::HTTPNotFound
+        log.debug("#{response.code} -- #{response.class}")
       else
-        log.error(response.body)
+        log.debug("#{response.code} -- #{response.class}")
+        log.error MultiJson.load(response.body)["error"]
       end
-      
     end
     
   end
