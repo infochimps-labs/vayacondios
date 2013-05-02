@@ -6,7 +6,8 @@ import java.util.Collection;
  * An organization is the last commmon class in the Vayacondios
  * hierarchy between the itemset and stash interface.
  */
-public class Organization extends VayacondiosClient {
+public class Organization<LinkType extends LinkToVCD>
+  extends VayacondiosClient {
   public Organization(PathBuilder delegate) { super(delegate); }
 
   public Organization(VayacondiosClient server, String organization) {
@@ -22,8 +23,18 @@ public class Organization extends VayacondiosClient {
   /**
    * @return new ItemSets path builder for this organization
    */
-  public ItemSets itemsets() {
-    return new ItemSets(this, StandardVCDLink.class);
+  public ItemSets<LinkType> itemsets() {
+    return itemsets(new StandardVCDLink());
+  }
+
+
+  /**
+   * @param linkType link type to use to 
+   * 
+   * @return new ItemSets path builder for this organization
+   */
+  public ItemSets<LinkType> itemsets(LinkToVCD linkToVCD) {
+    return new ItemSets(this, linkToVCD);
   }
 
   //----------------------------------------------------------------------------

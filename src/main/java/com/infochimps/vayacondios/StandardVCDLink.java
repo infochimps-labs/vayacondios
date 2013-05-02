@@ -34,8 +34,6 @@ import static com.infochimps.util.CurrentClass.getLogger;
 import static com.infochimps.vayacondios.ItemSets.Item;
 
 public class StandardVCDLink extends LinkToVCD {
-  public StandardVCDLink(ItemSets parent) { super(parent); }
-
   public List<Item> fetch(String topic, String id) throws IOException {
     BufferedReader reader = null;
     try {

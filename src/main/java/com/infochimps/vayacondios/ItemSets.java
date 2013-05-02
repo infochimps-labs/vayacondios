@@ -43,27 +43,10 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
    * @param linkClass for testing purposes. can be used to shim up a
    * dummy vayacondios session.
    */
-  public ItemSets(Organization org, Class<LinkType> linkClass) {
+  public ItemSets(Organization org, LinkType linkToVCD) {
     super(org);
     _org = org;
-    try {
-      _vcdLink = linkClass.getConstructor(ItemSets.class).newInstance(this);
-    } catch (IllegalAccessException ex) {
-      LOG.error("trouble instantiating link to Vayacondios.", ex);
-      System.exit(1);
-    } catch (InvocationTargetException ex) {
-      LOG.error("trouble instantiating link to Vayacondios.", ex);
-      System.exit(1);
-    } catch (InstantiationException ex) {
-      LOG.error("trouble instantiating link to Vayacondios.", ex);
-      System.exit(1);
-    } catch (NoSuchMethodException ex) {
-      LOG.error("trouble instantiating link to Vayacondios.", ex);
-      System.exit(1);
-    } catch (SecurityException ex) {
-      LOG.error("trouble instantiating link to Vayacondios.", ex);
-      System.exit(1);
-    }
+    (_vcdLink = linkToVCD).setParent(this);
   }
 
   //----------------------------------------------------------------------------
