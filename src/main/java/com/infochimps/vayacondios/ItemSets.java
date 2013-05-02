@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +36,34 @@ import org.slf4j.Logger;
  * This is the first level of the Vayacondios path-building hierarchy
  * that is capable of directly manipulating itemsets.
  */
-public class ItemSets extends Organization {
+public class ItemSets<LinkType extends LinkToVCD> extends Organization {
   public ItemSets(PathBuilder delegate) { super(delegate); }
 
-  public ItemSets(Organization org) {
+  /**
+   * @param linkClass for testing purposes. can be used to shim up a
+   * dummy vayacondios session.
+   */
+  public ItemSets(Organization org, Class<LinkType> linkClass) {
     super(org);
     _org = org;
+    try {
+      _vcdLink = linkClass.getConstructor(ItemSets.class).newInstance(this);
+    } catch (IllegalAccessException ex) {
+      LOG.error("trouble instantiating link to Vayacondios.", ex);
+      System.exit(1);
+    } catch (InvocationTargetException ex) {
+      LOG.error("trouble instantiating link to Vayacondios.", ex);
+      System.exit(1);
+    } catch (InstantiationException ex) {
+      LOG.error("trouble instantiating link to Vayacondios.", ex);
+      System.exit(1);
+    } catch (NoSuchMethodException ex) {
+      LOG.error("trouble instantiating link to Vayacondios.", ex);
+      System.exit(1);
+    } catch (SecurityException ex) {
+      LOG.error("trouble instantiating link to Vayacondios.", ex);
+      System.exit(1);
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -69,44 +92,7 @@ public class ItemSets extends Organization {
    * @return a collection of items
    */
   public List<Item> fetch(String topic, String id) throws IOException {
-    BufferedReader reader = null;
-    try {
-      reader = openUrl(urlString(PATH_COMPONENT, topic, id));
-    } catch (FileNotFoundException ex) {
-      // In the case of a 404, return an empty set.
-      return new ArrayList();
-    }
-    String line = reader.readLine();
-    JsonElement response;
-    JsonElement itemSet;
-
-    ArrayList<Item> result = new ArrayList<Item>();
-
-    // assume Vayacondios response comes in a single line
-    if (line != null &&
-	(response = PARSER.parse(line)).isJsonObject() &&
-	(itemSet = (response.getAsJsonObject().get("contents"))).isJsonArray()) {
-      for (JsonElement elem : itemSet.getAsJsonArray()) {
-	if (!elem.isJsonPrimitive()) {
-	  LOG.warn("ignoring non-primitive in itemset: " + elem);
-	  continue;
-	}
-
-	JsonPrimitive item = elem.getAsJsonPrimitive();
-	if      (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
-	else if (item.isNumber())  result.add(new Item(item.getAsNumber()));
-	else if (item.isString())  result.add(new Item(item.getAsString()));
-
-	else LOG.warn("ignoring unrecognized type in itemset: " + item);
-      }
-    }
-    
-    if ((line = reader.readLine()) != null)
-      LOG.warn("expected eof but saw " + line);
-
-    reader.close();
-
-    return result;
+    return _vcdLink.fetch(topic, id);
   }
 
   /**
@@ -173,72 +159,13 @@ public class ItemSets extends Organization {
 			String topic,
 			String id,
 			List<Item> items) throws IOException {
-
-    // serialize the items
-    HashMap content = new HashMap();
-    content.put("contents", items);
-    String body = GSON.toJson(content);
-    // connect to our standard path
-    URL url = new URL(urlString(PATH_COMPONENT, topic, id));
-    HttpURLConnection connection = (HttpURLConnection)
-      ((Boolean.valueOf(System.getProperty("ics.http.use_charles"))) ? 
-       url.openConnection(DebugUtil.useCharles()) : url.openConnection());
-
-    // configure connection
-    connection.setDoOutput(true);
-
-    // NOTE: Uncommenting this (and not calling
-    // connection.getInputStream()) causes Java to hang without
-    // sending its payload.
-
-    // connection.setDoInput(false);
-
-    if (method.equals("DELETE")) {
-      connection.setRequestMethod("PUT");
-      connection.setRequestProperty("X-Method", "DELETE");
-    } else if (method.equals("PATCH")) {
-      connection.setRequestMethod("PUT");
-      connection.setRequestProperty("X-Method", "PATCH");
-    } else connection.setRequestMethod(method);
-    connection.setRequestProperty("Content-Type", "application/json"); 
-    connection.setRequestProperty("Accept", "*/*");
-    connection.setRequestProperty("Content-Length",
-				  Integer.toString(body.getBytes().length));
-    connection.setUseCaches(false);
-
-    LOG.debug("sending: " + body);
-    LOG.debug("via " +
-	      connection.getRequestMethod() +
-	      " to " +
-	      urlString(PATH_COMPONENT, topic, id));
-
-    // connect and write
-    OutputStream os = connection.getOutputStream();
-    os.write(body.getBytes("UTF-8"));
-    os.flush();
-    os.close();
-
-    // ignore reponse
-    InputStream is = connection.getInputStream();
-
-    LOG.trace("ignoring response from Vayacondios.");
-    byte buf[] = new byte[256];
-    while (is.read(buf) != -1);
-    LOG.trace("response ignored.");
-    is.close();
-
-    // fin.
-    connection.disconnect();
+    _vcdLink.mutate(method, topic, id, items);
   }
 
+  private LinkType _vcdLink;
   private Organization _org;
 
-  private static final JsonParser PARSER	= new JsonParser();
   private static final Logger LOG		= getLogger();
-  private static final String PATH_COMPONENT    = "itemset";
-  private static final Gson GSON                = new GsonBuilder().
-    registerTypeAdapter(Item.class, new Item.Serializer()).
-    create();
 
   //============================================================================
   // Topic

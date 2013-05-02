@@ -68,16 +68,6 @@ public class VayacondiosClient extends PathBuilder {
   protected String getServerName() { return _serverName; }
 
   //----------------------------------------------------------------------------
-  // private methods
-  //----------------------------------------------------------------------------
-
-  protected BufferedReader openUrl(String urlString) throws IOException {
-    HashMap headers = new HashMap();
-    headers.put("Accept", "*/*");
-    return HttpHelper.open(LOG, urlString, headers, Charset.forName("UTF-8"));
-  }
-  
-  //----------------------------------------------------------------------------
   // fields
   //----------------------------------------------------------------------------
 

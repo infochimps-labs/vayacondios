@@ -22,7 +22,9 @@ public class Organization extends VayacondiosClient {
   /**
    * @return new ItemSets path builder for this organization
    */
-  public ItemSets itemsets() { return new ItemSets(this); }
+  public ItemSets itemsets() {
+    return new ItemSets(this, StandardVCDLink.class);
+  }
 
   //----------------------------------------------------------------------------
   // API HTTP path components
