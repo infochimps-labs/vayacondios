@@ -33,28 +33,28 @@ public class HttpHelper {
   }
 
   public static BufferedReader open(Logger log,
-				    String urlString,
-				    Charset inputCharset) throws IOException {
+                                    String urlString,
+                                    Charset inputCharset) throws IOException {
     return getReader(openStream(log, urlString), inputCharset);
   }
 
   public static BufferedReader open(Logger log,
-				    String urlString,
-				    HashMap<String,String> extraHeaders,
-				    Charset inputCharset) throws IOException {
+                                    String urlString,
+                                    HashMap<String,String> extraHeaders,
+                                    Charset inputCharset) throws IOException {
     return getReader(openStream(log, urlString, extraHeaders), inputCharset);
 
   }
 
   public static InputStream openStream(Logger log,
-				       String urlString) throws IOException {
+                                       String urlString) throws IOException {
     HttpURLConnection con = getConnection(urlString, log);
     return getStream(con, log);
   }
 
   public static InputStream openStream(Logger log,
-				       String urlString,
-				       HashMap<String,String> extraHeaders) throws IOException {
+                                       String urlString,
+                                       HashMap<String,String> extraHeaders) throws IOException {
     HttpURLConnection con = getConnection(urlString, log);
     for (Entry<String,String> header : extraHeaders.entrySet())
       con.setRequestProperty(header.getKey(), header.getValue());
@@ -70,8 +70,8 @@ public class HttpHelper {
     }
 
     HttpURLConnection con = (HttpURLConnection)(USE_CHARLES ?
-						url.openConnection(DebugUtil.useCharles()) :
-						url.openConnection());
+                                                url.openConnection(DebugUtil.useCharles()) :
+                                                url.openConnection());
 
     String userInfo = url.getUserInfo();
     if (userInfo != null) {
@@ -83,7 +83,7 @@ public class HttpHelper {
   }
 
   private static InputStream getStream(HttpURLConnection con,
-				       Logger log) throws IOException {
+                                       Logger log) throws IOException {
     InputStream in = null;
 
     try { in = con.getInputStream(); }
@@ -95,12 +95,12 @@ public class HttpHelper {
 
       InputStream errorStream = con.getErrorStream();
       if (errorStream != null) {
-	BufferedReader r = new BufferedReader(new InputStreamReader(errorStream));
-	try { for (String line; (line = r.readLine()) != null; log.warn(line)); }
-	catch (IOException nested_exc) {
-	  log.error("Got an exception in the exception handler: {}", nested_exc);
-	  throw e;
-	}
+        BufferedReader r = new BufferedReader(new InputStreamReader(errorStream));
+        try { for (String line; (line = r.readLine()) != null; log.warn(line)); }
+        catch (IOException nested_exc) {
+          log.error("Got an exception in the exception handler: {}", nested_exc);
+          throw e;
+        }
       }
       throw e;
     }

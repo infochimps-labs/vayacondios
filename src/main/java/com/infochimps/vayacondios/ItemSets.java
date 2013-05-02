@@ -90,8 +90,8 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
    * @param items items whose existence should be ensured in the set.
    */
   public void create(String topic,
-		     String id,
-		     List<Item> items) throws IOException {
+                     String id,
+                     List<Item> items) throws IOException {
     mutate("PUT", topic, id, items);
   }
 
@@ -106,8 +106,8 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
    * @param items items whose absence should be ensured in the set.
    */
   public void remove(String topic,
-		     String id,
-		     List<Item> items) throws IOException {
+                     String id,
+                     List<Item> items) throws IOException {
     mutate("DELETE", topic, id, items);
   }
 
@@ -123,8 +123,8 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
    * @param items items whose existence should be ensured in the set.
    */
   public void update(String topic,
-		     String id,
-		     List<Item> items) throws IOException {
+                     String id,
+                     List<Item> items) throws IOException {
     mutate("PATCH", topic, id, items);
   }
 
@@ -139,16 +139,16 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
   //----------------------------------------------------------------------------
 
   protected void mutate(String method,
-			String topic,
-			String id,
-			List<Item> items) throws IOException {
+                        String topic,
+                        String id,
+                        List<Item> items) throws IOException {
     _vcdLink.mutate(method, topic, id, items);
   }
 
   private LinkType _vcdLink;
   private Organization _org;
 
-  private static final Logger LOG		= getLogger();
+  private static final Logger LOG               = getLogger();
 
   //============================================================================
   // Topic
@@ -303,10 +303,10 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
   public static class Item {
     static class Serializer implements JsonSerializer {
       public JsonElement serialize(Object item,
-				   Type typeOfId,
-				   JsonSerializationContext context) {
-	return GSON.toJsonTree(Item.class.isAssignableFrom(item.getClass()) ? 
-			       ((Item)item).getObject() : item);
+                                   Type typeOfId,
+                                   JsonSerializationContext context) {
+        return GSON.toJsonTree(Item.class.isAssignableFrom(item.getClass()) ? 
+                               ((Item)item).getObject() : item);
       }
       private static final Gson GSON = new Gson();
       private static final Logger LOG = getLogger();
@@ -329,19 +329,19 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
 
     public Boolean getAsBoolean() {
       if (_type != TYPE.BOOLEAN)
-	throw new ClassCastException("item is not a boolean");
+        throw new ClassCastException("item is not a boolean");
       return (Boolean)_item;
     }
 
     public Number getAsNumber() {
       if (_type != TYPE.NUMBER)
-	throw new ClassCastException("item is not a number");
+        throw new ClassCastException("item is not a number");
       return (Number)_item;
     }
 
     public String getAsString() {
       if (_type != TYPE.STRING)
-	throw new ClassCastException("item is not a string");
+        throw new ClassCastException("item is not a string");
       return (String)_item;
     }
 
@@ -359,7 +359,7 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
 
     public boolean equals(Object other) {
       return (Item.class.isAssignableFrom(other.getClass())) ? 
-	_item.equals(((Item)other).getObject()) : _item.equals(other);
+        _item.equals(((Item)other).getObject()) : _item.equals(other);
     }
 
     //--------------------------------------------------------------------------

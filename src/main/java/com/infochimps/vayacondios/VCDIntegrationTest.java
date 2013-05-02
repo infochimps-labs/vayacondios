@@ -76,7 +76,7 @@ public class VCDIntegrationTest {
 
   public static void main(String argv[]) {
     System.out.println("*** If Vayacondios is not running on port " + VCD_PORT + ", " +
-		       "this will fail. ***");
+                       "this will fail. ***");
     System.out.println("Running Vayacondios integration test...");
 
     try {

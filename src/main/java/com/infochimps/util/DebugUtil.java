@@ -17,22 +17,22 @@ import java.net.Proxy;
 
 public class DebugUtil {
     public static Proxy useCharles() {
-	trustAllCerts();
-	return new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888));
+        trustAllCerts();
+        return new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888));
     }
 
     public static void trustAllCerts() {
-	try {
-	    SSLContext sc = SSLContext.getInstance("SSL"); 
-	    sc.init(null,
-		    new TrustManager[] { 
-			new X509TrustManager() {     
-			    public X509Certificate[] getAcceptedIssuers() { return null;} 
-			    public void checkClientTrusted(X509Certificate[] certs, String authType) {} 
-			    public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-			} 
-		    }, new SecureRandom()); 
-	    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-	} catch (GeneralSecurityException e) {}
+        try {
+            SSLContext sc = SSLContext.getInstance("SSL"); 
+            sc.init(null,
+                    new TrustManager[] { 
+                        new X509TrustManager() {     
+                            public X509Certificate[] getAcceptedIssuers() { return null;} 
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {} 
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                        } 
+                    }, new SecureRandom()); 
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (GeneralSecurityException e) {}
     }
 }

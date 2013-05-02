@@ -50,20 +50,20 @@ public class StandardVCDLink extends LinkToVCD {
 
     // assume Vayacondios response comes in a single line
     if (line != null &&
-	(response = PARSER.parse(line)).isJsonObject() &&
-	(itemSet = (response.getAsJsonObject().get("contents"))).isJsonArray()) {
+        (response = PARSER.parse(line)).isJsonObject() &&
+        (itemSet = (response.getAsJsonObject().get("contents"))).isJsonArray()) {
       for (JsonElement elem : itemSet.getAsJsonArray()) {
-	if (!elem.isJsonPrimitive()) {
-	  LOG.warn("ignoring non-primitive in itemset: " + elem);
-	  continue;
-	}
+        if (!elem.isJsonPrimitive()) {
+          LOG.warn("ignoring non-primitive in itemset: " + elem);
+          continue;
+        }
 
-	JsonPrimitive item = elem.getAsJsonPrimitive();
-	if      (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
-	else if (item.isNumber())  result.add(new Item(item.getAsNumber()));
-	else if (item.isString())  result.add(new Item(item.getAsString()));
+        JsonPrimitive item = elem.getAsJsonPrimitive();
+        if      (item.isBoolean()) result.add(new Item(item.getAsBoolean()));
+        else if (item.isNumber())  result.add(new Item(item.getAsNumber()));
+        else if (item.isString())  result.add(new Item(item.getAsString()));
 
-	else LOG.warn("ignoring unrecognized type in itemset: " + item);
+        else LOG.warn("ignoring unrecognized type in itemset: " + item);
       }
     }
     
@@ -76,9 +76,9 @@ public class StandardVCDLink extends LinkToVCD {
   }
 
   public void mutate(String method,
-		     String topic,
-		     String id,
-		     List<Item> items) throws IOException {
+                     String topic,
+                     String id,
+                     List<Item> items) throws IOException {
     
     // serialize the items
     HashMap content = new HashMap();
@@ -109,14 +109,14 @@ public class StandardVCDLink extends LinkToVCD {
     connection.setRequestProperty("Content-Type", "application/json"); 
     connection.setRequestProperty("Accept", "*/*");
     connection.setRequestProperty("Content-Length",
-				  Integer.toString(body.getBytes().length));
+                                  Integer.toString(body.getBytes().length));
     connection.setUseCaches(false);
 
     LOG.debug("sending: " + body);
     LOG.debug("via " +
-	      connection.getRequestMethod() +
-	      " to " +
-	      getParent().urlString(PATH_COMPONENT, topic, id));
+              connection.getRequestMethod() +
+              " to " +
+              getParent().urlString(PATH_COMPONENT, topic, id));
 
     // connect and write
     OutputStream os = connection.getOutputStream();
@@ -146,7 +146,7 @@ public class StandardVCDLink extends LinkToVCD {
   private static final Gson GSON                = new GsonBuilder().
     registerTypeAdapter(Item.class, new Item.Serializer()).
     create();
-  private static final JsonParser PARSER	= new JsonParser();
+  private static final JsonParser PARSER        = new JsonParser();
   private static final Logger LOG               = getLogger();
   private static final String PATH_COMPONENT    = "itemset";
 }

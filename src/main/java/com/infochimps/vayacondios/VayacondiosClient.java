@@ -45,9 +45,9 @@ public class VayacondiosClient extends PathBuilder {
   //----------------------------------------------------------------------------
 
   protected String urlString(String organization,
-			     String type,
-			     String topic,
-			     String id) {
+                             String type,
+                             String topic,
+                             String id) {
     return new StringBuilder().
       append("http://").
       append(getServerName()).
