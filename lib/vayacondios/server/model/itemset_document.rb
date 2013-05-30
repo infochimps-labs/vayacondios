@@ -1,4 +1,5 @@
 require 'vayacondios/server/model/document'
+require 'vayacondios/legacy_switch'
 
 # The configuration model
 #
@@ -21,6 +22,8 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
     @body         = nil
     @mongo        = mongodb
 
+    @handler = Vayacondios.legacy_switch
+
     collection_name = [organization.to_s, topic, 'itemset'].join('.')
     @collection = @mongo.collection(collection_name)
   end
@@ -34,7 +37,7 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def body
-    {contents: @body}
+    @handler.wrap_contents(@body)
   end
 
   def find
@@ -50,9 +53,9 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def update(document)
-    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
+    raise Vayacondios::Error::BadRequest.new unless @handler.proper_request(document)
 
-    @body = document['contents']
+    @body = extract_contents(document)
 
 
     @collection.update({:_id => @id}, {:_id => @id, 'd' => @body }, {upsert: true})
@@ -61,19 +64,19 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def patch(document)
-    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
+    raise Vayacondios::Error::BadRequest.new unless @handler.proper_request(document)
 
     # Merge ourselves
     if @body
-      @body = @body + document['contents']
+      @body = @body + extract_contents(document)
     else
-      @body = document['contents']
+      @body = extract_contents(document)
     end
 
     @collection.update({:_id => @id}, {
       '$addToSet' => {
         'd' => {
-          '$each'=> document['contents']
+          '$each'=> extract_contents(document)
         }
       }
     }, {upsert: true})
@@ -82,13 +85,13 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   def destroy(document)
-    raise Vayacondios::Error::BadRequest.new unless document.is_a?(Hash)
+    raise Vayacondios::Error::BadRequest.new unless @handler.proper_request(document)
 
-    @body -= document['contents']
+    @body -= extract_contents(document)
     
     @collection.update({:_id => @id}, {
       '$pullAll' => {
-        'd' => document['contents']
+        'd' => extract_contents(document)
       }
     })
     
@@ -96,6 +99,11 @@ class Vayacondios::ItemsetDocument < Vayacondios::Document
   end
 
   protected
+
+  def extract_contents(document)
+    puts "doc = #{document}. contents = #{result = @handler.extract_contents(document)}"
+    result
+  end
 
   def sanitize_options(options)
     options = options.symbolize_keys

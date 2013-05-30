@@ -2,3 +2,6 @@ mongo:
   host:         localhost
   port:         27017
   database:     vayacondios_dev
+
+vayacondios:
+  legacy: false
