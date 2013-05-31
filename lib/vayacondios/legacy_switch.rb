@@ -5,13 +5,17 @@ class Vayacondios
   class StandardContentsHandler
     def wrap_contents(contents) {contents: contents} end
     def extract_contents(document) document['contents'] end
-    def proper_request(document) document.is_a? Hash end
+    def proper_request(document)
+      document.is_a? Hash and document.fetch('_json', {}).is_a? Hash
+    end
   end
-  
+
   class LegacyContentsHandler
     def wrap_contents(contents) contents end
-    def extract_contents(document) document end
-    def proper_request(document) document.is_a? Array end
+    def extract_contents(document) document.fetch('_json', {}) end
+    def proper_request(document)
+      document.is_a? Array or document.fetch('_json', {}).is_a? Array
+    end
   end
 
   def self.legacy_switch
