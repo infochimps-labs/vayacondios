@@ -2,7 +2,7 @@ require 'gorillib/logger/log'
 require 'net/http'
 require 'multi_json'
 require_relative 'config'
-require_relative '../legacy_switch'
+require_relative 'legacy_switch'
 
 class Vayacondios
   class Client

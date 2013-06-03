@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../../lib/vayacondios/legacy_switch'
+require_relative '../../lib/vayacondios/server/legacy_switch'
 
 require 'multi_json'
 

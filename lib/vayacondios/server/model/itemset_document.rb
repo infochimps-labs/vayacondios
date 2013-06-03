@@ -1,5 +1,5 @@
 require 'vayacondios/server/model/document'
-require 'vayacondios/legacy_switch'
+require 'vayacondios/server/legacy_switch'
 
 # The configuration model
 #
