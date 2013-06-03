@@ -34,6 +34,7 @@ class Vayacondios
   end
 
   def self.force_legacy_mode on
+    Log.info("forcing #{on ? 'legacy' : 'standard'} mode")
     @@legacy_switch = get_legacy_switch on
   end
 

@@ -1,7 +1,7 @@
 package com.infochimps.vayacondios;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import java.net.URL;
 
@@ -50,8 +51,7 @@ public class StandardVCDLink extends LinkToVCD {
 
     // assume Vayacondios response comes in a single line
     if (line != null &&
-        (response = PARSER.parse(line)).isJsonObject() &&
-        (itemSet = (response.getAsJsonObject().get("contents"))).isJsonArray()) {
+        (itemSet = VCD_HANDLER.extractContents(PARSER.parse(line))) != null) {
       for (JsonElement elem : itemSet.getAsJsonArray()) {
         if (!elem.isJsonPrimitive()) {
           LOG.warn("ignoring non-primitive in itemset: " + elem);
@@ -81,9 +81,7 @@ public class StandardVCDLink extends LinkToVCD {
                      List<Item> items) throws IOException {
     
     // serialize the items
-    HashMap content = new HashMap();
-    content.put("contents", items);
-    String body = GSON.toJson(content);
+    String body = VCD_HANDLER.wrapContents(items);
     // connect to our standard path
     URL url = new URL(getParent().urlString(PATH_COMPONENT, topic, id));
     HttpURLConnection connection = (HttpURLConnection)
@@ -137,6 +135,17 @@ public class StandardVCDLink extends LinkToVCD {
     connection.disconnect();
   }
 
+  //----------------------------------------------------------------------------
+
+  public static void forceLegacy(boolean vcdLegacy) {
+    LOG.info("forcing vayacondios {} mode", vcdLegacy ? "legacy" : "standard");
+
+    VCD_HANDLER = vcdLegacy ?
+      new LegacyContentsHandler() : new StandardContentsHandler();
+  }
+
+  //----------------------------------------------------------------------------
+
   private BufferedReader openUrl(String urlString) throws IOException {
     HashMap headers = new HashMap();
     headers.put("Accept", "*/*");
@@ -149,4 +158,61 @@ public class StandardVCDLink extends LinkToVCD {
   private static final JsonParser PARSER        = new JsonParser();
   private static final Logger LOG               = getLogger();
   private static final String PATH_COMPONENT    = "itemset";
+
+  private static LegacySwitch VCD_HANDLER = new StandardContentsHandler();
+
+  //----------------------------------------------------------------------------
+
+  private static interface LegacySwitch {
+    String wrapContents(List<Item> items);
+    JsonArray extractContents(JsonElement response);
+  } 
+
+  private static class LegacyContentsHandler implements LegacySwitch {
+    @Override
+    public String wrapContents(List<Item> items) {
+      String json = GSON.toJson(items);
+      LOG.trace("results of wrapping with legacy handler: {}", json);
+      return json;
+    }
+    @Override
+    public JsonArray extractContents(JsonElement response) {
+      if (response.isJsonArray()) {
+        return response.getAsJsonArray();
+      } else { return null; }
+    }
+  }
+
+  private static class StandardContentsHandler implements LegacySwitch {
+    @Override
+    public String wrapContents(final List<Item> items) {
+      // not at all sure why GSON is returning null given a
+      // Map<String,List<Item>> all of the sudden, but it seems to
+      // work on a Map<String,List<String>>, so here we go.
+      Map<String,List<String>> contents =
+        new HashMap<String,List<String>>();
+      List<String> strItems = new ArrayList<String>();
+      for (Item item : items) {
+        strItems.add(item.getObject().toString());
+      }
+      contents.put("contents", strItems);
+      LOG.trace("contents: {}", contents);
+      String json = GSON.toJson(contents);
+      LOG.trace("results of wrapping with standard handler: {}", json);
+      return json;
+    }
+    @Override
+    public JsonArray extractContents(JsonElement response) {
+      JsonElement itemSet;
+      
+      if (response.isJsonObject()) {
+        if ((itemSet = response.getAsJsonObject().get("contents"))
+            .isJsonArray()) {
+          return itemSet.getAsJsonArray();
+        }
+      }
+
+      return null;
+    }
+  }
 }

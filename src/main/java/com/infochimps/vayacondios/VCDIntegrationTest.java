@@ -1,6 +1,7 @@
 package com.infochimps.vayacondios;
 
 import com.infochimps.vayacondios.VayacondiosClient;
+import com.infochimps.vayacondios.StandardVCDLink;
 
 import static com.infochimps.util.CurrentClass.getLogger;
 
@@ -19,6 +20,10 @@ import org.slf4j.Logger;
 public class VCDIntegrationTest {
   private static final int VCD_PORT = 8000;
   private static final Logger LOG = getLogger();
+
+  public static void setUp() {
+    StandardVCDLink.forceLegacy(false);
+  }
 
   private static ItemSets itemSets() {
     return new VayacondiosClient("localhost", VCD_PORT).
@@ -78,6 +83,8 @@ public class VCDIntegrationTest {
     System.out.println("*** If Vayacondios is not running on port " + VCD_PORT + ", " +
                        "this will fail. ***");
     System.out.println("Running Vayacondios integration test...");
+
+    setUp();
 
     try {
       create("foo", "baz", "bar", "bing");

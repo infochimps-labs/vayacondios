@@ -62,6 +62,8 @@
 	  <arguments>
 	    <argument>-cp</argument>
 	    <classpath/>
+	    <argument>-Dlog4j.debug</argument>
+	    <argument>-Dlog4j.configuration=file://${project.basedir}/config/log4j.properties</argument>
 	    <argument>-jar</argument>
 	    <argument>target/${project.artifactId}-${project.version}.jar</argument>
 	  </arguments>
@@ -112,13 +114,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.2</version>
+      <version>1.7.5</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>1.7.2</version>
-      <scope>test</scope>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.5</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

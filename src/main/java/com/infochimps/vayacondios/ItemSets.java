@@ -301,7 +301,7 @@ public class ItemSets<LinkType extends LinkToVCD> extends Organization {
    * A Vayacondios item can be a boolean, a number, or a string.
    */
   public static class Item {
-    static class Serializer implements JsonSerializer {
+    public static class Serializer implements JsonSerializer {
       public JsonElement serialize(Object item,
                                    Type typeOfId,
                                    JsonSerializationContext context) {
