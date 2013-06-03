@@ -1,6 +1,8 @@
 require 'gorillib/logger/log'
 require 'net/http'
 require 'multi_json'
+require_relative 'config'
+require_relative '../legacy_switch'
 
 class Vayacondios
   class Client
@@ -15,7 +17,7 @@ class Vayacondios
 
       def fetch organization=nil, topic=nil, id=nil
         resp = execute_request(_req(:fetch, nil, organization, topic, id)) and
-          resp["contents"]
+          Vayacondios.legacy_switch.extract_response(resp)
       end
 
       def update ary, organization=nil, topic=nil, id=nil
@@ -70,7 +72,10 @@ class Vayacondios
         when :remove then Net::HTTP::Delete
         else         raise ArgumentError.new("invalid type: #{type}")
         end.new(the_path, headers).tap do |req|
-          req.body = MultiJson.encode(contents: ary) unless type == :fetch
+          unless type == :fetch
+            req.body =
+              MultiJson.encode(Vayacondios.legacy_switch.wrap_contents(ary))
+          end
         end
       end
     end

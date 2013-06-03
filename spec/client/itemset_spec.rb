@@ -12,13 +12,14 @@ describe Vayacondios::Client::ItemSet do
   end
 
   context "after instantiation" do
-
     itemset = Vayacondios::Client::ItemSet.new("foohost", 9999, "fooorg", "footopic", "fooid")
     ary = ["foo", "bar", "baz"]
 
     # testing internals here to avoid shimming up HTTP libraries.
 
     it "generates a put request without a patch header when asked to create" do
+      Vayacondios.force_legacy_mode false
+
       req = itemset.instance_eval{_req(:create, ary)}
 
       req.method.should eql('PUT')
@@ -28,6 +29,8 @@ describe Vayacondios::Client::ItemSet do
     end
 
     it "generates a put request with a patch header when asked to update" do
+      Vayacondios.force_legacy_mode false
+
       req = itemset.instance_eval{_req(:update, ary)}
 
       req.method.should eql('PUT')
@@ -45,6 +48,8 @@ describe Vayacondios::Client::ItemSet do
     end
 
     it "generates a delete request when asked to remove" do
+      Vayacondios.force_legacy_mode false
+
       req = itemset.instance_eval{_req(:remove, ary)}
 
       req.method.should eql('DELETE')

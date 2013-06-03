@@ -1,3 +1,5 @@
+require 'gorillib/logger/log'
+
 class Vayacondios
   # Are we operating on JSON Hashes (Vayacondios) or on JSON arrays
   # (Vayacondios Legacy)? These classes determine which to use.
@@ -5,6 +7,7 @@ class Vayacondios
   class StandardContentsHandler
     def wrap_contents(contents) {contents: contents} end
     def extract_contents(document) document['contents'] end
+    def extract_response(document) document['contents'] end
     def proper_request(document)
       document.is_a? Hash and document.fetch('_json', {}).is_a? Hash
     end
@@ -13,13 +16,21 @@ class Vayacondios
   class LegacyContentsHandler
     def wrap_contents(contents) contents end
     def extract_contents(document) document.fetch('_json', {}) end
+    def extract_response(document) document end
     def proper_request(document)
       document.is_a? Array or document.fetch('_json', {}).is_a? Array
     end
   end
 
+  @@legacy_switch = nil
+
   def self.legacy_switch
-    @@legacy_switch ||= get_legacy_switch(Settings[:vayacondios][:legacy])
+    legacy_mode_on = Settings[:vayacondios][:legacy]
+    if @@legacy_switch.nil?
+      @@legacy_switch = get_legacy_switch(legacy_mode_on)
+      Log.info("using #{legacy_mode_on ? 'legacy' : 'standard'} mode")
+    end
+    @@legacy_switch
   end
 
   def self.force_legacy_mode on
