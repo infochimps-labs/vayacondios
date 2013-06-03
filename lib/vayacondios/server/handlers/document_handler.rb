@@ -2,39 +2,38 @@ class Vayacondios
 
   class DocumentHandler
 
-    attr_accessor :log, :mongo
+    attr_accessor :log
 
-    def initialize(log, mongo)
-      self.log   = log
-      self.mongo = mongo
+    def initialize(log)
+      self.log = log
     end
-
-    def find options={}
+    
+    def find params={}
       log.debug("Processing by #{self.class}#find")
-      log.debug("  Parameters: #{options.inspect}")
+      log.debug("  Parameters: #{params.inspect}")
     end
 
-    def create(options={}, document={})
+    def create(params={}, document={})
       log.debug("Processing by #{self.class}#create")
-      log.debug("  Parameters: #{options.inspect}")
+      log.debug("  Parameters: #{params.inspect}")
       log.debug("  Document:   #{document.inspect}")
     end
     
-    def update(options={}, document={})
+    def update(params={}, document={})
       log.debug("Processing by #{self.class}#update")
-      log.debug("  Parameters: #{options.inspect}")
+      log.debug("  Parameters: #{params.inspect}")
       log.debug("  Document:   #{document.inspect}")
     end
 
-    def patch options={}, document={}
+    def patch params={}, document={}
       log.debug("Processing by #{self.class}#patch")
-      log.debug("  Parameters: #{options.inspect}")
+      log.debug("  Parameters: #{params.inspect}")
       log.debug("  Document:   #{document.inspect}")
     end
 
-    def delete options={}
+    def delete params={}
       log.debug("Processing by #{self.class}#delete")
-      log.debug("  Parameters: #{options.inspect}")
+      log.debug("  Parameters: #{params.inspect}")
     end
     
   end

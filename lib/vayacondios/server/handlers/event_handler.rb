@@ -4,30 +4,30 @@
 # method.
 class Vayacondios
 
-  class EventHandler < DocumentHandler
+  class EventHandler < MongoDocumentHandler
 
-    def find options={}
-      super(options)
-      (EventDocument.find(log, mongo, options) or raise Goliath::Validation::Error.new(404, "No event with ID /#{options[:topic]}/#{options[:id]}")).body
+    def find params={}
+      super(params)
+      Event.find(log, database, params) or raise Goliath::Validation::Error.new(404, "Event with topic <#{params[:topic]}> and ID <#{params[:id]}> not found")
     end
     
-    def create(options={}, document={})
-      super(options, document)
-      { id: EventDocument.create(log, mongo, options, document).id }
+    def create(params={}, document={})
+      super(params, document)
+      Event.create(log, database, params, document)
     end
 
-    def update(options={}, document={})
-      super(options, document)
-      { id: EventDocument.update(log, mongo, options, document).id }
+    def update(params={}, document={})
+      super(params, document)
+      raise Goliath::Validation::Error.new(400, "Cannot update events")
     end
     
-    def patch options={}, document={}
-      super(options, document)
+    def patch params={}, document={}
+      super(params, document)
       raise Goliath::Validation::Error.new(400, "Cannot patch events")
     end
 
-    def delete options={}
-      super(options)
+    def delete params={}
+      super(params)
       raise Goliath::Validation::Error.new(400, "Cannot delete events")
     end
     

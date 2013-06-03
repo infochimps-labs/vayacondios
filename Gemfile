@@ -9,6 +9,7 @@ group :development do
 end
 
 group :test do
+  gem 'rspec'
   gem 'yard'
   gem 'mongo'  
 end

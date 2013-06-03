@@ -8,4 +8,4 @@ Dir["spec/support/**/*.rb"].each {|f| require File.join(File.dirname(__FILE__), 
 
 Goliath.env = :test
 
-require 'vayacondios/server/api'
+require 'vayacondios/server/http_server'

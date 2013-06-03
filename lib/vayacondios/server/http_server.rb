@@ -13,11 +13,15 @@ and write configuration and events.
 It provides the following HTTP endpoints, all of which assume a
 JSON-encoded request body.
 
-  GET /v1/ORG/event/TOPIC/ID
-  PUT /v1/ORG/event/TOPIC[/ID]
+Events:
+  GET    /v1/ORG/event/TOPIC/ID
+  POST   /v1/ORG/event/TOPIC[/ID]
 
-  GET /v1/ORG/config/TOPIC/ID
-  PUT /v1/ORG/config/TOPIC/ID
+Stashes:
+  GET    /v1/ORG/stash/TOPIC[/ID]
+  PUT    /v1/ORG/stash/TOPIC[/ID]
+  POST   /v1/ORG/stash/TOPIC[/ID]
+  DELETE /v1/ORG/stash/TOPIC[/ID]
 
 The server requires MongoDB as a data store.
 BANNER
@@ -38,10 +42,9 @@ BANNER
       options[:config] ||= File.join(File.dirname(__FILE__), '..', '..', '..', 'config', 'vcd-server.rb')
     end
 
-    use Goliath::Rack::Tracer, 'X-Tracer'                                    # log trace statistics
     use Goliath::Rack::Heartbeat                                             # respond to /status with 200, OK (monitoring, etc)
     use Vayacondios::Rack::JSONize                                           # JSON input & output
-    use Goliath::Rack::Params                                                # parse query string and message body into params hash
+    use Vayacondios::Rack::Params                                            # parse query string and message body into params hash
     use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE]   # only allow these methods
     
     use Vayacondios::Rack::ExtractMethods                                    # interpolate GET, PUT into :create, :update, etc
@@ -58,13 +61,13 @@ BANNER
           [200, {}, handler.find(env[:vayacondios_route])]
 
         when :create
-          [200, {}, handler.create(env[:vayacondios_route], env['params'])]
+          [200, {}, handler.create(env[:vayacondios_route], document)]
           
         when :update
-          [200, {}, handler.update(env[:vayacondios_route], env['params'])]
+          [200, {}, handler.update(env[:vayacondios_route], document)]
           
         when :patch
-          [200, {}, handler.patch(env[:vayacondios_route], env['params'])]
+          [200, {}, handler.patch(env[:vayacondios_route], document)]
 
         when :delete
           [200, {}, handler.delete(env[:vayacondios_route])]
@@ -75,6 +78,10 @@ BANNER
         env.logger.error "#{e.class} -- #{e.message}"
         e.backtrace.each{ |line| env.logger.error(line) }
       end
+    end
+
+    def document
+      params['_document'] || params
     end
 
     def handler

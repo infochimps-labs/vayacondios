@@ -12,6 +12,7 @@ Gem::Specification.new do |gem|
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
   gem.files         = `git ls-files -- lib  | grep client`.split("\n")
+  gem.executables   = ['vcd']
   gem.test_files    = `git ls-files -- spec | grep client`.split("\n")
   gem.require_paths = ['lib']
 
