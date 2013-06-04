@@ -1,0 +1,15 @@
+# This is an example configuration for the Vayacondios client program
+# `vcd`.
+#
+# You can copy this file to /etc/vayacondios/vayacondios.yml or
+# ~/.vayacondios.yml to have the `vcd` program read it on startup.
+#
+# This provides a convenient way of providing shared access to a
+# Vayacondios server from a given machine.
+#
+# @see Vayacondios::CLI which reads this configuration file
+
+---
+host:         localhost
+port:         9000
+organization: example

@@ -1,0 +1,18 @@
+# During normal operation, configuration values like the location of a
+# MongoDB server are passed to Vayacondios server via the
+# command-line.
+#
+# During integration tests (which must instantiate a Vayacondios
+# server *without* a command line) this file is used to specify the
+# location of a MongoDB to use for testing.
+#
+# *WARNING*: The database named here will be emptied of data during
+# *the running of tests.
+#
+# @see spec/spec_helper.rb for the code which reads this file
+# @see spec/support/mongo_helper.rb for the 
+---
+mongo:
+  host:         localhost
+  port:         27017
+  database:     vayacondios_development

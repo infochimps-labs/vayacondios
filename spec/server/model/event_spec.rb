@@ -2,6 +2,9 @@ require 'spec_helper'
 
 describe Vayacondios::Event, events: true do
 
+  before { Timecop.freeze(timestamp) }
+  after  { Timecop.return            }
+  
   let(:organization) { 'organization'      }
   let(:topic)        { 'topic'             }
   let(:log)          { double("Logger", debug: true)    }
@@ -21,12 +24,11 @@ describe Vayacondios::Event, events: true do
   describe "#to_timestamp" do
 
     it "given a nil value returns the current time" do
-      Time.should_receive(:now).at_least(1).times.and_return(timestamp)
       subject.to_timestamp(nil).should == timestamp
     end
 
-    it "given a Time instance returns that instance" do
-      subject.to_timestamp(timestamp).should == timestamp
+    it "given a Time instance returns that instance in UTC" do
+      subject.to_timestamp(timestamp).should == timestamp.utc
     end
 
     it "given a Date instance converts it into a Time" do
@@ -38,6 +40,12 @@ describe Vayacondios::Event, events: true do
       # loses millisecond resolution...so round to the second
       subject.to_timestamp(timestamp.to_s).should == Time.at(timestamp.to_i) 
     end
+
+    it "converts all times to UTC" do
+      tokyo_time = timestamp.getlocal("+09:00")
+      subject.to_timestamp(tokyo_time).should == Time.at(timestamp.to_i).utc
+    end
+    
   end
 
   describe "#find" do
@@ -123,7 +131,6 @@ describe Vayacondios::Event, events: true do
       context "for an event with no timestamp and" do
         context "a document without a timestamp" do
           it "sets it to the current time" do
-            Time.stub!(:now).and_return(timestamp)
             subject.to_mongo_create_document({})[:t].should == timestamp
           end
         end

@@ -34,13 +34,13 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   def to_timestamp obj
     case obj
     when String
-      Time.parse(obj)
+      Time.parse(obj).utc
     when Date
-      obj.to_time
+      obj.to_time.utc
     when Time
-      obj
+      obj.utc
     else
-      Time.now
+      Time.now.utc
     end
   end
   

@@ -17,15 +17,15 @@ describe Vayacondios::HttpServer, events: true do
       end
       context "if the event is found" do
         before do
-          mongo do |db|
+          mongo_query do |db|
             db.collection("organization.topic.events").insert({_id: 'id', t: timestamp, d: hash_event.merge(time: timestamp)})
           end
         end
         it "returns a 200" do
           vcd_test(verb: verb, path: path, status: 200)
         end
-        it "returns the body of the event" do
-          vcd_test(verb: verb, path: path, response: hash_event)
+        it "returns the body of the event with the original timestamp converted to a UTC string" do
+          vcd_test(verb: verb, path: path, response: hash_event.merge('time' => Time.at(timestamp.to_i).utc.to_s))
         end
       end
     end
@@ -52,7 +52,7 @@ describe Vayacondios::HttpServer, events: true do
           vcd_test(verb: verb, path: path, response: hash_event)
         end
         it "stores the event in the organization.topic.events collection with an auto-generated ID" do
-          mongo do |db|
+          mongo_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
             event.should_not be_nil
             event['_id'].should_not be_nil

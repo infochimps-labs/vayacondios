@@ -74,9 +74,10 @@ BANNER
         end
       rescue Goliath::Validation::Error => e
         return [e.status_code, {}, {error: e.message}]
-      rescue e
+      rescue => e
         env.logger.error "#{e.class} -- #{e.message}"
         e.backtrace.each{ |line| env.logger.error(line) }
+        return [500, {}, {error: "#{e.class} -- #{e.message}", backtrace: e.backtrace}]
       end
     end
 

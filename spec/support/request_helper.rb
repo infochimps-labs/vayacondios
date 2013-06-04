@@ -1,5 +1,5 @@
 def vcd_test options={}, &block
-  with_api(Vayacondios::HttpServer) do |api|
+  with_api(Vayacondios::HttpServer, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test') do |api|
     
     request = {path: options[:path]}.tap do |req|
       req[:body] = MultiJson.dump(options[:body]) if options[:body]

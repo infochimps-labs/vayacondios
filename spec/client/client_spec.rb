@@ -2,10 +2,11 @@ require 'spec_helper'
 
 describe Vayacondios::Client, events: true, stashes: true do
   
-  let(:topic) { 'topic'      }
-  let(:id)    { 'id'         }
+  let(:organization) { 'organization' }
+  let(:topic)        { 'topic'        }
+  let(:id)           { 'id'           }
   
-  subject { Vayacondios::Client.new }
+  subject { Vayacondios::Client.new(organization: organization) }
 
   describe "#announce" do
     it "is defined" do
