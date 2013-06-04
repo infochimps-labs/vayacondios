@@ -27,8 +27,8 @@ describe Vayacondios::Event, events: true do
       subject.to_timestamp(nil).should == timestamp
     end
 
-    it "given a Time instance returns that instance in UTC" do
-      subject.to_timestamp(timestamp).should == timestamp.utc
+    it "given a Time instance returns that instance" do
+      subject.to_timestamp(timestamp).should == timestamp
     end
 
     it "given a Date instance converts it into a Time" do
@@ -43,7 +43,7 @@ describe Vayacondios::Event, events: true do
 
     it "converts all times to UTC" do
       tokyo_time = timestamp.getlocal("+09:00")
-      subject.to_timestamp(tokyo_time).should == Time.at(timestamp.to_i).utc
+      subject.to_timestamp(tokyo_time).zone.should == "UTC"
     end
     
   end

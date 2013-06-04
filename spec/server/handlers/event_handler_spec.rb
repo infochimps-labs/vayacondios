@@ -30,5 +30,22 @@ describe Vayacondios::EventHandler, events: true do
     end
   end
 
+  describe "#update" do
+    it "returns a 400" do
+      expect { subject.update(params, hash_event) }.to raise_error(Goliath::Validation::Error, /update/)
+    end
+  end
+
+  describe "#patch" do
+    it "returns a 400" do
+      expect { subject.patch(params, hash_event) }.to raise_error(Goliath::Validation::Error, /patch/)
+    end
+  end
+
+  describe "#delete" do
+    it "returns a 400" do
+      expect { subject.delete(params) }.to raise_error(Goliath::Validation::Error, /delete/)
+    end
+  end
   
 end
