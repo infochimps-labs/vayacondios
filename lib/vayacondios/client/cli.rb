@@ -241,6 +241,8 @@ DESCRIPTION
     
     def handle_response doc
       case
+      when doc.is_a?(String)
+        puts doc
       when doc && settings.pretty
         puts MultiJson.dump(doc, pretty: true)
       when doc
