@@ -25,16 +25,16 @@ public class HttpHelper {
 
   // opens or returns a null reader
   public static BufferedReader openOrNull(Logger log,
-					  String urlString,
-					  Charset inputCharset) {
+                                          String urlString,
+                                          Charset inputCharset) {
     return openOrNull(log, urlString, inputCharset, 0);
   }
 
   // opens or returns a null reader
   public static BufferedReader openOrNull(Logger log,
-					  String urlString,
-					  Charset inputCharset,
-					  int timeout) {
+                                          String urlString,
+                                          Charset inputCharset,
+                                          int timeout) {
     try { return open(log, urlString, inputCharset, timeout); }
     catch (IOException e) {
       log.warn("Got an exception trying to open {}: {}", urlString, e);
@@ -80,43 +80,40 @@ public class HttpHelper {
   //----------------------------------------------------------------------------
 
   public static InputStream openStream(Logger log,
-				       String urlString,
-				       Charset inputCharset) throws IOException {
-    return openStream(log, urlString, inputCharset, 0);
+                                       String urlString) throws IOException {
+    return openStream(log, urlString, 0);
   }
 
   public static InputStream openStream(Logger log,
-				       String urlString,
-				       HashMap<String,String> extraHeaders,
-				       Charset inputCharset) throws IOException {
-    return openStream(log, urlString, extraHeaders, inputCharset, 0);
+                                       String urlString,
+                                       HashMap<String,String> extraHeaders)
+    throws IOException {
+    return openStream(log, urlString, extraHeaders, 0);
   }
   
   public static InputStream openStream(Logger log,
-				       String urlString,
-				       Charset inputCharset,
-				       int timeout) throws IOException {
+                                       String urlString,
+                                       int timeout) throws IOException {
     HttpURLConnection con = getConnection(urlString, log, timeout);
-    return getStream(con, log, inputCharset);
+    return getStream(con, log);
   }
 
   public static InputStream openStream(Logger log,
-				       String urlString,
-				       HashMap<String,String> extraHeaders,
-				       Charset inputCharset,
-				       int timeout) throws IOException {
+                                       String urlString,
+                                       HashMap<String,String> extraHeaders,
+                                       int timeout) throws IOException {
 
     HttpURLConnection con = getConnection(urlString, log, timeout);
     for (Entry<String,String> header : extraHeaders.entrySet())
       con.setRequestProperty(header.getKey(), header.getValue());
-    return getStream(con, log, inputCharset);
+    return getStream(con, log);
   }
 
   //----------------------------------------------------------------------------
 
   private static HttpURLConnection getConnection(String urlString,
-						 Logger log,
-						 int timeout)
+                                                 Logger log,
+                                                 int timeout)
     throws IOException {
     URL url = null;
     try { url = new URL(urlString); }
@@ -144,18 +141,17 @@ public class HttpHelper {
                                           Charset inputCharset) throws IOException {
     BufferedReader reader =
       new BufferedReader(
-	new InputStreamReader(getStream(con, log, inputCharset), inputCharset));
+        new InputStreamReader(getStream(con, log), inputCharset));
 
     log.info("successfully opened connection to {} with character encoding {}",
-	     con.getURL().toString(),
-	     inputCharset);
+             con.getURL().toString(),
+             inputCharset);
 
     return reader;
   }
 
   private static InputStream getStream(HttpURLConnection con,
-				       Logger log,
-				       Charset inputCharset) throws IOException {
+                                       Logger log) throws IOException {
     InputStream in;
     try { in = con.getInputStream(); }
     catch (IOException e) {
