@@ -25,8 +25,8 @@ class Vayacondios
   @@legacy_switch = nil
 
   def self.legacy_switch
-    legacy_mode_on = Settings[:vayacondios][:legacy]
     if @@legacy_switch.nil?
+      legacy_mode_on = Settings[:vayacondios][:legacy]
       @@legacy_switch = get_legacy_switch(legacy_mode_on)
       Log.info("using #{legacy_mode_on ? 'legacy' : 'standard'} mode")
     end
