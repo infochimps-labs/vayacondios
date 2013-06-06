@@ -24,44 +24,100 @@ public class HttpHelper {
   private static final boolean USE_CHARLES = false;
 
   // opens or returns a null reader
-    public static BufferedReader openOrNull(Logger log, String urlString, Charset inputCharset) {
-    try { return open(log, urlString, inputCharset); }
+  public static BufferedReader openOrNull(Logger log,
+					  String urlString,
+					  Charset inputCharset) {
+    return openOrNull(log, urlString, inputCharset, 0);
+  }
+
+  // opens or returns a null reader
+  public static BufferedReader openOrNull(Logger log,
+					  String urlString,
+					  Charset inputCharset,
+					  int timeout) {
+    try { return open(log, urlString, inputCharset, timeout); }
     catch (IOException e) {
       log.warn("Got an exception trying to open {}: {}", urlString, e);
       return null;
     }
   }
 
+  //----------------------------------------------------------------------------
+
   public static BufferedReader open(Logger log,
                                     String urlString,
                                     Charset inputCharset) throws IOException {
-    return getReader(openStream(log, urlString), inputCharset);
+    return open(log, urlString, inputCharset, 0);
   }
 
   public static BufferedReader open(Logger log,
                                     String urlString,
                                     HashMap<String,String> extraHeaders,
                                     Charset inputCharset) throws IOException {
-    return getReader(openStream(log, urlString, extraHeaders), inputCharset);
-
+    return open(log, urlString, extraHeaders, inputCharset, 0);
+  }
+  
+  public static BufferedReader open(Logger log,
+                                    String urlString,
+                                    Charset inputCharset,
+                                    int timeout) throws IOException {
+    HttpURLConnection con = getConnection(urlString, log, timeout);
+    return getReader(con, log, inputCharset);
   }
 
-  public static InputStream openStream(Logger log,
-                                       String urlString) throws IOException {
-    HttpURLConnection con = getConnection(urlString, log);
-    return getStream(con, log);
-  }
+  public static BufferedReader open(Logger log,
+                                    String urlString,
+                                    HashMap<String,String> extraHeaders,
+                                    Charset inputCharset,
+                                    int timeout) throws IOException {
 
-  public static InputStream openStream(Logger log,
-                                       String urlString,
-                                       HashMap<String,String> extraHeaders) throws IOException {
-    HttpURLConnection con = getConnection(urlString, log);
+    HttpURLConnection con = getConnection(urlString, log, timeout);
     for (Entry<String,String> header : extraHeaders.entrySet())
       con.setRequestProperty(header.getKey(), header.getValue());
-    return getStream(con, log);
+    return getReader(con, log, inputCharset);
   }
 
-  private static HttpURLConnection getConnection(String urlString, Logger log) throws IOException {
+  //----------------------------------------------------------------------------
+
+  public static InputStream openStream(Logger log,
+				       String urlString,
+				       Charset inputCharset) throws IOException {
+    return openStream(log, urlString, inputCharset, 0);
+  }
+
+  public static InputStream openStream(Logger log,
+				       String urlString,
+				       HashMap<String,String> extraHeaders,
+				       Charset inputCharset) throws IOException {
+    return openStream(log, urlString, extraHeaders, inputCharset, 0);
+  }
+  
+  public static InputStream openStream(Logger log,
+				       String urlString,
+				       Charset inputCharset,
+				       int timeout) throws IOException {
+    HttpURLConnection con = getConnection(urlString, log, timeout);
+    return getStream(con, log, inputCharset);
+  }
+
+  public static InputStream openStream(Logger log,
+				       String urlString,
+				       HashMap<String,String> extraHeaders,
+				       Charset inputCharset,
+				       int timeout) throws IOException {
+
+    HttpURLConnection con = getConnection(urlString, log, timeout);
+    for (Entry<String,String> header : extraHeaders.entrySet())
+      con.setRequestProperty(header.getKey(), header.getValue());
+    return getStream(con, log, inputCharset);
+  }
+
+  //----------------------------------------------------------------------------
+
+  private static HttpURLConnection getConnection(String urlString,
+						 Logger log,
+						 int timeout)
+    throws IOException {
     URL url = null;
     try { url = new URL(urlString); }
     catch (MalformedURLException e) {
@@ -79,13 +135,28 @@ public class HttpHelper {
       con.setRequestProperty("Authorization", "Basic " + new String(BASE64.encodeBase64(userInfo.getBytes())));
     }
     con.setRequestProperty("Accept-Encoding", "gzip,deflate");
+    if (timeout != 0) con.setReadTimeout(timeout);
     return con;
   }
 
-  private static InputStream getStream(HttpURLConnection con,
-                                       Logger log) throws IOException {
-    InputStream in = null;
+  private static BufferedReader getReader(HttpURLConnection con,
+                                          Logger log,
+                                          Charset inputCharset) throws IOException {
+    BufferedReader reader =
+      new BufferedReader(
+	new InputStreamReader(getStream(con, log, inputCharset), inputCharset));
 
+    log.info("successfully opened connection to {} with character encoding {}",
+	     con.getURL().toString(),
+	     inputCharset);
+
+    return reader;
+  }
+
+  private static InputStream getStream(HttpURLConnection con,
+				       Logger log,
+				       Charset inputCharset) throws IOException {
+    InputStream in;
     try { in = con.getInputStream(); }
     catch (IOException e) {
       // Some HTTP responses will raise an exception, but the
@@ -96,7 +167,7 @@ public class HttpHelper {
       InputStream errorStream = con.getErrorStream();
       if (errorStream != null) {
         BufferedReader r = new BufferedReader(new InputStreamReader(errorStream));
-        try { for (String line; (line = r.readLine()) != null; log.warn(line)); }
+        try { for (String line; (line = r.readLine()) != null; log.error(line)); }
         catch (IOException nested_exc) {
           log.error("Got an exception in the exception handler: {}", nested_exc);
           throw e;
@@ -105,17 +176,10 @@ public class HttpHelper {
       throw e;
     }
 
-    log.debug("successfully opened connection to " + con.getURL().toString());
     String encoding = con.getContentEncoding();
     log.debug("Got HTTP stream with content encoding type '" + encoding + "'");
 
-    return (encoding != null && encoding.equals("gzip")) ? new GZIPInputStream(in) : in;
-  }
-
-  private static BufferedReader getReader(InputStream in, Charset inputCharset) {
-    InputStreamReader istream_reader = new InputStreamReader(in, inputCharset);
-    BufferedReader reader = new BufferedReader(istream_reader);
-
-    return reader;
+    return (encoding != null && encoding.equals("gzip")) ?
+      new GZIPInputStream(in) : in;
   }
 }
