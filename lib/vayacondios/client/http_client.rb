@@ -61,6 +61,9 @@ class Vayacondios
     def send_request params
       begin
         handle_response(connection.send(*params))
+      rescue Timeout::Error => e
+        log.error("Timed out connecting to http://#{host}:#{port}")
+        nil
       rescue Errno::ECONNREFUSED => e
         log.error("Could not connect to http://#{host}:#{port}")
         nil
