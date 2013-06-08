@@ -41,58 +41,82 @@ describe Vayacondios::Stash, stashes: true do
   end
 
   describe "#find" do
-    context "with an ID" do
-      before { subject.id = id }
-      it "sends a find_one request to the database selecting just the specific ID field" do
-        collection.should_receive(:find_one).with({_id: topic}, {fields: [id]})
-        subject.find
+    context "with a topic" do
+      context "with an ID" do
+        before { subject.id = id }
+        it "sends a find_one request to the database selecting just the specific ID field" do
+          collection.should_receive(:find_one).with({_id: topic}, {fields: [id]})
+          subject.find
+        end
+        context "when a stash with the given topic exists" do
+          before do
+            collection.should_receive(:find_one)
+              .with({_id: topic}, {fields: [id]})
+              .and_return({"_id" => topic, id => hash_stash})
+          end
+          it "returns the value of the ID field" do
+            subject.find.should == hash_stash
+          end
+        end
+        context "when a stash with the given topic doesn't exist" do
+          before do
+            collection.should_receive(:find_one)
+              .with({_id: topic}, {fields: [id]})
+              .and_return(nil)
+          end
+          it "returns nil" do
+            subject.find.should be_nil
+          end
+        end
       end
-      context "when a stash with the given topic exists" do
-        before do
-          collection.should_receive(:find_one)
-            .with({_id: topic}, {fields: [id]})
-            .and_return({"_id" => topic, id => hash_stash})
+      context "without an ID" do
+        it "sends a find_one request to the database for the whole record" do
+          collection.should_receive(:find_one).with({_id: topic})
+          subject.find
         end
-        it "returns the value of the ID field" do
-          subject.find.should == hash_stash
+        context "when a stash with the given topic exists" do
+          before do
+            collection.should_receive(:find_one)
+              .with({_id: topic})
+              .and_return(hash_stash.merge("_id" => topic))
+          end
+          it "returns the stash without its topic" do
+            subject.find.should == hash_stash
+          end
         end
-      end
-      context "when a stash with the given topic doesn't exist" do
-        before do
-          collection.should_receive(:find_one)
-            .with({_id: topic}, {fields: [id]})
-            .and_return(nil)
-        end
-        it "returns nil" do
-          subject.find.should be_nil
+        context "when a stash with the given topic doesn't exist" do
+          before do
+            collection.should_receive(:find_one)
+              .with({_id: topic})
+              .and_return(nil)
+          end
+          it "returns nil" do
+            subject.find.should be_nil
+          end
         end
       end
     end
-    context "without an ID" do
-      it "sends a find_one request to the database for the whole record" do
-        collection.should_receive(:find_one).with({_id: topic})
-        subject.find
+    context "without a topic" do
+      before { subject.topic = nil }
+      it "performs a search request" do
+        subject.should_receive(:search).with(stash_query)
+        subject.find(stash_query)
       end
-      context "when a stash with the given topic exists" do
-        before do
-          collection.should_receive(:find_one)
-            .with({_id: topic})
-            .and_return(hash_stash.merge("_id" => topic))
-        end
-        it "returns the stash without its topic" do
-          subject.find.should == hash_stash
-        end
-      end
-      context "when a stash with the given topic doesn't exist" do
-        before do
-          collection.should_receive(:find_one)
-            .with({_id: topic})
-            .and_return(nil)
-        end
-        it "returns nil" do
-          subject.find.should be_nil
-        end
-      end
+    end
+  end
+
+  describe "#search" do
+    it "has default sorting and limiting behavior" do
+      collection.should_receive(:find).with(stash_query, sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT)
+        subject.search(stash_query)
+    end
+    it "has accepts the 'sort' parameter" do
+      collection.should_receive(:find).with(stash_query_with_sort, sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT)
+      subject.search(stash_query_with_sort)
+    end
+    it "has accepts the 'limit' parameter" do
+      collection.should_receive(:find).with(stash_query_with_limit, sort: Vayacondios::Stash::SORT, limit: 10)
+      subject.search(stash_query_with_limit)
     end
   end
 

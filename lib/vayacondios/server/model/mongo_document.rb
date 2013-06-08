@@ -46,7 +46,7 @@ class Vayacondios::MongoDocument < Vayacondios::Document
     name.to_s.gsub(/[^\w\.]+/, '_').gsub(/^\./,'_').gsub(/\.$/,'_')
   end
   
-  def find
+  def find query={}
   end
 
   def create document={}
@@ -57,10 +57,10 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   def destroy
   end
   
-  def self.find(log, database, params)
-    new(log, database, params).find
+  def self.find(log, database, params, query)
+    new(log, database, params).find(query)
   end
-  
+
   def self.create(log, database, params, document)
     new(log, database, params).create(document)
   end

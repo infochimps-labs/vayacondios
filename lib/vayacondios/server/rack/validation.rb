@@ -18,7 +18,6 @@ class Vayacondios
         case route[:type]
         when 'stash'
           raise Goliath::Validation::Error.new(400, "Require an organization when addressing a stash") unless route[:organization]
-          raise Goliath::Validation::Error.new(400, "Require a topic when addressing a stash") unless route[:topic]
         when 'event'
           raise Goliath::Validation::Error.new(400, "Require an organization when addressing an event") unless route[:organization]
           raise Goliath::Validation::Error.new(400, "Require a topic when addressing an event") unless route[:topic]

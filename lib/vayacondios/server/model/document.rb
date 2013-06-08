@@ -12,7 +12,7 @@ class Vayacondios::Document
   def initialize(params={})
     @params           = sanitize_params(params)
     self.organization = (@params[:organization] or raise Error.new("Must provide an :organization when instantiating a #{self.class}"))
-    self.topic        = (@params[:topic]        or raise Error.new("Must provide a topic when instantiating a #{self.class}"))
+    self.topic        = @params[:topic]
   end
   
   def sanitize_params params

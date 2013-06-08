@@ -16,10 +16,15 @@
 #   
 class Vayacondios::Event < Vayacondios::MongoDocument
 
+  LIMIT  = 1000
+  SORT   = ['t', 'descending']
+  WINDOW = 3600
+
   attr_accessor :timestamp
 
   def initialize(log, database, params={})
     super(log, database, params)
+    raise Error.new("Must provide a topic when instantiating a #{self.class}") if self.topic.blank?
     self.collection = self.database.collection(collection_name)
   end
 
@@ -44,18 +49,43 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     end
   end
   
-  def find
-    raise Goliath::Validation::Error.new(400, "Must provide the ID of the event to find") if id.blank?
-    result = mongo_query(collection, :find_one, {_id: id})
-    if result.present?
-      self.timestamp = result["t"]
-      self.body      = result["d"]
-      self.body
+  def find query={}
+    if id.blank?
+      return search(query)
     else
-      nil
+      result = mongo_query(collection, :find_one, {_id: id})
+      if result.present?
+        self.timestamp = result["t"]
+        self.body      = result["d"]
+        self.body
+      else
+        nil
+      end
     end
   end
 
+  def search query
+    opts = {}
+    opts[:limit]  = (query.delete("limit")  || LIMIT).to_i
+    opts[:sort]   = (query.delete("sort")   || SORT)
+    opts[:fields] = query.delete("fields") if query["fields"]
+    
+    where = {}
+    if query['time'].is_a?(Hash)
+      spec = query.delete('time')
+      from = parse_timestamp(spec['from'])
+      upto = parse_timestamp(spec['upto'])
+      if from || upto
+        where['t'] = {}
+        where['t'][:gte] = from if from
+        where['t'][:lte] = upto if upto
+      end
+    end
+    where.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
+    where["t"] ||= { gte: Time.now - WINDOW }
+    mongo_query(collection, :find, where, opts)
+  end
+  
   def create(document)
     raise Goliath::Validation::Error.new(400, "Events must be Hash-like to create") unless document.is_a?(Hash)
     mongo_document = to_mongo_create_document(document)
@@ -77,6 +107,18 @@ class Vayacondios::Event < Vayacondios::MongoDocument
       result[:_id] = id if id
       result[:t]   = to_timestamp(document[:time] || document['time'] || self.timestamp)
       result[:d]   = document.dup
+    end
+  end
+
+  def parse_timestamp t
+    return if t.blank?
+    begin
+      case t
+      when String  then Time.parse(t)
+      when Numeric then Time.at(t)
+      end
+    rescue => e
+      nil
     end
   end
 end

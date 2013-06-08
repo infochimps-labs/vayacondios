@@ -10,6 +10,9 @@
 #
 class Vayacondios::Stash < Vayacondios::MongoDocument
 
+  LIMIT = 200
+  SORT  = ['_id', 'ascending']
+
   def initialize(log, database, params={})
     super(log, database, params)
     self.collection = self.database.collection(collection_name)
@@ -24,11 +27,18 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   end
 
   def topic= t
-    @topic = self.class.format_mongo_id(t) if t.present?
+    if t.nil?
+      @topic = nil
+    else
+      @topic = self.class.format_mongo_id(t) if t.present?
+    end
   end
 
-  def find
-    if id.blank?
+  def find query={}
+    case
+    when topic.blank? && id.blank?
+      return search(query)
+    when id.blank?
       result = mongo_query(collection, :find_one, {_id: topic})
       if result.present?
         result.delete("_id")
@@ -42,6 +52,12 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
       end
     end
     self.body
+  end
+
+  def search(query={})
+    limit = (query.delete("limit") || LIMIT).to_i
+    sort  = (query.delete("sort")  || SORT)
+    mongo_query(collection, :find, query, sort: sort, limit: limit)
   end
 
   def create document={}

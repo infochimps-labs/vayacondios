@@ -58,7 +58,7 @@ BANNER
         case env[:vayacondios_method]
           
         when :show
-          [200, {}, handler.find(env[:vayacondios_route])]
+          [200, {}, handler.find(env[:vayacondios_route], document)]
 
         when :create
           [200, {}, handler.create(env[:vayacondios_route], document)]

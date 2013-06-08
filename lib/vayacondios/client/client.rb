@@ -307,7 +307,7 @@ class Vayacondios
     #   @option options [String] :topic the topic to set (required)
     #   @option options [String] :id the ID to set (optional)
     #   @option options [Object] :value the value to set.  Must be a Hash if no ID is provided
-    def set! topic, id, value
+    def set! *args
       topic, id, value = extract_topic_id_and_value(*args)
       if dry_run?
         msg  = "Replacing <#{topic}>"
@@ -529,9 +529,12 @@ class Vayacondios
         topic = (args.first[:topic] || args.first['topic'])
         event = (args.first[:event] || args.first['event'])
         id    = (args.first[:id]    || args.first['id'])
+        raise ArgumentError.new("When using a Hash argument, must provide the :topic key") if topic.nil?
       else
         topic, event, id, _ = args
+        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
       end
+      
       [topic, to_document(event), id]
     end
 
@@ -539,8 +542,10 @@ class Vayacondios
       if args.first.is_a?(Hash)
         topic = (args.first[:topic] || args.first['topic'])
         id    = (args.first[:id]    || args.first['id'])
+        raise ArgumentError.new("When using a Hash argument, must provide the :topic key") if topic.nil?
       else
         topic, id, _ = args
+        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
       end
       [topic, id]
     end
@@ -550,8 +555,11 @@ class Vayacondios
         topic = (args.first[:topic] || args.first['topic'])
         id    = (args.first[:id]    || args.first['id'])
         value = (args.first[:value] || args.first['value'])
+        raise ArgumentError.new("When using a Hash argument, must provide the :topic key") if topic.nil?
       else
         topic, id, value, _ = args
+        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
+        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
       end
       [topic, id, to_document(value)]
     end

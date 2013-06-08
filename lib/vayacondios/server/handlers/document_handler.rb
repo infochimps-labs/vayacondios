@@ -8,9 +8,10 @@ class Vayacondios
       self.log = log
     end
     
-    def find params={}
+    def find params={}, document={}
       log.debug("Processing by #{self.class}#find")
       log.debug("  Parameters: #{params.inspect}")
+      log.debug("  Document:   #{document.inspect}")
     end
 
     def create(params={}, document={})
@@ -31,9 +32,10 @@ class Vayacondios
       log.debug("  Document:   #{document.inspect}")
     end
 
-    def delete params={}
+    def delete params={}, document={}
       log.debug("Processing by #{self.class}#delete")
       log.debug("  Parameters: #{params.inspect}")
+      log.debug("  Document:   #{document.inspect}")
     end
     
   end

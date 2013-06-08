@@ -4,9 +4,9 @@ class Vayacondios
   # organization.
   class StashHandler < MongoDocumentHandler
 
-    def find params={}
-      super(params)
-      if result = Stash.find(log, database, params)
+    def find params={}, document={}
+      super(params, document)
+      if result = Stash.find(log, database, params, document)
         return result
       end
       raise Goliath::Validation::Error.new(404, ["Stash with topic <#{params[:topic]}>"].tap do |msg|
