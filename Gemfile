@@ -6,11 +6,12 @@ gemspec name: 'vayacondios-client'
 group :development do
   gem 'rake'
   gem 'foreman'
+  gem 'yard'
+  gem 'redcarpet'
 end
 
 group :test do
   gem 'rspec'
-  gem 'yard'
   gem 'mongo'
   gem 'timecop'
 end
