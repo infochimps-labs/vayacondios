@@ -88,29 +88,13 @@ class Vayacondios
     #
     # A topic is required when announcing an event.
     #
-    # @example Announce an SSH intrusion event in your network on topic `intrusions`
-    #
-    #   client.announce('intrusions', ip: '10.123.123.123', priority: 3, type: 'ssh')
-    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 01:15:13 -0500", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
-    #
     # If you don't specify an ID for the event, one will be generated
-    # by the server and returned to you, as above.  You can pass an ID
-    # is as the third argument.
-    #
-    # @example Announce a new build of your project on topic `builds` with ID given by the SHA1 of your commit.
-    #
-    #   client.announce('builds', { name: 'Little Stinker', version: '1.2.3', status: 'success', duration: 183 }, '13fe3ff5f13c6b0394cc22501a9617cfe2445c63')
-    #   #=> {"id"=>"13fe3ff5f13c6b0394cc22501a9617cfe2445c63", "time"=>"2013-06-02 01:15:13 -0500", "name"=>"Little Stinker", "version"=>"1.2.3", "status"=>"success", "duration"=>183}
-    #
+    # by the server and returned to you in the response.
+    # 
     # Similarly, if you don't specify the time of the event, the
     # current time (upon arrival at the server) will be used.  You can
     # set the time of the event explicitly by including the `time` key
     # in your event data.
-    #
-    # @example Setting an explicit time for an event
-    #
-    #   client.announce('intrusions', ip: '10.123.123.123', priority: 3, type: 'ssh', time: "2013-06-02 00:00:00 -0000")
-    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 00:00:00 -0000", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
     #
     # Setting the time and the ID are done in different places because
     # the ID is related to the *label* (equivalently the *routing*) of
@@ -119,20 +103,80 @@ class Vayacondios
     # If this client is in dry run mode the request will be logged
     # instead of sent.
     #
-    # @param [String] topic the topic to announce on
-    # @param [Hash] event the event to announce
-    # @param [String, nil] id the optional ID for the event
+    # @example Announce an SSH intrusion event in your network on topic `intrusions`
+    #
+    #   client.announce('intrusions', ip: '10.123.123.123', priority: 3, type: 'ssh')
+    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 01:15:13 -0500", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
+    #
+    # @example Same example but using a single Hash argument instead
+    # 
+    #   client.announce({
+    #     topic: 'intrusions',
+    #     event: {ip: '10.123.123.123', priority: 3, type: 'ssh'}
+    #   })
+    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 01:15:13 -0500", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
+    #
+    # @example Announce a new build of your project on topic `builds` with ID given by the SHA1 of your commit.
+    #
+    #   client.announce('builds', { name: 'Little Stinker', version: '1.2.3', status: 'success', duration: 183 }, '13fe3ff5f13c6b0394cc22501a9617cfe2445c63')
+    #   #=> {"id"=>"13fe3ff5f13c6b0394cc22501a9617cfe2445c63", "time"=>"2013-06-02 01:15:13 -0500", "name"=>"Little Stinker", "version"=>"1.2.3", "status"=>"success", "duration"=>183}
+    #
+    # @example Same example but using a single Hash argument instead
+    #
+    #   client.announce({
+    #     topic: 'builds',
+    #     id:    '13fe3ff5f13c6b0394cc22501a9617cfe2445c63',
+    #     event: {
+    #       name:     'Little Stinker',
+    #       version:  '1.2.3',
+    #       status:   'success',
+    #       duration: 183,
+    #     }
+    #   })
+    #   #=> {"id"=>"13fe3ff5f13c6b0394cc22501a9617cfe2445c63", "time"=>"2013-06-02 01:15:13 -0500", "name"=>"Little Stinker", "version"=>"1.2.3", "status"=>"success", "duration"=>183}
+    #
+    # @example Setting an explicit time for an event
+    #
+    #   client.announce('intrusions', ip: '10.123.123.123', priority: 3, type: 'ssh', time: "2013-06-02 00:00:00 -0000")
+    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 00:00:00 -0000", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
+    #
+    # @example Same example but using a single Hash argument instead
+    #
+    #   client.announce({
+    #     topic: 'intrusions',
+    #     event: {
+    #       ip:       '10.123.123.123',
+    #       priority: 3,
+    #       type:     'ssh',
+    #       time:     "2013-06-02 00:00:00 -0000"
+    #     }
+    #   })
+    #   #=> {"id"=>"51aae2f181bdb31d10000007", "time"=>"2013-06-02 00:00:00 -0000", "ip"=>"10.123.123.123", "priority"=>"3", "type"=>"ssh"}
+    #
     # @return [Hash] the event returned by the server in acknowledgement
-    def announce topic, event, id=nil
-      doc = to_document(event)
+    #
+    # @overload announce(topic, event, id=nil)
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to announce on
+    #   @param [Hash] event the event to announce
+    #   @param [String, nil] id the optional ID for the event
+    #
+    # @overload announce(options={})
+    #   Call with a single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic of the event (required)
+    #   @option options [String] :event the body of the event (required)
+    #   @option options [String] :id the ID of the event (optional)
+    def announce *args
+      topic, event, id = extract_topic_event_and_id(*args)
       if dry_run?
         msg  = "Announcing <#{topic}>"
         msg += "/<#{id}>" if id
-        msg += ": #{doc.inspect}"
+        msg += ": #{event.inspect}"
         log.debug(msg)
         nil
       else
-        perform_announce(topic, doc, id)
+        perform_announce(topic, event, id)
       end
     end
 
@@ -142,24 +186,42 @@ class Vayacondios
     # the ID within the topic, otherwise the stash for the entire
     # topic.
     #
+    # Will return whatever value is stored at the corresponding topic
+    # (and ID) or `nil` if none is found.
+    #
+    # If the client is in dry run mode, the request will be logged
+    # instead of sent and `nil` will be returned.
+    #
     # @example Retrieve a list of firewall rules on the topic `firewall` under the ID `webservers`
     #
     #   client.get('firewall', 'webservers')
+    #
+    # @example Same example but using a single Hash argument
+    #
+    #   client.get(topic: 'firewall', id: 'webservers')
     #
     # @example Retrieve a list of all firewall rules on the topic `firewall`
     #
     #   client.get('firewall')
     #
-    # Will return whatever value is stored at the corresponding topic
-    # and ID or `nil` if none is found.
+    # @example Same example but using a single Hash argument
     #
-    # If the client is in dry run mode, the request will be logged
-    # instead of sent.
+    #   client.get(topic: 'firewall')
     #
-    # @param [String] topic
-    # @param [String, nil] id
-    # @return [Object] the value stored fore the given `topic` and `id`
-    def get topic, id=nil
+    # @return [Object] the value stored fore the given `topic` and `id` or `nil` if none is found
+    #
+    # @overload get(topic, id=nil)
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to get (required)
+    #   @param [String] id the ID to get (can be `nil`)
+    #
+    # @overload get(options={})
+    #   Call with a single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic to get (required)
+    #   @option options [String] :id the ID to get (optional)
+    def get *args
+      topic, id = extract_topic_and_id(*args)
       if dry_run?
         msg  = "Getting <#{topic}>"
         msg += "/<#{id}>" if id
@@ -170,82 +232,250 @@ class Vayacondios
       end
     end
 
-    # Set a stash by replacing it with the given document.
+    # Set a stash by replacing it with the given value.
     #
     # A topic is required when setting a stash.
+    #
+    # If no ID is provided, the the given `value` must be a Hash.  If
+    # an ID is provided then the given value can be of any
+    # JSON-serializable type.
+    #
+    # Whatever is currently set for this topic (and ID) will be
+    # overwritten.
     #
     # @example Replace existing firewall rules with new ones for the topic `firewall` and ID `webservers`
     #
     #   client.set!('firewall', 'webservers', internet: {port: 80, range: '*'}, blacklisted: ['10.123.123.123'])
     #
-    # In this example, if other data existing within the stash for
-    # topic `firewall` and ID `webservers` it would be replaced with
-    # the contents above.
+    # @example Same example but with a single Hash argument
     #
-    # @param [String] topic
-    # @param [String] id
-    # @param [Object] document
-    def set! topic, id, document
-      doc = to_document(document)
+    #   client.set!({
+    #     topic:    'firewall',
+    #     id:       'webservers',
+    #     value: {
+    #       internet:    { port: 80, range: '*'},
+    #       blacklisted: ['10.123.123.123']
+    #     }
+    #   })
+    #
+    # @example Set the current server count to `44`.
+    #
+    #   client.set!('servers', 'count', 44)
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.set!(topic: 'servers', id: 'count', value: 44)
+    #
+    # @example Replace all existing firewall rules for all IDs
+    #
+    #   client.set!('firewall', {
+    #     webservers: {
+    #       internet:    {port: 80, range: '*'},
+    #       blacklisted: ['10.123.123.123']
+    #     },
+    #     datanodes: {
+    #       internet: {port: 6383, range: '10.*'}
+    #     }
+    #   })
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.set!({
+    #     topic: 'firewall',
+    #     value: {
+    #       webservers: {
+    #         internet:    {port: 80, range: '*'},
+    #         blacklisted: ['10.123.123.123']
+    #       },
+    #       datanodes: {
+    #         internet: {port: 6383, range: '10.*'}
+    #       }
+    #     }
+    #   })
+    #
+    # @return The value received by the server which was sent (or `nil` if in dry run mode)
+    #
+    # @overload set!(topic, id, value)
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to set (required)
+    #   @param [String] id the ID to set (can be `nil`)
+    #   @param [Object] value the value to set.  Must be a Hash if `id` is `nil`
+    #
+    # @overload set!(options={})
+    #   Call with a single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic to set (required)
+    #   @option options [String] :id the ID to set (optional)
+    #   @option options [Object] :value the value to set.  Must be a Hash if no ID is provided
+    def set! topic, id, value
+      topic, id, value = extract_topic_id_and_value(*args)
       if dry_run?
         msg  = "Replacing <#{topic}>"
         msg += "/<#{id}>" if id
-        msg += ": #{doc.inspect}"
+        msg += ": #{value.inspect}"
         log.debug(msg)
+        nil
       else
-        perform_set!(topic, id, doc)
+        perform_set!(topic, id, value)
       end
     end
 
-    # Set a stash by merging the given document into it.
+    # Set a stash by merging the given value into it.
     #
     # A topic is required when setting a stash.
+    #
+    # If no ID is provided, the the given `value` must be a Hash.  If
+    # an ID is provided then the given value can be of any
+    # JSON-serializable type.
+    #
+    # Whatever value is provided will be merged with the existing
+    # value in a type-aware way: Hashes will be merged, Arrays &
+    # Strings will be concatenated, Numeric types will be incremented.
     #
     # @example Set a new firewall rule on the topic `firewall` for the ID `webservers`
     #
     #   client.set('firewall', 'webservers', internet: {port: 80, range: '*'})
     #
-    # In this example, other data existing within the stash for topic
-    # `firewall` and ID `webservers` would be merged alongside the new
-    # `internet` fields.
+    # @example Same example but with a single Hash argument
     #
-    # @param [String] topic
-    # @param [String] id
-    # @param [Object] document
-    def set topic, id, document
-      doc = to_document(document)
+    #   client.set({
+    #     topic: 'firewall',
+    #     id:    'webservers',
+    #     value: {
+    #       internet: { port: 80, range: '*' }
+    #     }
+    #   })
+    #
+    # @example Increment the current server count by 2
+    #
+    #   client.set('servers', 'count', 2)
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.set(topic: 'servers', id: 'count', value: 2)
+    #
+    # @example Merge two new firewall rules into an existing set of rules
+    #
+    #   client.set('firewall', {
+    #     webservers: {
+    #       internet:    {port: 80, range: '*'},
+    #       blacklisted: ['10.123.123.123']
+    #     },
+    #     datanodes: {
+    #       internet: {port: 6383, range: '10.*'}
+    #     }
+    #   })
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.set({
+    #     topic: 'firewall',
+    #     value: {
+    #       webservers: {
+    #         internet:    {port: 80, range: '*'},
+    #         blacklisted: ['10.123.123.123']
+    #       },
+    #       datanodes: {
+    #         internet: {port: 6383, range: '10.*'}
+    #       }
+    #     }
+    #   })
+    #   
+    # @return The value received by the server which was sent (or `nil` if in dry run mode)
+    #
+    # @overload set(topic, id, value)
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to set (required)
+    #   @param [String] id the ID to set (can be `nil`)
+    #   @param [Object] value the value to set.  Must be a Hash if `id` is `nil`
+    #
+    # @overload set(options={})
+    #   Call with a single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic to set (required)
+    #   @option options [String] :id the ID to set (optional)
+    #   @option options [Object] :value the value to set.  Must be a Hash if no ID is provided
+    #
+    # @see #increment
+    def set *args
+      topic, id, value = extract_topic_id_and_value(*args)
       if dry_run?
         msg  = "Merging <#{topic}>"
         msg += "/<#{id}>" if id
-        msg += ": #{doc.inspect}"
+        msg += ": #{value.inspect}"
         log.debug(msg)
+        nil
       else
-        perform_set(topic, id, doc)
+        perform_set(topic, id, value)
       end
+    end
+
+    # An alias for the `set` method, used for readability when setting
+    # numeric values.
+    #
+    # @example Increment the current server count by 2
+    #
+    #   client.increment('servers', 'count', 2)
+    #
+    # @see #set
+    def increment *args
+      set *args
     end
 
     # Delete a stash.
     #
-    # @param [String] topic
-    # @param [String] id
+    # Requires a topic.  If an ID is given, will delete the stash at
+    # the given ID within the given topic, otherwise will delete the
+    # entire topic.
+    #
+    # @example Delete the firewall rules for the 'webservers' ID
+    #
+    #   client.delete('firewall', 'webservers')
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.delete(topic: 'firewall', id: 'webservers')
+    #
+    # @example Delete all the firewall rules
+    #
+    #   client.delete('firewall')
+    #
+    # @example Same example but with a single Hash argument
+    #
+    #   client.delete(topic: 'firewall')
+    #
+    # @return [Hash] with the topic (and ID) of the deleted stash or `nil` if in dry run mode.
+    #
+    # @overload delete(topic, id=nil)
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to delete (required)
+    #   @param [String] id the ID to delete (can be `nil`)
+    #
+    # @overload delete(options={})
+    #   Call with a single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic to delete (required)
+    #   @option options [String] :id the ID to delete (optional)
     def delete topic, id=nil
       if dry_run?
         msg  = "Deleting <#{topic}>"
         msg += "/<#{id}>" if id
         log.debug(msg)
+        nil
       else
         perform_delete(topic, id)
       end
     end
 
-    # Convert an object into a simple document that can be serialized
-    # and sent to the server.
+    # Convert an object into a simple value that can be serialized and
+    # sent to the server.
     #
-    # Objects which define "standard" methods (`to_hash`, `to_a`) will
-    # have those methods called to turn them into simple documents.
+    # Objects which define "standard" methods (`to_hash`, `to_a`, &c.)
+    # will have those methods called to turn them into Hashes or
+    # Arrays.
     #
     # In usual usage, this method is essentially just returning the
-    # Hash you probably called it with.
+    # same object you probably called it with.
     #
     # @param [Object] obj the original object
     # @return [Object] the simplified document representing that object
@@ -293,6 +523,38 @@ class Vayacondios
     attr_writer :log
     
     protected
+
+    def extract_topic_event_and_id *args
+      if args.first.is_a?(Hash)
+        topic = (args.first[:topic] || args.first['topic'])
+        event = (args.first[:event] || args.first['event'])
+        id    = (args.first[:id]    || args.first['id'])
+      else
+        topic, event, id, _ = args
+      end
+      [topic, to_document(event), id]
+    end
+
+    def extract_topic_and_id *args
+      if args.first.is_a?(Hash)
+        topic = (args.first[:topic] || args.first['topic'])
+        id    = (args.first[:id]    || args.first['id'])
+      else
+        topic, id, _ = args
+      end
+      [topic, id]
+    end
+
+    def extract_topic_id_and_value *args
+      if args.first.is_a?(Hash)
+        topic = (args.first[:topic] || args.first['topic'])
+        id    = (args.first[:id]    || args.first['id'])
+        value = (args.first[:value] || args.first['value'])
+      else
+        topic, id, value, _ = args
+      end
+      [topic, id, to_document(value)]
+    end
 
     # Perform the actual announcement.  Concrete subclasses should
     # override this method.
