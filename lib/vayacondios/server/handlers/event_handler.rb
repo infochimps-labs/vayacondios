@@ -6,9 +6,9 @@ class Vayacondios
 
   class EventHandler < MongoDocumentHandler
 
-    def find params={}, document={}
-      super(params, document)
-      if result = Event.find(log, database, params, document)
+    def find params={}, query={}
+      super(params, query)
+      if result = Event.find(log, database, params, query)
         return result
       else
         raise Goliath::Validation::Error.new(404, "Event with topic <#{params[:topic]}> and ID <#{params[:id]}> not found")

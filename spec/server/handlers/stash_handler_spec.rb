@@ -11,13 +11,13 @@ describe Vayacondios::StashHandler, stashes: true do
   describe "#find" do
     it "returns the record found by the Stash model it delegates to" do
       Vayacondios::Stash.should_receive(:find)
-        .with(log, database, params).and_return(hash_stash)
+        .with(log, database, params, {}).and_return(hash_stash)
       subject.find(params).should == hash_stash
     end
 
     it "raises a 404-error if no record is found" do
       Vayacondios::Stash.should_receive(:find)
-        .with(log, database, params).and_return(nil)
+        .with(log, database, params, {}).and_return(nil)
       expect { subject.find(params) }.to raise_error(Goliath::Validation::Error, /not found/)
     end
   end

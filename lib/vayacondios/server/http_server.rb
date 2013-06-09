@@ -86,7 +86,14 @@ BANNER
     end
 
     def handler
-      ('vayacondios/' + env[:vayacondios_route][:type] + '_handler').camelize.constantize.new(env.logger, mongo)
+      case env[:vayacondios_route][:type]
+      when /^stash/i
+        Vayacondios::StashHandler.new(env.logger, mongo)
+      when /^event/i
+        Vayacondios::EventHandler.new(env.logger, mongo)
+      else
+        raise Goliath::Validation::Error.new(400, "Invalid type: <#{env[:vayacondios_route][:type]}>")
+      end
     end
 
   end

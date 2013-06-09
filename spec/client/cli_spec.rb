@@ -105,6 +105,32 @@ describe Vayacondios::CLI, events: true, stashes: true do
     end
   end
 
+  describe "events" do
+    before { ARGV.replace(['events']) }
+    it "raises an error without a topic" do
+      cli.boot
+      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+    end
+
+    context "with topic" do
+      before { ARGV << topic }
+      it "searches for events" do
+        client.should_receive(:events).with(topic, {})
+        cli.boot
+        cli.run
+      end
+
+      context "and an inline query" do
+        before { ARGV << json_event_query }
+        it "uses the query" do
+          client.should_receive(:events).with(topic, event_query)
+          cli.boot
+          cli.run
+        end
+      end
+    end
+  end
+
   describe "get" do
     before { ARGV.replace(['get']) }
 
@@ -127,6 +153,23 @@ describe Vayacondios::CLI, events: true, stashes: true do
           cli.boot
           cli.run
         end
+      end
+    end
+  end
+
+  describe "stashes" do
+    before { ARGV.replace(['stashes']) }
+    it "searches for stashes" do
+      client.should_receive(:stashes).with({})
+      cli.boot
+      cli.run
+    end
+    context "and an inline query" do
+      before { ARGV << json_stash_query }
+      it "uses the query" do
+        client.should_receive(:stashes).with(stash_query)
+        cli.boot
+        cli.run
       end
     end
   end

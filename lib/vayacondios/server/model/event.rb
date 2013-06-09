@@ -16,7 +16,7 @@
 #   
 class Vayacondios::Event < Vayacondios::MongoDocument
 
-  LIMIT  = 1000
+  LIMIT  = 200
   SORT   = ['t', 'descending']
   WINDOW = 3600
 
@@ -66,24 +66,17 @@ class Vayacondios::Event < Vayacondios::MongoDocument
 
   def search query
     opts = {}
-    opts[:limit]  = (query.delete("limit")  || LIMIT).to_i
-    opts[:sort]   = (query.delete("sort")   || SORT)
-    opts[:fields] = query.delete("fields") if query["fields"]
+    opts[:limit]  = (query.delete(:limit)  || query.delete("limit")  || LIMIT).to_i
+    opts[:sort]   = (query.delete(:sort)   || query.delete("sort")   || SORT)
+    opts[:fields] = (query.delete(:fields) || query.delete("fields")) if (query.has_key?(:fields) || query.has_key?('fields'))
     
-    where = {}
-    if query['time'].is_a?(Hash)
-      spec = query.delete('time')
-      from = parse_timestamp(spec['from'])
-      upto = parse_timestamp(spec['upto'])
-      if from || upto
-        where['t'] = {}
-        where['t'][:gte] = from if from
-        where['t'][:lte] = upto if upto
-      end
-    end
-    where.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
-    where["t"] ||= { gte: Time.now - WINDOW }
-    mongo_query(collection, :find, where, opts)
+    selector = {t: {}}
+    selector[:t][:gte]   = parse_timestamp(query.delete(:from) || query.delete('from'))
+    selector[:t][:gte] ||=  (Time.now - WINDOW)
+    selector[:t][:lte]   = parse_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
+    selector.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
+    
+    mongo_query(collection, :find, selector, opts)
   end
   
   def create(document)
@@ -114,8 +107,9 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     return if t.blank?
     begin
       case t
-      when String  then Time.parse(t)
-      when Numeric then Time.at(t)
+      when String  then Time.parse(t).utc
+      when Date    then t.to_time.utc
+      when Numeric then Time.at(t).utc
       end
     rescue => e
       nil

@@ -5,7 +5,7 @@ class Vayacondios
 
     Error = Class.new(StandardError)
 
-    attr_accessor :client, :topic, :id, :document
+    attr_accessor :client, :topic, :id, :document, :query
 
     def settings
       @settings ||= Configliere::Param.new.tap do |s|
@@ -16,6 +16,8 @@ class Vayacondios
 usage:
   vcd [ --param=val|--param|-p val|-p ] announce TOPIC [DOCUMENT] [ID]
   vcd [ --param=val|--param|-p val|-p ] get|set|set!|delete TOPIC ID [DOCUMENT]
+  vcd [ --param=val|--param|-p val|-p ] events TOPIC QUERY
+  vcd [ --param=val|--param|-p val|-p ] stashes QUERY
 USAGE
         end
         
@@ -92,6 +94,7 @@ DESCRIPTION
         s.define :log_level, description: "Log level", default: "INFO"
 
         s.define :pretty, description: "Pretty-print output", type: :boolean, default: false, flag: 'p'
+        s.define :dry_run, description: "Don't perform any actual requests", type: :boolean, default: false
       end
     end
 
@@ -99,7 +102,7 @@ DESCRIPTION
       settings.read("/etc/vayacondios/vayacondios.yml")    if File.exist?("/etc/vayacondios/vayacondios.yml")
       settings.read(File.expand_path("~/.vayacondios.yml")) if ENV["HOME"] && File.exist?(File.expand_path("~/.vayacondios.yml"))
       settings.resolve!
-      self.client = HttpClient.new(log: log, host: settings.host, port: settings.port, organization: settings.organization)
+      self.client = HttpClient.new(log: log, host: settings.host, port: settings.port, organization: settings.organization, dry_run: settings.dry_run)
       log.debug("Connected to #{client.host}:#{client.port}")
     end
     
@@ -118,13 +121,15 @@ DESCRIPTION
       command = settings.rest.shift
       case command
       when 'announce' then announce
+      when 'events'   then events
       when 'get'      then get
+      when 'stashes'  then stashes
       when 'set'      then set
       when 'set!'     then set!
       when 'delete'   then delete
       when nil        then settings.dump_help
       else
-        raise Error.new("Unknown command: <#{command}>.  Must be either 'announce' or one of 'get', 'set', 'set!', or 'delete'.")
+        raise Error.new("Unknown command: <#{command}>.  Must be either 'announce', one of 'get', 'set', 'set!', or 'delete', or one of 'events' or 'stashes'")
       end
     end
 
@@ -142,18 +147,43 @@ DESCRIPTION
       end
     end
 
+    def events
+      self.topic    = (settings.rest.shift or raise Error.new("Must provide a topic when searching for events"))
+      self.query    = (settings.rest.shift || '{}')
+      inputs do |query|
+        response = client.events(topic_for(query), query)
+        if response
+          response.each do |result|
+            handle_response(result)
+          end
+        end
+      end
+    end
+    
     def get
       self.topic = (settings.rest.shift or raise Error.new("Must provide a topic when getting a stash"))
       self.id    = settings.rest.shift
       if input?
         inputs do |req|
-          handle_response(client.get(topic_for(req), id_for(req)))
+          response = client.get(topic_for(req), id_for(req))
+          if response
+            response.each do |result|
+              handle_response(result)
+            end
+          end
         end
       else
         handle_response(client.get(topic, id))
       end
     end
 
+    def stashes
+      self.query = (settings.rest.shift || '{}')
+      inputs do |query|
+        handle_response(client.stashes(query))
+      end
+    end
+    
     def set
       self.topic    = (settings.rest.shift or raise Error.new("Must provide a topic when setting a stash"))
       self.id       = settings.rest.shift
@@ -200,6 +230,7 @@ DESCRIPTION
           yield MultiJson.load(line)
         rescue => e
           log.error("#{e.class} -- #{e.message}")
+          $stderr.puts(e.backtrace)
         end
       end
     end
@@ -208,8 +239,8 @@ DESCRIPTION
     
     def raw_inputs(&block)
       case
-      when document
-        [document].each(&block)
+      when document || query
+        [document, query].compact.each(&block)
       when settings.file
         File.open(settings.file).each(&block)
       when input_on_stdin?

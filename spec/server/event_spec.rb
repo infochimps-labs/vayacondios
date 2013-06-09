@@ -144,7 +144,7 @@ describe Vayacondios::HttpServer, events: true do
           vcd(verb: verb, path: path, body: hash_event, includes: {'id' => id})
         end
         it "and a timestamp" do
-          vcd(verb: verb, path: path, body: hash_event, includes { 'time' => timestamp })
+          vcd(verb: verb, path: path, body: hash_event, includes: { 'time' => timestamp })
         end
         it "stores the event in the organization.topic.events collection with the given ID" do
           vcd(verb: verb, path: path, body: hash_event)

@@ -47,8 +47,6 @@ class Vayacondios
     #
     # Will raise an error if instantiated without an organization.
     #
-    # 
-    #
     # The client will create its own logger but you can override this
     # with another Logger (or similar) instance.
     #
@@ -177,6 +175,78 @@ class Vayacondios
         nil
       else
         perform_announce(topic, event, id)
+      end
+    end
+
+    # Search for events matching some criteria.
+    #
+    # A topic is required when searching for events.
+    #
+    # The default search behavior implemented by Vayacondios server is
+    # to return up to 200 events from the last hour on the given topic
+    # sorted by timestamp.
+    #
+    # The number of events, the time period, and sorting behavior can
+    # all be changed.
+    #
+    # The set of fields returned in each event can also be specified.
+    # Default behavior is to return all fields.
+    #
+    # @example Retrieve recent events on the `intrusions` topic.
+    #
+    #   client.events('intrusions')
+    #
+    # @example Specify a different time period
+    # 
+    #   client.events('intrusions', limit: 1000, time: {from: (Time.now - 1.day), upto: (Time.now - 1.hour)})
+    #
+    # @example Return only the `request.ip` and `port` of the event
+    # 
+    #   client.events('intrusions', fields: ['request.ip','port'])
+    #
+    # @example Above examples but called with a single Hash argument
+    #
+    #   client.events({
+    #     topic:  'intrusions',
+    #     query:  {limit: 1000},
+    #     time:   {from: (Time.now - 1.day)},
+    #     fields: ['request.ip', 'port']
+    #   })
+    #
+    # @overload events(topic, query={})
+    #   Call with explicit arguments
+    #   @param [String] topic the topic to search
+    #   @param[Hash] query the search query
+    #   @option query [Integer] :limit (200) the maximum number of events to return
+    #   @option query [Time] :from (an hour ago) the earliest time an event can occur
+    #   @option query [Time] :upto (present) the latest time an event can occur
+    #   @option query [Array<String>] :fields (all fields) the fields of the event to return
+    #   @option query [Array<Array>] :sort array of [field, direction] pairs to sort by
+    #
+    # @overload events(options={})
+    #   Call witha  single Hash argument
+    #   @param [Hash] options
+    #   @option options [String] :topic the topic to search
+    #   @option options [Hash] :query the search query
+    def events *args
+      topic, query = extract_topic_and_query(*args)
+      if dry_run?
+        log.debug("Searching events/<#{topic}>: #{query.inspect}")
+        nil
+      else
+        perform_events(topic, query)
+      end
+    end
+
+    # Search for stashes matching some criteria.
+    #
+    # The default search behavior is to return the 
+    def stashes query={}
+      if dry_run?
+        log.debug("Searching stashes: #{query.inspect}")
+        nil
+      else
+        perform_stashes(query)
       end
     end
 
@@ -490,7 +560,7 @@ class Vayacondios
       when obj.respond_to?(:to_h)           then obj.to_h           # new 2.0 convention
 
       # is it an Array
-      when obj.respond_to?(:to_a)           then obj.to_a           # longstanding convention
+      when obj && obj.respond_to?(:to_a)    then obj.to_a           # longstanding convention
 
       # otherwise just keep it how it is
       else
@@ -559,9 +629,20 @@ class Vayacondios
       else
         topic, id, value, _ = args
         raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
-        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
       end
       [topic, id, to_document(value)]
+    end
+
+    def extract_topic_and_query *args
+      if args.first.is_a?(Hash)
+        topic = (args.first[:topic] || args.first['topic'])
+        query = (args.first[:query] || args.first['query'])
+        raise ArgumentError.new("When using a Hash argument, must provide the :topic key") if topic.nil?
+      else
+        topic, query, _ = args
+        raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
+      end
+      [topic, to_document(query)]
     end
 
     # Perform the actual announcement.  Concrete subclasses should
@@ -576,7 +657,25 @@ class Vayacondios
     def perform_announce topic, event, id=nil
     end
 
-    # Perform the actual announcement.  Concrete subclasses should
+    # Perform the actual search for events.  Concrete subclasses
+    # should override this method.
+    # 
+    # @param [String] topic
+    # @param [Hash] query
+    # @return [Array<Hash>]
+    def perform_events topic, query={}
+    end
+
+    # Perform the actual search for stashes.  Concrete subclasses
+    # should override this method.
+    # 
+    # @param [String] topic
+    # @param [Hash] query
+    # @return [Array<Hash>]
+    def perform_stashes topic, query={}
+    end
+    
+    # Perform the actual get request.  Concrete subclasses should
     # override this method.
     # 
     # @param [String] topic
@@ -587,7 +686,7 @@ class Vayacondios
     def perform_get topic, id=nil
     end
 
-    # Perform the actual announcement.  Concrete subclasses should
+    # Perform the actual set! request.  Concrete subclasses should
     # override this method.
     # 
     # @param [String] topic
@@ -599,7 +698,7 @@ class Vayacondios
     def perform_set! topic, id, document
     end
 
-    # Perform the actual announcement.  Concrete subclasses should
+    # Perform the actual set request.  Concrete subclasses should
     # override this method.
     # 
     # @param [String] topic
@@ -611,8 +710,8 @@ class Vayacondios
     def perform_set topic, id, document
     end
 
-    # Perform the actual announcement.  Concrete subclasses should
-    # override this method.
+    # Perform the delete request.  Concrete subclasses should override
+    # this method.
     # 
     # @param [String] topic
     # @param [String] id

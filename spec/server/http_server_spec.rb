@@ -12,7 +12,7 @@ describe Vayacondios::HttpServer do
     end
   end
 
-  context "a path which doesn't match the  /v1/organization/stash|event/topic[/id] structure" do
+  context "a path which doesn't match the API structure" do
     it "returns a 400" do
       vcd verb: 'GET', path: '/gobbledygook', status: 400
     end

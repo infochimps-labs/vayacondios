@@ -94,38 +94,38 @@ describe Vayacondios::Event, events: true do
 
   describe "#search" do
     it "has default sorting, limiting, and windowing behavior" do
-      collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
       subject.search(event_query)
     end
     it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Event::LIMIT)
+      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Event::LIMIT)
       subject.search(event_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: 10)
+      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: 10)
       subject.search(event_query_with_limit)
     end
     it "accepts the 'fields' parameter" do
-      collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
+      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
       subject.search(event_query_with_fields)
     end
     
     describe "handling 'time' parameters" do
       it "parses them when they're strings" do
-        collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query_with_string_time)
       end
       it "parses them when they're numeric" do
-        collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query_with_int_time)
       end
       it "ignores them when they are something else" do
-        collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar", "d.time" => ["hello"]}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query.merge("time" => ['hello']))
+        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        subject.search(event_query.merge("from" => ['hello']))
       end
       it "ignores them when they are unparseable" do
-        collection.should_receive(:find).with({"t" => {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query.merge("time" => {gte: "2013-06-73 Sat 100:35"}))
+        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        subject.search(event_query.merge("from" => "2013-06-73 Sat 100:35"))
       end
       
     end

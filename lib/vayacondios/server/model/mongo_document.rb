@@ -49,6 +49,9 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   def find query={}
   end
 
+  def search query={}
+  end
+  
   def create document={}
   end
   alias_method :update, :create

@@ -1,35 +1,49 @@
 require 'spec_helper'
 
-describe Vayacondios::Rack::Routing do
-  let(:env) { { 'CONTENT_TYPE' => 'application/x-www-form-urlencoded; charset=utf-8' } }
-  let(:app) { mock('app').as_null_object }
-  subject   { described_class.new(app)   }     
+describe Vayacondios::Rack::Routing, rack: true do
 
-  it 'adds a key in env for :vayacondios_route' do
-    app.should_receive(:call).with do |app_env|
-      app_env.keys.should include(:vayacondios_route)
-    end
-    subject.call(env)
+  subject { described_class.new(upstream) }
+
+  it "parses the request path and generates the route before calling the upstream app" do
+    upstream.should_receive(:call)
+      .with(env.merge({
+                        Goliath::Request::REQUEST_PATH => "/v1/organization/event/topic",
+                        vayacondios_route: kind_of(Hash),
+                        'async.callback' => kind_of(Proc),
+                      }))
+      .and_return([200, {}, ['']])
+    subject.should_receive(:parse_path).with("/v1/organization/event/topic").and_return({})
+    subject.call(env.merge(Goliath::Request::REQUEST_PATH => "/v1/organization/event/topic"))
   end
-  
-  context 'parse_path' do
+
+  describe "#parse_path" do
     it 'returns nil if the route is unparseable' do
       subject.parse_path('/what/the:f/happened&here?').should be nil
     end
-    it 'parses organizations and types correctly' do
-      subject.parse_path('/v1/infochimps/event').should include(organization: 'infochimps', type: 'event')
+
+    it 'parses /v1/organization/event/topic' do
+      subject.parse_path('/v1/organization/event/topic').should include(organization: 'organization', type: 'event', topic: 'topic')
     end
 
-    it 'parses topics correctly' do
-      subject.parse_path('/v1/infochimps/config/foo').should include(topic: 'foo')
+    it 'parses /v1/infochimps/event/topic/id' do
+      subject.parse_path('/v1/organization/event/topic/id').should include(organization: 'organization', type: 'event', topic: 'topic', id: 'id')
     end
 
-    it 'parses ids correctly' do
-      subject.parse_path('/v1/infochimps/itemset/bar/1').should include(id: '1')
+    it 'parses /v1/infochimps/events/topic' do
+      subject.parse_path('/v1/organization/events/topic').should include(organization: 'organization', type: 'events', topic: 'topic')
     end
 
-    it 'parses formats correctly' do
-      subject.parse_path('/v1/infochimps/event/baz/1.json').should include(format: 'json')
+    it 'parses /v1/infochimps/stash/topic' do
+      subject.parse_path('/v1/organization/stash/topic').should include(organization: 'organization', type: 'stash', topic: 'topic')
     end
+
+    it 'parses /v1/infochimps/stash/topic/id' do
+      subject.parse_path('/v1/organization/stash/topic/id').should include(organization: 'organization', type: 'stash', topic: 'topic', id: 'id')
+    end
+
+    it 'parses /v1/infochimps/stashes' do
+      subject.parse_path('/v1/organization/stashes').should include(organization: 'organization', type: 'stashes')
+    end
+    
   end
 end

@@ -65,6 +65,24 @@ describe Vayacondios::Client, events: true, stashes: true do
     end
   end
 
+  describe "#events" do
+    it "is defined" do
+      should respond_to(:events)
+    end
+
+    context "without arguments" do
+      it "raises an error" do
+        expect { subject.events() }.to raise_error(ArgumentError, /topic/)
+      end
+    end
+
+    context "with only a topic argument" do
+      it "sends a search for events belonging to that topic" do
+        expect { subject.events(topic) }.to_not raise_error
+      end
+    end
+  end
+
   describe "#get" do
     it "is defined" do
       should respond_to(:get)
@@ -97,6 +115,18 @@ describe Vayacondios::Client, events: true, stashes: true do
     end
   end
 
+  describe "#stashes" do
+    it "is defined" do
+      should respond_to(:stashes)
+    end
+
+    context "without arguments" do
+      it "sends a search for stashes" do
+        expect { subject.stashes() }.to_not raise_error
+      end
+    end
+  end
+  
   describe "#set" do
     it "is defined" do
       should respond_to(:set)

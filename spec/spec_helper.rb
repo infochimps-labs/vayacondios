@@ -16,6 +16,8 @@ Settings.define 'mongo.database', :default => 'vayacondios_test', :description =
 Settings.read(File.join File.dirname(__FILE__), '..', 'config', 'spec.yml')
 Settings.resolve!
 
+require 'rack/test'
+
 require 'goliath/test_helper'
 Dir["spec/support/**/*.rb"].each {|f| require File.join(File.dirname(__FILE__), '..', f) }
 

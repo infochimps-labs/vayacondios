@@ -28,8 +28,16 @@ class Vayacondios
       request(:post, 'event', topic, id, body: event)
     end
 
+    def perform_events topic, query={}
+      request(:get, 'events', topic, body: query)
+    end
+
     def perform_get topic, id=nil
       request(:get, 'stash', topic, id)
+    end
+    
+    def perform_stashes query={}
+      request(:get, 'stashes', body: query)
     end
 
     def perform_set topic, id, document
@@ -49,18 +57,17 @@ class Vayacondios
     end
 
     def create_request method, *args
-      document = (args.pop[:body] || '') if args.last.is_a?(Hash)
+      document = args.pop[:body] if args.last.is_a?(Hash)
       path    = File.join('/v1', organization, *args.compact.map(&:to_s))
-      params  = [method.to_sym, path]
-      params += [MultiJson.dump(document), headers] if document
-
       log.debug("#{method.to_s.upcase} http://#{host}:#{port}#{path}")
-      params
+      Net::HTTP.const_get(method.to_s.capitalize).new(path, headers).tap do |req|
+        req.body = MultiJson.dump(document) if document
+      end
     end
 
-    def send_request params
+    def send_request req
       begin
-        handle_response(connection.send(*params))
+        handle_response(connection.request(req))
       rescue Timeout::Error => e
         log.error("Timed out connecting to http://#{host}:#{port}")
         nil

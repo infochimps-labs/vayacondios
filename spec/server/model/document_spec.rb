@@ -15,13 +15,6 @@ describe Vayacondios::Document do
         expect { subject.new(params) }.to raise_error(Vayacondios::Document::Error, /organization/)
       end
     end
-    
-    context "without a 'topic' option" do
-      let(:params) { {organization: organization} }
-      it "raises an error" do
-        expect { subject.new(params) }.to raise_error(Vayacondios::Document::Error, /topic/)
-      end
-    end
 
     context "with 'organization' and 'topic' options" do
       let(:params) { {organization: organization, 'topic' => topic} } # symbol AND string keys
