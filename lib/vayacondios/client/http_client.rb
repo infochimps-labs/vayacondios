@@ -59,9 +59,14 @@ class Vayacondios
     def create_request method, *args
       document = args.pop[:body] if args.last.is_a?(Hash)
       path    = File.join('/v1', organization, *args.compact.map(&:to_s))
-      log.debug("#{method.to_s.upcase} http://#{host}:#{port}#{path}")
+      msgs    = [method.to_s.upcase, "http://#{host}:#{port}#{path}"]
       Net::HTTP.const_get(method.to_s.capitalize).new(path, headers).tap do |req|
-        req.body = MultiJson.dump(document) if document
+        if document
+          output   = MultiJson.dump(document)
+          req.body = output
+          msgs << output
+        end
+        log.debug(msgs.join(' '))
       end
     end
 
