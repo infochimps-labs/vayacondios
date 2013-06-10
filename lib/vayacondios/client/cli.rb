@@ -274,11 +274,12 @@ DESCRIPTION
       case
       when doc.is_a?(String)
         puts doc
-      when doc && settings.pretty
-        puts MultiJson.dump(doc, pretty: true)
+      when doc.is_a?(Array)
+        doc.each do |line|
+          puts MultiJson.dump(line, pretty: settings.pretty)
+        end
       when doc
         puts MultiJson.dump(doc)
-      else
       end
     end
 
