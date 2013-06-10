@@ -72,7 +72,9 @@ class Vayacondios
 
     def send_request req
       begin
-        handle_response(connection.request(req))
+        Timeout.timeout(5) do
+          handle_response(connection.request(req))
+        end
       rescue Timeout::Error => e
         log.error("Timed out connecting to http://#{host}:#{port}")
         nil
