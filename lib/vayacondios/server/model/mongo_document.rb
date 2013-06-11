@@ -43,7 +43,7 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   end
 
   def sanitize_mongo_collection_name name
-    name.to_s.gsub(/[^\w\.]+/, '_').gsub(/^\./,'_').gsub(/\.$/,'_')
+    name.to_s.gsub(/[^-\w\.]+/, '_').gsub(/^\./,'_').gsub(/\.$/,'_')
   end
   
   def find query={}
