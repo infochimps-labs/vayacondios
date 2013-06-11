@@ -4,6 +4,7 @@ import com.infochimps.vayacondios.VayacondiosClient;
 import com.infochimps.vayacondios.StandardVCDLink;
 
 import static com.infochimps.util.CurrentClass.getLogger;
+import static com.infochimps.config.Configliere.propertyOr;
 
 import static com.infochimps.vayacondios.ItemSets.Item;
 import static com.infochimps.vayacondios.ItemSets.ItemSet;
@@ -22,7 +23,10 @@ public class VCDIntegrationTest {
   private static final Logger LOG = getLogger();
 
   public static void setUp() {
-    StandardVCDLink.forceLegacy(false);
+    boolean legacyMode =
+      Boolean.valueOf(propertyOr("vayacondios.legacy"), "false");
+    LOG.info("Using Vayacondios {} mode", legacyMode ? "legacy" : "standard");
+    StandardVCDLink.forceLegacy(legacyMode);
   }
 
   private static ItemSets itemSets() {

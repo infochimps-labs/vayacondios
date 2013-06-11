@@ -143,9 +143,9 @@ public class HttpHelper {
       new BufferedReader(
         new InputStreamReader(getStream(con, log), inputCharset));
 
-    log.info("successfully opened connection to {} with character encoding {}",
-             con.getURL().toString(),
-             inputCharset);
+    log.debug("successfully opened connection to {} with character encoding {}",
+	      con.getURL().toString(),
+	      inputCharset);
 
     return reader;
   }
