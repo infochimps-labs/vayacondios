@@ -1,88 +1,27 @@
 package com.infochimps.vayacondios;
 
-import static com.infochimps.util.CurrentClass.getLogger;
+import java.util.Map;
+import java.util.List;
 
-import com.infochimps.util.CurrentClass;
-import com.infochimps.util.HttpHelper;
+interface VayacondiosClient {
 
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.nio.charset.Charset;
-import java.util.HashMap;
+    void announce(String topic, Map event, String id);
+    void announce(String topic, Map event);
 
-import org.slf4j.Logger;
+    List events(String topic, Map query);
 
-/**
- * VayacondiosClient is the root of the Vayacondios hierarchy. It
- * communicates with a Vayacondios server via its HTTP API. Currently
- * only Vayacondios itemsets are supported.
- */
-public class VayacondiosClient extends PathBuilder {
-  public VayacondiosClient(PathBuilder delegate) { super(delegate); }
+    Object get(String topic, String id);
+    Object get(String topic);
 
-  public VayacondiosClient(String serverName, int port) {
-    _serverName = serverName;
-    _port       = port;
-  }
+    List stashes(Map query);
+    
+    void merge(String topic, String id, Map value);
+    void merge(String topic, Map value);
 
-  //----------------------------------------------------------------------------
-  // next in path hierarchy
-  //----------------------------------------------------------------------------
+    void set(String topic, String id, Map value);
+    void set(String topic, Map value);
 
-  /**
-   * @param organization Vayacondios organization. see Vayacondios
-   *                     documentation for details.
-   * @return new Organization path builder for this server with the
-   *         specified orgnanization name
-   *
-   */
-  public Organization organization(String organization) {
-    return new Organization(this, organization);
-  }
-
-  //----------------------------------------------------------------------------
-  // API HTTP path components
-  //----------------------------------------------------------------------------
-
-  protected String urlString(String organization,
-			     String type,
-			     String topic,
-			     String id) {
-    return new StringBuilder().
-      append("http://").
-      append(getServerName()).
-      append(":").
-      append(getPort()).
-      append("/v1/").
-      append(organization).
-      append("/").
-      append(type).
-      append("/").
-      append(topic).
-      append("/").
-      append(id)
-      .toString();
-  }
-
-  protected int    getPort()       { return _port;       }
-  protected String getServerName() { return _serverName; }
-
-  //----------------------------------------------------------------------------
-  // private methods
-  //----------------------------------------------------------------------------
-
-  protected BufferedReader openUrl(String urlString) throws IOException {
-    HashMap headers = new HashMap();
-    headers.put("Accept", "*/*");
-    return HttpHelper.open(LOG, urlString, headers, Charset.forName("UTF-8"));
-  }
-  
-  //----------------------------------------------------------------------------
-  // fields
-  //----------------------------------------------------------------------------
-
-  private String _serverName;
-  private int    _port;
-
-  private static final Logger LOG = getLogger();
+    void delete(String topic, String id);
+    void delete(String topic);
+    
 }

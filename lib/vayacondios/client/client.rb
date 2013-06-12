@@ -238,18 +238,6 @@ class Vayacondios
       end
     end
 
-    # Search for stashes matching some criteria.
-    #
-    # The default search behavior is to return the 
-    def stashes query={}
-      if dry_run?
-        log.debug("Searching stashes: #{query.inspect}")
-        nil
-      else
-        perform_stashes(query)
-      end
-    end
-
     # Retrieve a stash.
     #
     # Requires a topic.  If an ID is given, will return the stash for
@@ -302,6 +290,18 @@ class Vayacondios
       end
     end
 
+    # Search for stashes matching some criteria.
+    #
+    # The default search behavior is to return the 
+    def stashes query={}
+      if dry_run?
+        log.debug("Searching stashes: #{query.inspect}")
+        nil
+      else
+        perform_stashes(query)
+      end
+    end
+    
     # Set a stash by replacing it with the given value.
     #
     # A topic is required when setting a stash.

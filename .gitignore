@@ -61,3 +61,4 @@ public/system/*
 .rbx
 config/vayacondios.yml
 config/spec.yml
+target/*

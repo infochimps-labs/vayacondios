@@ -16,12 +16,14 @@ JSON-encoded request body.
 Events:
   GET    /v1/ORG/event/TOPIC/ID
   POST   /v1/ORG/event/TOPIC[/ID]
+  GET    /v1/ORG/events/TOPIC
 
 Stashes:
   GET    /v1/ORG/stash/TOPIC[/ID]
   PUT    /v1/ORG/stash/TOPIC[/ID]
   POST   /v1/ORG/stash/TOPIC[/ID]
   DELETE /v1/ORG/stash/TOPIC[/ID]
+  GET    /v1/ORG/stashes
 
 The server requires MongoDB as a data store.
 BANNER
@@ -77,7 +79,7 @@ BANNER
       rescue => e
         env.logger.error "#{e.class} -- #{e.message}"
         e.backtrace.each{ |line| env.logger.error(line) }
-        return [500, {}, {error: "#{e.class} -- #{e.message}", backtrace: e.backtrace}]
+        return [500, {}, {error: "#{e.class} -- #{e.message}"}]
       end
     end
 

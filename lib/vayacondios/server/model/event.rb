@@ -57,7 +57,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
       if result.present?
         self.timestamp = result["t"]
         self.body      = result["d"]
-        self.body
+        self.class.to_wire(result)
       else
         nil
       end
@@ -71,12 +71,14 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     opts[:fields] = (query.delete(:fields) || query.delete("fields")) if (query.has_key?(:fields) || query.has_key?('fields'))
     
     selector = {t: {}}
-    selector[:t][:gte]   = parse_timestamp(query.delete(:from) || query.delete('from'))
-    selector[:t][:gte] ||=  (Time.now - WINDOW)
-    selector[:t][:lte]   = parse_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
+    selector[:t][:$gte]   = parse_timestamp(query.delete(:from) || query.delete('from'))
+    selector[:t][:$gte] ||=  (Time.now - WINDOW)
+    selector[:t][:$lte]   = parse_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
     selector.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
     
-    mongo_query(collection, :find, selector, opts)
+    (mongo_query(collection, :find, selector, opts) || []).map do |result|
+      self.class.to_wire(result)
+    end
   end
   
   def create(document)
@@ -115,4 +117,9 @@ class Vayacondios::Event < Vayacondios::MongoDocument
       nil
     end
   end
+
+  def self.to_wire result
+    {id: format_mongo_id(result["_id"]).to_s, time: result["t"]}.merge(result["d"])
+  end
+  
 end
