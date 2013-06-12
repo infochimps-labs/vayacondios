@@ -22,13 +22,13 @@ public class VCDIntegrationTest {
   private static final Logger LOG = getLogger();
 
   public static void setUp() {
-    // This will happen to default to false when getProperty returns
-    // null, which is what we want.
-    boolean legacyMode = Boolean.valueOf(System.getProperty("vayacondios.legacy"));
+    // This will default to false when the property is null, which is
+    // what we happen to want.
+    boolean legacyMode =
+      Boolean.valueOf(System.getProperty("vayacondios.legacy"));
     LOG.info("Using Vayacondios {} mode", legacyMode ? "legacy" : "standard");
     StandardVCDLink.forceLegacy(legacyMode);
   }
-
   private static ItemSets itemSets() {
     return new VayacondiosClient("localhost", VCD_PORT).
       organization("org").
