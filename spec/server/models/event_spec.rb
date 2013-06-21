@@ -126,6 +126,11 @@ describe Vayacondios::Event, events: true do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
       subject.search(event_query_with_fields)
     end
+    it "interprets the 'id' field as a regular expression search on _id" do
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "_id" => Regexp.new(/baz/), "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+      subject.search(event_query_with_id)
+    end
+    
     
     describe "handling 'time' parameters" do
       it "parses them when they're strings" do

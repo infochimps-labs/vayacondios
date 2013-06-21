@@ -118,14 +118,21 @@ describe Vayacondios::Stash, stashes: true do
       collection.should_receive(:find).with(stash_query, sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT)
         subject.search(stash_query)
     end
-    it "has accepts the 'sort' parameter" do
+    it "accepts the 'sort' parameter" do
       collection.should_receive(:find).with(stash_query_with_sort, sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT)
       subject.search(stash_query_with_sort)
     end
-    it "has accepts the 'limit' parameter" do
+    it "accepts the 'limit' parameter" do
       collection.should_receive(:find).with(stash_query_with_limit, sort: Vayacondios::Stash::SORT, limit: 10)
       subject.search(stash_query_with_limit)
     end
+    it "interprets the 'topic' parameter as regular expression search on the _id" do
+      modified_stash_query_with_topic = stash_query_with_topic.dup
+      modified_stash_query_with_topic["_id"] = Regexp.new(modified_stash_query_with_topic.delete('topic'))
+      collection.should_receive(:find).with(modified_stash_query_with_topic, sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT)
+      subject.search(stash_query_with_topic)
+    end
+    
   end
 
   describe "#create" do

@@ -13,6 +13,7 @@ shared_context "events", events: true do
   let(:event_query_with_fields)            { {'foo' => 'bar', 'fields' => %w[bing bam] } }
   let(:event_query_with_string_time)       { {'foo' => 'bar', "from" => "2013-06-08 01:19:15 -0500"} }
   let(:event_query_with_int_time)          { {'foo' => 'bar', "from" => 1370672418 } }
+  let(:event_query_with_id)                { {'foo' => 'bar', 'id' => 'baz' } }
 end
 
 shared_context "stashes", stashes: true do
@@ -27,6 +28,7 @@ shared_context "stashes", stashes: true do
   
   let(:stash_query_with_limit) { {'foo' => 'bar', 'limit' => 10} }
   let(:stash_query_with_sort)  { {'foo' => 'bar', 'sort'  => ['bar', 'ascending']} }
+  let(:stash_query_with_topic) { {'foo' => 'bar', 'topic' => 'baz' } }
 end
 
 shared_context "rack", rack: true do

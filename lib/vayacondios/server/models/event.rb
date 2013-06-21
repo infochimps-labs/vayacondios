@@ -134,6 +134,8 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # @option query [Array] "fields" an array of fields to return for each event
   # @option query [Time, String, Numeric] "from" the beginning of the time window for returned events
   # @option query [Time, String, Numeric] "upto" the end of the time window for returned events
+  # @option query [Time, String, Numeric] "upto" the end of the time window for returned events
+  # @option query [Regexp, String] "id" will be matched as a regular expression against the ID of the event
   # @return [Array<Hash>] the matched events
   def search query
     opts = {}
@@ -144,6 +146,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     selector = {t: {}}
     selector[:t][:$gte]   = to_timestamp(query.delete(:from) || query.delete('from'), (Time.now - WINDOW).utc)
     selector[:t][:$lte]   = to_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
+    selector["_id"]       = Regexp.new(query.delete(:id) || query.delete("id")) if (query[:id] || query["id"]) # let 'id' map naturally
     selector.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
     
     (mongo_query(collection, :find, selector, opts) || []).map do |result|

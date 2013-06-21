@@ -108,10 +108,14 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   # @param [Hash] query
   # @option query [Integer] "limit" (50) the number of stashes to return
   # @option query [Array] "sort" (['_id', 'ascending']) the sort order for returned stashes
+  # @option query [String, Regexp] "topic" will be matched as a regular expression against the topic of the stash
   # @return [Array<Hash>] the matched stashes
   def search(query={})
+    query["_id"]  = Regexp.new(query.delete(:topic) || query.delete("topic")) if (query[:topic] || query["topic"]) # allow searching on topic naturally
+    
     limit = (query.delete("limit") || LIMIT).to_i
     sort  = (query.delete("sort")  || SORT)
+    
     mongo_query(collection, :find, query, sort: sort, limit: limit)
   end
 
