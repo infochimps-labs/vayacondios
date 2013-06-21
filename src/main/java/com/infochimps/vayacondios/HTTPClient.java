@@ -96,10 +96,10 @@ public class HTTPClient extends BaseClient {
 
     private static Logger LOG = LoggerFactory.getLogger(HTTPClient.class);
     
-    /** Default host to connection to (default: {@value}) */
+    /** Default Vayacondios server host. */
     public static String  DEFAULT_HOST = "localhost";
     
-    /** Default port to connection to (default: {@value}) */
+    /** Default Vayacondios server port. */
     public static Integer DEFAULT_PORT = 9000;
     
     private String     _host;
@@ -276,7 +276,7 @@ public class HTTPClient extends BaseClient {
      * The proper way to use a <code>VayacondiosClient</code> is to
      * set up the client during initialization of your appilcation and
      * only close it at the end -- when you can afford to throw in a
-     * call to {@link Thread#sleep(int n)} if you need to.
+     * call to {@link Thread#sleep(long millis)} if you need to.
      * 
      * */
     @Override
