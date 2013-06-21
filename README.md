@@ -261,14 +261,14 @@ stashes (in JSON format):
 ## Installation & Configuration
 
 <a name="installation-database" />
-## Database
+### Database
 
 Vayacondios server depends on a database to store all its data.
 Currently, only MongoDB is supported: here are some
 [installation instructions](http://docs.mongodb.org/manual/installation/).
 
 <a name="installation-server" />
-## Server
+### Server
 
 Vayacondios server is distributed via Rubygems:
 
@@ -287,7 +287,7 @@ configured via command-line options.  Try `vcd-server --help` for more
 details.
 
 <a name="installation-client" />
-## Client
+### Client
 
 The server exposes its API via HTTP so all sorts of clients can talk
 to Vayacondios server.  Most simply, a command like
@@ -302,7 +302,7 @@ You can also install some pre-written clients that are aware of the
 Vayacondios API.
 
 <a name="installation-client-cli" />
-### Command-Line
+#### Command-Line
 
 The `vcd` command-line client is installed via Rubygems:
 
@@ -331,7 +331,7 @@ organization: my_company
 ```
 
 <a name="installation-client-ruby" />
-### Ruby Client
+#### Ruby Client
 
 A Ruby client is also avialable via Rubygems:
 
@@ -352,7 +352,7 @@ The Ruby client exposes several API requests as named methods (like
 href="#api-events-announce">announce event</a> API endpoint).
 
 <a name="installation-client-java" />
-### Java Client
+#### Java Client
 
 A Java client is also available.  Put the following into your
 `pom.xml`:
