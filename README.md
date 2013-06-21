@@ -126,7 +126,7 @@ Here are some examples of data that it would make sense to store as
 events (in JSON format):
 
 * the output of a build from a CI system might be written to topic `ci`
-```json
+```
 {
   "environment": "Jenkins CI v. 1.519",
   "project": {
@@ -147,7 +147,7 @@ events (in JSON format):
 }  
 ```
 * an intrusion event picked up by the firewall might be written to topic `firewall.intrusions`
-```json
+```
 {
   "ip":     "74.210.29.117",
   "port":   22,
@@ -156,7 +156,7 @@ events (in JSON format):
 }
 ```
 * some performance statistics for a running server might be written topic `phoenix.servers.webserver-16`
-```json
+```
 {
   "data_center": "Phoenix",
   "rack":        "14",
@@ -183,6 +183,7 @@ events (in JSON format):
 	"read":  0.11
   }
 ```
+
 <a name="datamodel-stashes" />
 ### Stashes
 
@@ -208,7 +209,7 @@ Here are some examples of data that it would make sense to store as
 stashes (in JSON format):
 
 * a collection of projects to run through a CI system might be stored on topic `ci`
-```json
+```
 {
   "projects": {
     {
@@ -224,7 +225,7 @@ stashes (in JSON format):
 }
 ```
 * firewall settings might be stored on topic `firewall`
-```json
+```
 {
   "firewall": {
     "rules": [
@@ -243,7 +244,7 @@ stashes (in JSON format):
 }
 ```
 * a mapping of servers within some data center might be stored on topic `data_centers.phoenix`
-```json
+```
 {
   "name":     "PHX",
   "location": "Phoenix, AZ",
@@ -406,45 +407,133 @@ The Java client exposes several API requests as named methods (like
 href="#api-events-announce">announce event</a> API endpoint).
 
 <a name="api" />
-## API
+## API (v2)
 
-The following describes each HTTP endpoint exposed by the Vayacondios
-server:
+All HTTP endpoints defined by the Vayacondios server API share a
+common structure: `/:version/:organization/:type/[:topic]/[:id]/...`
+
+| Parameter    | Required | Definition                            | Examples                              |
+| ------------ | -------- |	------------------------------------- | ------------------------------------- |
+| version      | required |	Vayacondios API version               | v1, v2 (current)                      |
+| organization | required |	Name of organization, service, or app | `security`, `accounting`, `customerX` |
+| type         | required |	Request type                          | `event`, `stash`, `events`, `stashes` |
+| topic        | varies   |	Topic for event or stash              | `firewall`, `servers.webserver-3`     |
+| id           | varies   |	ID of event or field within stash     | `cpu`, `liua38923u2389f`              |
+
+The `version`, `organization`, and `type` parameters are always
+required.  Other parameters are required depending on the endpoint.
+
+Vayacondios server only listens for a single value of the top-level
+`version` parameter (curently: `v2`). A frontend webserver (Apache,
+nginx, &c.) can be used to split traffic to backend Vayacondios
+servers running different versions of the Vayacondios API by routing
+based on this parameter.
+
+The `type` parameter is fixed and defines the type of a Vayacondios
+request: `event`, `stash`, `events`, or `stashes`.
+
+All other parameters are completely free for clients to specify under
+the following constraints:
+
+* the `organization` parameter can only contain letters, digits,
+  hyphens, and underscores and it must begin with a letter
+
+* the `topic` parameter can only contain letters, digits, hyphens,
+  underscores, and periods and it cannot start or end with a period
+
+* the `id` parameter cannot contain the dollar sign or period
+
+The `type`, `organization`, `topic`, and `id` parameter together
+constitue the *vayacondios route*.
+
+The *document* is the request body sent to the server with a given
+request.  Requests to Vayacondios should have JSON-encoded bodies but
+the body can be any JSON datatype: Hash, Array, String, Integer,
+Float, Boolean, or `null`.
+
+The *response* is the JSON-encoded response body sent back to the
+client from the server.  If an error occurred, in addition to the
+appropriate HTTP response code, the response will be a Hash containing
+the key `error` with a message detailing the error.
+
+In the case of a record which is not found, the response may be empty
+but the HTTP response code will be 404.
+
+In the case of a successful request, the response code will be 200 and
+the response body will the requested/written object.
 
 <a name="api-events" />
 ### Events
 
+A topic within an organization can have many events.
+
+Events are Hash-like data structures which have an associated
+timestamp and ID.
+
+Events can be announced, retrieved, and searched.  Events cannot be
+updated or deleted, though announcing an event with the same ID as an
+existing event overwrites the existing event.
+
 <a name="api-events-announce" />
 #### Announce a new event
 
-Method: `POST`
-Path:   `/v2/ORGANIZATION/event/TOPIC`
-Action: Stores a new event with an auto-generated ID
+An event can be created without an ID.  The server will generate a
+random, unique ID and include it with the event in the response.  This
+is the most common way to write an event.  If you don't intend to ever
+retrieve this specific event (as opposed to searching across events)
+then this is the right choice.
 
-Method: `POST`
-Path:   `/v2/ORGANIZATION/event/TOPIC/ID`
-Action: Stores/overwrites a new event with the given ID
+Events can also be created with an explicit ID. This is less common
+but can be useful if your events naturally contain a unique
+identifier.
+
+| Method | Path                               | Request | Response | Action                                          | 
+| ------ | ---------------------------------- | ------- | -------- | ----------------------------------------------- |
+| POST   | /v2/:organization/event/:topic     | Hash    | Hash     | Stores a new event with an auto-generated ID    |
+| POST   | /v2/:organization/event/:topic/:id | Hash    | Hash     | Stores/overwrites a new event with the given ID |
+
+All requests to announce a new event accept a Hash-like request body.
+Key/value pairs in this request body constitute the body of the event.
+The following parameters have special meaning:
 
 | Parameter | Description                    | Default      | Example Values                           |
 | --------- | ------------------------------ | ------------ | ---------------------------------------- |
 | time      | Set the timestamp of the event | current time |`2013-06-20 16:20:48 -0500`, `1371763237` |
 
-All other key/value in the request body will be stored as data for the
-event.
+The response body will contain a Hash that is the original request
+Hash but with the (possibly auto-generated) ID and timestamp included.
 
 <a name="api-events-get" />
 #### Get an existing event
 
-Method: `GET`
-Path:   `/v2/ORGANIZATION/event/TOPIC/ID`
-Action: Retrieve an existing event given its ID
+Events can be retrieved if their ID is known.
+
+| Method | Path                               | Request | Response | Action                                          | 
+| ------ | ---------------------------------- | ------- | -------- | ----------------------------------------------- |
+| GET    | /v2/:organization/event/:topic/:id | N/A     | Hash     | Retrieve an existing event given its ID         |
+
+The response will contain the event Hash if found or will be empty if
+not.
 
 <a name="api-events-search" />
 #### Search for events
 
-Method: `GET`
-Path:   `/v2/ORGANIZATION/events/TOPIC`
-Action: Search for events on the given topic.
+You can search for events matching a query.
+
+| Method | Path                           | Request | Response    | Action                                          | 
+| ------ | ------------------------------ | ------- | ----------- | ----------------------------------------------- |
+| GET    | /v2/:organization/event/:topic | Hash    | Array<Hash> | Search for events on the given topic.           |
+
+The default behavior (which will occur with an empty request body) is
+to return the most recent 50 events on the given `topic` sorted in
+descending order by their timestamps.
+
+Each key in the query body will be interpeted as a condition that the
+data of each event must match in order to be returned.  Keys with
+periods are interpreted as nested fields.  The following parameters
+have special meaning and can be used to adjust the time window, number
+of returned events, the sort behavior, and the fields within each
+event to return:
 
 | Parameter | Description                                  | Default              | Example Values                                         |
 | --------- | -------------------------------------------- | -------------------- | ------------------------------------------------------ |
@@ -453,71 +542,120 @@ Action: Search for events on the given topic.
 | limit     | Return up to this many events                | 50                   | 100, 200                                               |
 | fields    | Return only these fields from the event body | all fields           | `["account_id", "ip_address"]`                         |
 | sort      | Sort returned events by this field           | descending by time   | `["time", "ascending"]`, `["ip_address", "ascending"]` |
+| id        | Regular expression search on event ID        | N/A                  | `sensor-data-.*`, `2013-06-20-.*`                      |
 
-All other key/value in the request body will be used as conditions
-that the event body must match.
+The response will be an Array of the matching events, possibly an
+empty Array if no events were found.
 
 <a name="api-stashes" />
 ### Stashes
 
+A topic within an organization can have a stash.
+
+Stashes are Hash-like data structures.  Each key/value pair with the
+stash can be accessed directly by using the name of its key as the ID
+in requests.
+
+Stashes can be set, merged, retrieved, searched, and destroyed.
+
 <a name="api-stashes-set" />
-#### Set a stashed value
+#### Set a value
 
-Method: `POST`
-Path:   `/v2/ORGANIZATION/stash/TOPIC`
-Action: Overwrites the stash with the given topic.
+You can set a value for a stash or one of the fields within a stash.
+Your value will override whatever value is currently stored for that
+stash or for that ID within the stash.
 
-Method: `POST`
-Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
-Action: Overwrites the ID field of the stash with the given topic.
+| Method | Path                               | Request | Response | Action                                                     |
+| ------ | ---------------------------------- | ------- | -------- | ---------------------------------------------------------- |
+| POST   | /v2/:organization/stash/:topic     | Hash    | Hash     | Overwrites the stash with the given topic.                 |
+| POST   | /v2/:organization/stash/:topic/:id | varies  | varies   | Overwrites the ID field of the stash with the given topic. |
 
-Method: `PUT`
-Path:   `/v2/ORGANIZATION/stash/TOPIC`
-Action: Merges new data into the stash with the given topic.
+When setting the stash itself, your value must be Hash-like.  When
+setting an ID within a stash, your value can have any datatype.
 
-Method: `PUT`
-Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
-Action: Merges new data into the ID field of the stash with the given topic.
+The response for setting a stash will be the (Hash-like) stash you
+just set.  When setting an ID within a stash, the response will be of
+the same datatype as the request.
 
-All other key/value in the request body will be stored as data for the
-event.
+#### Merge a value
+
+You can merge a value for a stash or one of the fields within a stash.
+
+| Method | Path                               | Request | Response | Action                                                      |
+| ------ | ---------------------------------- | ------- | -------- | ----------------------------------------------------------- |
+| PUT    | /v2/:organization/stash/:topic     | Hash    | Hash     | Merges into the stash with the given topic.                 |
+| PUT    | /v2/:organization/stash/:topic/:id | varies  | varies   | Merges into the ID field of the stash with the given topic. |
+
+When merging the stash itself, your value must be Hash-like and will
+be merged on top of the existing (Hash-like) stash's value.
+
+When merging one of the ID fields within the stash, your value can
+have any datatype and it will be intelligently merged:
+
+* if your value is Hash-like and the existing value is Hash-like , your new value will be merged on top of the existing value
+* if your value is Array-like and the existing value is Array-like , your new value will be concatenated to the end of the existing value
+* if your value is String-like and the existing value is String-like , your new value will be concatenated to the end of the existing value
+* if your value is Numeric-like and the existing value is Numeric-like , your new value will be added to the existing value
+
+The response for merging a stash will be the Hash-like combination of
+your old and new value.  The response for merging an ID within a stash
+will be of the same type as the request.
 
 <a name="api-stashes-get" />
-#### Get a stashed value
+#### Get a value
 
-Method: `GET`
-Path:   `/v2/ORGANIZATION/stash/TOPIC`
-Action: Retrieve the stash with the given topic.
+You can get the value of an existing stash or one of the fields within
+that stash.
 
-Method: `GET`
-Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
-Action: Retrieve the ID field of the stash with the given topic.
+| Method | Path                               | Request | Response | Action                                                 |
+| ------ | ---------------------------------- | ------- | -------- | ------------------------------------------------------ |
+| GET    | /v2/:organization/stash/:topic     | N/A     | Hash     | Return the stash with the given topic.                 |
+| GET    | /v2/:organization/stash/:topic/:id | N/A     | varies   | Return the ID field of the stash with the given topic. |
+
+The response for retreiving a stash will be the Hash-like stash while
+the response for retreving an ID field within a stash will vary based
+on the datatype of that value.
 
 <a name="api-stashes-delete" />
-#### Delete a stashed value
+#### Delete a value
 
-Method: `DELETE`
-Path:   `/v2/ORGANIZATION/stash/TOPIC`
-Action: Delete the stash with the given topic.
+You can get delete a stash or one of the fields within a stash.
 
-Method: `DELETE`
-Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
-Action: Delete the ID field of the stash with the given topic.
+| Method | Path                               | Request | Response | Action                                                  |
+| ------ | ---------------------------------- | ------- | -------- | ------------------------------------------------------- |
+| DELETE | /v2/:organization/stash/:topic     | N/A     | Hash     | Deletes the stash with the given topic.                 |
+| DELETE | /v2/:organization/stash/:topic/:id | N/A     | Hash     | Deletes the ID field of the stash with the given topic. |
+
+The response for deleting a stash or an ID within a stash will be a
+Hash naming the topic (and ID if given in the request) deleted.
 
 <a name="api-stashes-search" />
 #### Search for stashes
 
-Method: `GET`
-Path:   `/v2/ORGANIZATION/stashes`
-Action: Search for stashes.
+You can search for stashes.
 
-| Parameter | Description                                  | Default              | Example Values                 |
-| --------- | -------------------------------------------- | -------------------- | ------------------------------ |
-| limit     | Return up to this many stashes               | 50                   | 100, 200                       |
-| sort      | Sort returned stashes by this field          | ascending by topic   | `["ip_address", "ascending"]`  |
+| Method | Path                        | Request | Response    | Action                                                  |
+| ------ | --------------------------- | ------- | --------    | ------------------------------------------------------- |
+| GET    | /v2/:organization/stash     | Hash    | Array<Hash> | Search for stashes matching the given query.            |
 
-All other key/value in the request body will be used as conditions
-that the stash's body must match.
+The default behavior (which will occur with an empty request body) is
+to return 50 stashes in sorted in ascending order by their topic.
+
+Each key in the query body will be interpreted as a condition that the
+data of each stash must match in order to be returned.  Keys with
+periods are interpreted as nested fields.  The following parameters
+have special meaning and can be used to adjust the number of returned
+stashes and the the sort behavior.
+
+
+| Parameter | Description                                    | Default              | Example Values                     |
+| --------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
+| limit     | Return up to this many stashes                 | 50                   | 100, 200                           |
+| sort      | Sort returned stashes by this field            | ascending by topic   | `["ip_address", "ascending"]`      |
+| topic     | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
+
+The response will be an Array of the matching stashes, possibly an
+empty Array if no events were found.
 
 ### Copyright
 
