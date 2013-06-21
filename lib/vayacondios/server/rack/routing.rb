@@ -27,7 +27,7 @@ class Vayacondios
       # @param [String] path
       # @return [Hash] the `vayacondios_route` properties
       def parse_path(path)
-        path_regex = /^\/v2\/(?<organization>[a-z]\w+)\/(?<type>stash(?:es)?|events?)(\/(?<topic>[-\.\w]+)(\/(?<id>([-\.\w+]\/?)+))?)?(\/|\.(?<format>json))?$/i
+        path_regex = /^\/v2\/(?<organization>[a-z][-_\w]+)\/(?<type>stash(?:es)?|events?)(\/(?<topic>[-\.\w]+)(\/(?<id>([-\.\w+]\/?)+))?)?(\/|\.(?<format>json))?$/i
         if (match = path_regex.match(path))
           {}.tap do |segments|
             match.names.each do |segment|
