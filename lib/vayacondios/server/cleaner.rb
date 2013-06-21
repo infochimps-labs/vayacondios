@@ -121,8 +121,8 @@ DESCRIPTION
       settings.read("/etc/vayacondios/vayacondios.yml")    if File.exist?("/etc/vayacondios/vayacondios.yml")
       settings.read(File.expand_path("~/.vayacondios.yml")) if ENV["HOME"] && File.exist?(File.expand_path("~/.vayacondios.yml"))
       settings.resolve!
-      self.upto = parse_time(settings[:upto])
-      self.from = parse_time(settings[:from])
+      self.upto = parse_time(settings[:upto]) if settings[:upto]
+      self.from = parse_time(settings[:from]) if settings[:from]
     end
 
     # Validate that the provided timeframe is sensible.
@@ -152,9 +152,6 @@ DESCRIPTION
         puts [count, collection].map(&:to_s).join("\t")
       end
     end
-
-    private
-
 
     # Parses a given string into a time.
     #
@@ -209,13 +206,15 @@ DESCRIPTION
       "#{settings[:dry_run] ? 'Will remove' : 'Removing'} all events " + 
         case
         when upto && from
-          "#{upto} - #{from}"
+          "#{upto} - #{from} (#{upto.localtime} - #{from.localtime})"
         when upto
-          "before #{upto}"
+          "before #{upto} (#{upto.localtime})"
         when from
-          "after #{from}"
+          "after #{from} (#{from.localtime})"
         end
     end
+    
+    private
 
     # Clean the collection.
     #
@@ -241,7 +240,7 @@ DESCRIPTION
     # @return [Integer]
     # @see #query
     def count_stale_records collection
-      database.collection(collection).count(query)
+      database.collection(collection).find(query).count
     end
 
     # Remove stale records from the given collection.
@@ -271,8 +270,8 @@ DESCRIPTION
     def query
       {
         t: {}.tap do |constraints|
-          constraints[:$lte] = upto if upto
-          constraints[:$gte] = from if from
+          constraints[:$lte] = upto.utc if upto
+          constraints[:$gte] = from.utc if from
         end
       }
     end
