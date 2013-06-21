@@ -11,15 +11,15 @@ describe Vayacondios::HttpServer, events: true do
   context "GET" do
     let(:verb) { 'GET' }
 
-    context "/v1/organization/event/topic/id" do
-      let(:path)  { '/v1/organization/event/topic/id' }
+    context "/v2/organization/event/topic/id" do
+      let(:path)  { '/v2/organization/event/topic/id' }
       it "returns a 400" do
         vcd(verb: verb, path: path, status: 400)
       end
     end
 
-    context "/v1/organization/event/topic/id" do
-      let(:path)  { '/v1/organization/event/topic/id' }
+    context "/v2/organization/event/topic/id" do
+      let(:path)  { '/v2/organization/event/topic/id' }
       context "if the event isn't found" do
         it "returns a 404" do
           vcd(verb: verb, path: path, status: 404)
@@ -50,8 +50,8 @@ describe Vayacondios::HttpServer, events: true do
   context "POST" do
     let(:verb) { "POST" }
 
-    context "/v1/organization/event/topic" do
-      let(:path) { "/v1/organization/event/topic" }
+    context "/v2/organization/event/topic" do
+      let(:path) { "/v2/organization/event/topic" }
       context "with an empty event" do
         it "returns a 200" do
           vcd(verb: verb, path: path, status: 200)
@@ -110,8 +110,8 @@ describe Vayacondios::HttpServer, events: true do
       end
     end
 
-    context "/v1/organization/event/topic/id" do
-      let(:path) { "/v1/organization/event/topic/id" }
+    context "/v2/organization/event/topic/id" do
+      let(:path) { "/v2/organization/event/topic/id" }
       context "with an empty event" do
         it "returns a 200" do
           vcd(verb: verb, path: path, status: 200)
@@ -176,8 +176,8 @@ describe Vayacondios::HttpServer, events: true do
 
   context "PUT" do
     let(:verb) { 'PUT' }
-    context "/v1/organization/event/topic" do
-      let(:path) { "/v1/organization/event/topic" }
+    context "/v2/organization/event/topic" do
+      let(:path) { "/v2/organization/event/topic" }
       it "returns a 400" do
         vcd(verb: verb, path: path, status: 400)
       end
@@ -185,8 +185,8 @@ describe Vayacondios::HttpServer, events: true do
         vcd(verb: verb, path: path, error: /update/)
       end
     end
-    context "/v1/organization/event/topic/id" do
-      let(:path) { "/v1/organization/event/topic/id" }
+    context "/v2/organization/event/topic/id" do
+      let(:path) { "/v2/organization/event/topic/id" }
       it "returns a 400" do
         vcd(verb: verb, path: path, status: 400)
       end
@@ -198,8 +198,8 @@ describe Vayacondios::HttpServer, events: true do
 
   context "DELETE" do
     let(:verb) { 'DELETE' }
-    context "/v1/organization/event/topic" do
-      let(:path) { "/v1/organization/event/topic" }
+    context "/v2/organization/event/topic" do
+      let(:path) { "/v2/organization/event/topic" }
       it "returns a 400" do
         vcd(verb: verb, path: path, status: 400)
       end
@@ -207,8 +207,8 @@ describe Vayacondios::HttpServer, events: true do
         vcd(verb: verb, path: path, error: /delete/)
       end
     end
-    context "/v1/organization/event/topic/id" do
-      let(:path) { "/v1/organization/event/topic/id" }
+    context "/v2/organization/event/topic/id" do
+      let(:path) { "/v2/organization/event/topic/id" }
       it "returns a 400" do
         vcd(verb: verb, path: path, status: 400)
       end

@@ -32,30 +32,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
     describe "#announce" do
       context "without an ID" do
         context "with a Hash event" do
-          it "should send a POST request to /v1/organization/event/topic with the Hash as the body" do
+          it "should send a POST request to /v2/organization/event/topic with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic"
+              req.path.should  == "/v2/organization/event/topic"
               req.body.should  == json_hash_event
             end
             subject.announce(topic, hash_event)
           end
         end
         context "with an Array event" do
-          it "should send a POST request to /v1/organization/event/topic with the Array as the body" do
+          it "should send a POST request to /v2/organization/event/topic with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic"
+              req.path.should  == "/v2/organization/event/topic"
               req.body.should  == json_array_event
             end
             subject.announce(topic, array_event)
           end
         end
         context "with a String event" do
-          it "should send a POST request to /v1/organization/event/topic with the String as the body" do
+          it "should send a POST request to /v2/organization/event/topic with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic"
+              req.path.should  == "/v2/organization/event/topic"
               req.body.should  == json_string_event
             end
             subject.announce(topic, string_event)
@@ -64,30 +64,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
       end
       context "with an ID" do
         context "with a Hash event" do
-          it "should send a POST request to /v1/organization/event/topic/id with the Hash as the body" do
+          it "should send a POST request to /v2/organization/event/topic/id with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic/id"
+              req.path.should  == "/v2/organization/event/topic/id"
               req.body.should  == json_hash_event
             end
             subject.announce(topic, hash_event, id)
           end
         end
         context "with an Array event" do
-          it "should send a POST request to /v1/organization/event/topic/id with the Array as the body" do
+          it "should send a POST request to /v2/organization/event/topic/id with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic/id"
+              req.path.should  == "/v2/organization/event/topic/id"
               req.body.should  == json_array_event
             end
             subject.announce(topic, array_event, id)
           end
         end
         context "with a String event" do
-          it "should send a POST request to /v1/organization/event/topic/id with the String as the body" do
+          it "should send a POST request to /v2/organization/event/topic/id with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/event/topic/id"
+              req.path.should  == "/v2/organization/event/topic/id"
               req.body.should  == json_string_event
             end
             subject.announce(topic, string_event, id)
@@ -98,20 +98,20 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
 
     describe "#events" do
       context "without a query" do
-        it "sends a GET request to /v1/organization/events/topic" do
+        it "sends a GET request to /v2/organization/events/topic" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/events/topic"
+            req.path.should  == "/v2/organization/events/topic"
             req.body.should  == nil
           end
           subject.events(topic)
         end
       end
       context "with a query" do
-        it "sends a GET request to /v1/organization/events/topic with the query as a body" do
+        it "sends a GET request to /v2/organization/events/topic with the query as a body" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/events/topic"
+            req.path.should  == "/v2/organization/events/topic"
             req.body.should  == json_event_query
           end
           subject.events(topic, event_query)
@@ -121,20 +121,20 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
     
     describe "#get" do
       context "without an ID" do
-        it "should send a GET request to /v1/organization/stash/topic" do
+        it "should send a GET request to /v2/organization/stash/topic" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/stash/topic"
+            req.path.should  == "/v2/organization/stash/topic"
             req.body.should  == nil
           end
           subject.get(topic)
         end
       end
       context "with an ID" do
-        it "should send a GET request to /v1/organization/stash/topic/id" do
+        it "should send a GET request to /v2/organization/stash/topic/id" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/stash/topic/id"
+            req.path.should  == "/v2/organization/stash/topic/id"
             req.body.should  == nil
           end
           subject.get(topic, id)
@@ -144,20 +144,20 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
 
     describe "#stashes" do
       context "without a query" do
-        it "sends a GET request to /v1/organization/stashes" do
+        it "sends a GET request to /v2/organization/stashes" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/stashes"
+            req.path.should  == "/v2/organization/stashes"
             req.body.should  == '{}'
           end
           subject.stashes()
         end
       end
       context "with a query" do
-        it "sends a GET request to /v1/organization/stashes with the query as a body" do
+        it "sends a GET request to /v2/organization/stashes with the query as a body" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Get
-            req.path.should  == "/v1/organization/stashes"
+            req.path.should  == "/v2/organization/stashes"
             req.body.should == json_stash_query
           end
           subject.stashes(stash_query)
@@ -168,30 +168,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
     describe "#set" do
       context "without an ID" do
         context "with a Hash stash" do
-          it "should send a PUT request to /v1/organization/stash/topic with the Hash as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should  == json_hash_stash
             end
             subject.set(topic, nil, hash_stash)
           end
         end
         context "with an Array stash" do
-          it "should send a PUT request to /v1/organization/stash/topic with the Array as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should  == json_array_stash
             end
             subject.set(topic, nil, array_stash)
           end
         end
         context "with a String stash" do
-          it "should send a PUT request to /v1/organization/stash/topic with the String as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should  == json_string_stash
             end
             subject.set(topic, nil, string_stash)
@@ -201,30 +201,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
       
       context "with an ID" do
         context "with a Hash stash" do
-          it "should send a PUT request to /v1/organization/stash/topic/id with the Hash as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic/id with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_hash_stash
             end
             subject.set(topic, id, hash_stash)
           end
         end
         context "with an Array stash" do
-          it "should send a PUT request to /v1/organization/stash/topic/id with the Array as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic/id with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_array_stash
             end
             subject.set(topic, id, array_stash)
           end
         end
         context "with a String stash" do
-          it "should send a PUT request to /v1/organization/stash/topic/id with the String as the body" do
+          it "should send a PUT request to /v2/organization/stash/topic/id with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Put
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_string_stash
             end
             subject.set(topic, id, string_stash)
@@ -236,30 +236,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
     describe "#set!" do
       context "without an ID" do
         context "with a Hash stash" do
-          it "should send a POST request to /v1/organization/stash/topic with the Hash as the body" do
+          it "should send a POST request to /v2/organization/stash/topic with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should  == json_hash_stash
             end
             subject.set!(topic, nil, hash_stash)
           end
         end
         context "with an Array stash" do
-          it "should send a POST request to /v1/organization/stash/topic with the Array as the body" do
+          it "should send a POST request to /v2/organization/stash/topic with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should == json_array_stash
             end
             subject.set!(topic, nil, array_stash)
           end
         end
         context "with a String stash" do
-          it "should send a POST request to /v1/organization/stash/topic with the String as the body" do
+          it "should send a POST request to /v2/organization/stash/topic with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic"
+              req.path.should  == "/v2/organization/stash/topic"
               req.body.should  == json_string_stash
             end
             subject.set!(topic, nil, string_stash)
@@ -269,30 +269,30 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
       
       context "with an ID" do
         context "with a Hash stash" do
-          it "should send a POST request to /v1/organization/stash/topic/id with the Hash as the body" do
+          it "should send a POST request to /v2/organization/stash/topic/id with the Hash as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_hash_stash
             end
             subject.set!(topic, id, hash_stash)
           end
         end
         context "with an Array stash" do
-          it "should send a POST request to /v1/organization/stash/topic/id with the Array as the body" do
+          it "should send a POST request to /v2/organization/stash/topic/id with the Array as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_array_stash
             end
             subject.set!(topic, id, array_stash)
           end
         end
         context "with a String stash" do
-          it "should send a POST request to /v1/organization/stash/topic/id with the String as the body" do
+          it "should send a POST request to /v2/organization/stash/topic/id with the String as the body" do
             connection.should_receive(:request) do |req|
               req.class.should == Net::HTTP::Post
-              req.path.should  == "/v1/organization/stash/topic/id"
+              req.path.should  == "/v2/organization/stash/topic/id"
               req.body.should  == json_string_stash
             end
             subject.set!(topic, id, string_stash)
@@ -303,20 +303,20 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
 
     describe "#delete" do
       context "without an ID" do
-        it "should send a DELETE request to /v1/organization/stash/topic" do
+        it "should send a DELETE request to /v2/organization/stash/topic" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Delete
-            req.path.should  == "/v1/organization/stash/topic"
+            req.path.should  == "/v2/organization/stash/topic"
             req.body.should  == nil
           end
           subject.delete(topic)
         end
       end
       context "with an ID" do
-        it "should send a DELETE request to /v1/organization/stash/topic/id" do
+        it "should send a DELETE request to /v2/organization/stash/topic/id" do
           connection.should_receive(:request) do |req|
             req.class.should == Net::HTTP::Delete
-            req.path.should  == "/v1/organization/stash/topic/id"
+            req.path.should  == "/v2/organization/stash/topic/id"
             req.body.should  == nil
           end
           subject.delete(topic, id)

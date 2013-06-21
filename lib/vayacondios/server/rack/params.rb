@@ -1,7 +1,21 @@
 class Vayacondios
   module Rack
+
+    # Parses parameters in the request.
+    #
+    # Will parse parameters from the query string as well as from the
+    # request body.
+    #
+    # Rack gets unhappy when the parameters are anything other than a
+    # Hash but we want clients to be able to send non-Hash-like
+    # request bodies.  To support this case, the request's params are
+    # stored into the `_document` key of the params, to be fetched
+    # later by Vayacondios::HttpServer#document.
     class Params < Goliath::Rack::Params
 
+      # Parses the parameters of the request.
+      #
+      # @param [Hash] env the request environment
       def retrieve_params(env)
         params = {}
         params.merge!(::Rack::Utils.parse_nested_query(env['QUERY_STRING']))

@@ -1,6 +1,6 @@
 class Vayacondios
 
-  # Represents an abstract implementation of a Vayacondios client.
+  # An abstract implementation of a Vayacondios client.
   #
   # Defines methods for announcing events and setting/getting/deleting
   # stashes.
@@ -25,10 +25,13 @@ class Vayacondios
   # log all the requests it *would* have made.  The client's log can
   # be customized.
   #
-  # For each API method (`announce`, `get`, `set`, &c.) a concrete
-  # subclass should implement the corresponding `perform_` method
-  # (`perform_announce`, `perform_get`, `perform_set`, &c.)
+  # @abstract For each API method (`announce`, `get`, `set`, &c.) a
+  # concrete subclass should implement the corresponding `perform_`
+  # method (`perform_announce`, `perform_get`, `perform_set`, &c.)
   class Client
+
+    # The version of the Vayacondios API this client is using.
+    VERSION = 'v2'
 
     # An error to raise on bad requests.
     Error = Class.new(StandardError)
@@ -81,7 +84,7 @@ class Vayacondios
     # == API ==
     #
 
-    
+
     # Announce a new event.
     #
     # A topic is required when announcing an event.
@@ -178,16 +181,16 @@ class Vayacondios
       end
     end
 
-    # Search for events matching some criteria.
+    # Search for events matching some query.
     #
     # A topic is required when searching for events.
     #
     # The default search behavior implemented by Vayacondios server is
-    # to return up to 200 events from the last hour on the given topic
+    # to return up to 50 events from the last hour on the given topic
     # sorted by timestamp.
     #
-    # The number of events, the time period, and sorting behavior can
-    # all be changed.
+    # The events which match, number of events returned, the time
+    # period, and sorting behavior can all be changed.
     #
     # The set of fields returned in each event can also be specified.
     # Default behavior is to return all fields.
@@ -196,28 +199,53 @@ class Vayacondios
     #
     #   client.events('intrusions')
     #
+    # Each event must match each key/value pair in the `query`, with
+    # dots used to indicate nested fields.
+    #
+    # @example Retrieve recent intrusion events which have the field
+    # `type` equal to "ssh" and have a field `data_center` which is a
+    # Hash containing a field `name` equal to "Phoenix"
+    #
+    #  client.events('intrusions', type: 'ssh', 'data_center.name' => 'Phoenix')
+    #
+    # There are many more options, too:
+    #
+    # @example Request more than 50 events
+    #
+    #   client.events('intrusions', limit: 100)
+    #
     # @example Specify a different time period
     # 
-    #   client.events('intrusions', limit: 1000, time: {from: (Time.now - 1.day), upto: (Time.now - 1.hour)})
+    #   client.events('intrusions', time: {from: (Time.now - 1.day), upto: (Time.now - 1.hour)})
     #
     # @example Return only the `request.ip` and `port` of the event
     # 
     #   client.events('intrusions', fields: ['request.ip','port'])
     #
-    # @example Above examples but called with a single Hash argument
+    # @example Sort the returned events by the IP of the requestor in ascending order instead of the timestamp.
+    #
+    #   client.events('intrustions', sort: ['request.ip', 'ascending'])
+    #
+    # @example Above examples but combined into a single Hash argument
     #
     #   client.events({
     #     topic:  'intrusions',
-    #     query:  {limit: 1000},
-    #     time:   {from: (Time.now - 1.day)},
-    #     fields: ['request.ip', 'port']
+    #     query:  {
+    #       limit: 100,
+    #       from: (Time.now - 1.day),
+    #       upto: (Time.now - 1.hour),
+    #       fields: ['request.ip', 'port'],
+    #       sort:   ['request.ip', 'ascending'],
+    #       type: 'ssh',
+    #       'data_centers.name' => 'Phoenix',
+    #     }
     #   })
     #
     # @overload events(topic, query={})
     #   Call with explicit arguments
     #   @param [String] topic the topic to search
     #   @param[Hash] query the search query
-    #   @option query [Integer] :limit (200) the maximum number of events to return
+    #   @option query [Integer] :limit (50) the maximum number of events to return
     #   @option query [Time] :from (an hour ago) the earliest time an event can occur
     #   @option query [Time] :upto (present) the latest time an event can occur
     #   @option query [Array<String>] :fields (all fields) the fields of the event to return
@@ -228,6 +256,8 @@ class Vayacondios
     #   @param [Hash] options
     #   @option options [String] :topic the topic to search
     #   @option options [Hash] :query the search query
+    #
+    # @return the matching events
     def events *args
       topic, query = extract_topic_and_query(*args)
       if dry_run?
@@ -290,9 +320,51 @@ class Vayacondios
       end
     end
 
-    # Search for stashes matching some criteria.
+    # Search for stashes matching some query.
     #
-    # The default search behavior is to return the 
+    # The default search behavior is to return the first 50 stashes
+    # sorted by topic in ascending order.
+    #
+    # The stashes which match, number of stashes returned, and the
+    # sorting behavior can all be changed.
+    #
+    # @example Retrieve the first 50 stashes
+    #
+    #   client.stashes()
+    #
+    # Each stash must match each key/value pair in the `query`, with
+    # dots used to indicated nested fields.
+    #
+    # @example Retrieve stashes which have the field `type` equal to
+    # "Server" and the have a field `cloud` which is a Hash containing
+    # a field `provider` equal to "ec2"
+    #
+    #   client.stashes(type: "Server", "cloud.provider" => "ec2")
+    #
+    # There are many more options, too:
+    #
+    # @example Retrieve the first 100 stashes
+    #
+    #   client.stashes(limit: 100)
+    #
+    # @example Sort the returned stashes by the value of their
+    # `error_count` field in descending order
+    #
+    #   client.stashes(sort: ['error_count', 'descending'])
+    #
+    # @example Above examples combined into a single Hash argument
+    #
+    #   client.stashes({
+    #     limit: 100,
+    #     sort:  ['error_count', 'descending'],
+    #     type:  "Server",
+    #     "cloud.provider" => "ec2",
+    #   })
+    #
+    # @param [Hash] query the search query
+    # @option query [Integer] :limit (50) the maximum number of stashes to return
+    # @option query [Array<Array>] :sort array of [field, direction] pairs to sort by
+    # @return the matching stashes
     def stashes query={}
       if dry_run?
         log.debug("Searching stashes: #{query.inspect}")
@@ -594,6 +666,86 @@ class Vayacondios
     
     protected
 
+    # Perform the actual announcement.  Concrete subclasses should
+    # override this method.
+    # 
+    # @param [String] topic
+    # @param [Hash] event
+    # @param [String] id
+    # @return [Hash]
+    #
+    # @see #announce
+    def perform_announce topic, event, id=nil
+    end
+
+    # Perform the actual search for events.  Concrete subclasses
+    # should override this method.
+    # 
+    # @param [String] topic
+    # @param [Hash] query
+    # @return [Array<Hash>]
+    #
+    # @see #events
+    def perform_events topic, query={}
+    end
+
+    # Perform the actual search for stashes.  Concrete subclasses
+    # should override this method.
+    # 
+    # @param [String] topic
+    # @param [Hash] query
+    # @return [Array<Hash>]
+    #
+    # @see #stashes
+    def perform_stashes topic, query={}
+    end
+    
+    # Perform the actual get request.  Concrete subclasses should
+    # override this method.
+    # 
+    # @param [String] topic
+    # @param [String] id
+    # @return [Object]
+    #
+    # @see #get
+    def perform_get topic, id=nil
+    end
+
+    # Perform the actual set! request.  Concrete subclasses should
+    # override this method.
+    # 
+    # @param [String] topic
+    # @param [String] id
+    # @param [Object] document
+    # @return [Object]
+    #
+    # @see #set!
+    def perform_set! topic, id, document
+    end
+
+    # Perform the actual set request.  Concrete subclasses should
+    # override this method.
+    # 
+    # @param [String] topic
+    # @param [String] id
+    # @param [Object] document
+    # @return [Object]
+    #
+    # @see #set
+    def perform_set topic, id, document
+    end
+
+    # Perform the delete request.  Concrete subclasses should override
+    # this method.
+    # 
+    # @param [String] topic
+    # @param [String] id
+    # @return [Hash]
+    #
+    # @see #delete
+    def perform_delete topic, id=nil
+    end
+    
     def extract_topic_event_and_id *args
       if args.first.is_a?(Hash)
         topic = (args.first[:topic] || args.first['topic'])
@@ -643,82 +795,6 @@ class Vayacondios
         raise ArgumentError.new("When using explicit arguments, must provide the topic as the first argument") if topic.nil?
       end
       [topic, to_document(query)]
-    end
-
-    # Perform the actual announcement.  Concrete subclasses should
-    # override this method.
-    # 
-    # @param [String] topic
-    # @param [Hash] event
-    # @param [String] id
-    # @return [Hash]
-    #
-    # @see #announce
-    def perform_announce topic, event, id=nil
-    end
-
-    # Perform the actual search for events.  Concrete subclasses
-    # should override this method.
-    # 
-    # @param [String] topic
-    # @param [Hash] query
-    # @return [Array<Hash>]
-    def perform_events topic, query={}
-    end
-
-    # Perform the actual search for stashes.  Concrete subclasses
-    # should override this method.
-    # 
-    # @param [String] topic
-    # @param [Hash] query
-    # @return [Array<Hash>]
-    def perform_stashes topic, query={}
-    end
-    
-    # Perform the actual get request.  Concrete subclasses should
-    # override this method.
-    # 
-    # @param [String] topic
-    # @param [String] id
-    # @return [Object]
-    #
-    # @see #get
-    def perform_get topic, id=nil
-    end
-
-    # Perform the actual set! request.  Concrete subclasses should
-    # override this method.
-    # 
-    # @param [String] topic
-    # @param [String] id
-    # @param [Object] document
-    # @return [Object]
-    #
-    # @see #set!
-    def perform_set! topic, id, document
-    end
-
-    # Perform the actual set request.  Concrete subclasses should
-    # override this method.
-    # 
-    # @param [String] topic
-    # @param [String] id
-    # @param [Object] document
-    # @return [Object]
-    #
-    # @see #set
-    def perform_set topic, id, document
-    end
-
-    # Perform the delete request.  Concrete subclasses should override
-    # this method.
-    # 
-    # @param [String] topic
-    # @param [String] id
-    # @return [Hash]
-    #
-    # @see #delete
-    def perform_delete topic, id=nil
     end
 
   end

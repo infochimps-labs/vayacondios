@@ -8,7 +8,7 @@ end
 
 def clean_mongo!
   mongo_query do |db|
-    db.collections.select {|c| c.name !~ /system/ }.each { |c| c.drop }
+    db.collections.select {|c| c.name !~ /^system/ }.each { |c| c.drop }
   end
 end
 

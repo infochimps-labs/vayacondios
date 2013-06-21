@@ -20,11 +20,24 @@ describe Vayacondios::Event, events: true do
   describe "#collection_name" do
     its(:collection_name) { should == "organization.topic.events" }
   end
+
+  describe "#topic=" do
+    it "replaces non-word characters, non-(period|hyphen|underscore)s from a topic with underscores" do
+      Vayacondios::Event.new(log, database, organization: organization, topic: 'hello-.there buddy').topic.should == 'hello-.there_buddy'
+    end
+    it "replaces periods from the beginning and end of a topic with underscores" do
+      Vayacondios::Event.new(log, database, organization: organization, topic: '.hello.there.').topic.should == '_hello.there_'
+    end
+  end
   
   describe "#to_timestamp" do
 
-    it "given a nil value returns the current time" do
-      subject.to_timestamp(nil).should == timestamp
+    it "returns nil when the timestamp can't be parsed" do
+      subject.to_timestamp(nil).should be_nil
+    end
+    
+    it "given a default value returns the default value when the timestamp can't be parsed" do
+      subject.to_timestamp(nil, 'hello').should == 'hello'
     end
 
     it "given a Time instance returns that instance" do
@@ -41,6 +54,10 @@ describe Vayacondios::Event, events: true do
       subject.to_timestamp(timestamp.to_s).should == Time.at(timestamp.to_i) 
     end
 
+    it "given a Numeric parses it into a Time" do
+      subject.to_timestamp(timestamp.to_i).should == Time.at(timestamp.to_i) 
+    end
+    
     it "converts all times to UTC" do
       tokyo_time = timestamp.getlocal("+09:00")
       subject.to_timestamp(tokyo_time).zone.should == "UTC"
@@ -94,37 +111,37 @@ describe Vayacondios::Event, events: true do
 
   describe "#search" do
     it "has default sorting, limiting, and windowing behavior" do
-      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
       subject.search(event_query)
     end
     it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Event::LIMIT)
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Event::LIMIT)
       subject.search(event_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: 10)
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: 10)
       subject.search(event_query_with_limit)
     end
     it "accepts the 'fields' parameter" do
-      collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
       subject.search(event_query_with_fields)
     end
     
     describe "handling 'time' parameters" do
       it "parses them when they're strings" do
-        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query_with_string_time)
       end
       it "parses them when they're numeric" do
-        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query_with_int_time)
       end
       it "ignores them when they are something else" do
-        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query.merge("from" => ['hello']))
       end
       it "ignores them when they are unparseable" do
-        collection.should_receive(:find).with({t:  {gte: kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         subject.search(event_query.merge("from" => "2013-06-73 Sat 100:35"))
       end
       
@@ -133,7 +150,7 @@ describe Vayacondios::Event, events: true do
 
   describe "#create" do
     it "raises an error when given a non-Hash" do
-      expect { subject.create([]) }.to raise_error(Goliath::Validation::Error, /Hash/)
+      expect { subject.create([]) }.to raise_error(Vayacondios::Document::Error, /Hash/)
     end
 
     context "with an ID" do
@@ -152,17 +169,17 @@ describe Vayacondios::Event, events: true do
     end
   end
 
-  describe '#to_mongo_create_document' do
+  describe '#format_event_for_mongodb' do
     describe "the _id field" do
       context "for an event with an ID" do
         before  { subject.id = id }
         it "is set to the ID" do
-          subject.to_mongo_create_document({})[:_id].should == id
+          subject.format_event_for_mongodb({})[:_id].should == id
         end
       end
       context "for an  event lacks an ID" do
         it "is not present" do
-          subject.to_mongo_create_document({})[:_id].should be_nil
+          subject.format_event_for_mongodb({})[:_id].should be_nil
         end
       end
     end
@@ -171,12 +188,12 @@ describe Vayacondios::Event, events: true do
       context "for an event with no timestamp and" do
         context "a document without a timestamp" do
           it "sets it to the current time" do
-            subject.to_mongo_create_document({})[:t].should == timestamp
+            subject.format_event_for_mongodb({})[:t].should == timestamp
           end
         end
         context "a document with a timestamp" do
           it "sets it to the timestamp of the document" do
-            subject.to_mongo_create_document('time' => timestamp)[:t].should == timestamp
+            subject.format_event_for_mongodb('time' => timestamp)[:t].should == timestamp
           end
         end
       end
@@ -184,12 +201,12 @@ describe Vayacondios::Event, events: true do
         before { subject.timestamp = timestamp }
         context "a document without a timestamp" do
           it "sets it to the event's time" do
-            subject.to_mongo_create_document({})[:t].should == timestamp
+            subject.format_event_for_mongodb({})[:t].should == timestamp
           end
         end
         context "a document with a timestamp" do
           it "sets it to the timestamp of the document" do
-            subject.to_mongo_create_document('time' => timestamp + 1)[:t].should == timestamp + 1
+            subject.format_event_for_mongodb('time' => timestamp + 1)[:t].should == timestamp + 1
           end
         end
       end

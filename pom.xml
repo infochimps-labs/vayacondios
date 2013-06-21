@@ -4,8 +4,8 @@
   <groupId>com.infochimps</groupId>
   <artifactId>vayacondios</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.1-SNAPSHOT</version>
-  <name>java-common</name>
+  <version>2.0.0-LESLIE</version>
+  <name>Vayacondios</name>
   <url>http://maven.apache.org</url>
 
   <parent>
@@ -41,6 +41,25 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-surefire-plugin</artifactId>
+	<version>2.11</version>
+	<dependencies>
+	  <dependency>
+	    <groupId>org.apache.maven.surefire</groupId>
+	    <artifactId>surefire-junit47</artifactId>
+	    <version>2.12</version>
+	  </dependency>
+	</dependencies>
+	<configuration>
+	  <includes>
+	    <include>**/*.class</include>
+	  </includes>
+	  <excludedGroups>com.infochimps.vayacondios.test.IntegrationTest</excludedGroups>
+	</configuration>
+      </plugin>
+      
       <!-- <plugin> -->
       <!--   <groupId>org.apache.maven.plugins</groupId> -->
       <!--   <artifactId>maven-shade-plugin</artifactId> -->
@@ -120,7 +139,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>4.8.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -138,5 +157,12 @@
       <artifactId>httpclient</artifactId>
       <version>4.2.5</version>
     </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>2.11.1</version>
+      <scope>verify</scope>
+    </dependency>
+            
   </dependencies>
 </project>

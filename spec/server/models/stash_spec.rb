@@ -31,8 +31,16 @@ describe Vayacondios::Stash, stashes: true do
 
   describe "#topic=" do
     it "allows setting an arbitrary topic" do
-      subject.topic = '.mongo. crazy string'
-      subject.topic.should == '.mongo. crazy string'
+      subject.topic = '-mongo_ crazy string'
+      subject.topic.should == '-mongo_ crazy string'
+    end
+    it "replaces dollar-signs with an underscore" do
+      subject.topic = '$foo'
+      subject.topic.should == '_foo'
+    end
+    it "replaces periods with an underscore" do
+      subject.topic = '$foo'
+      subject.topic.should == '_foo'
     end
     it "will not set a blank topic" do
       subject.topic = ''
@@ -146,7 +154,7 @@ describe Vayacondios::Stash, stashes: true do
     end
     context "without an ID" do
       it "raises an error on a non-Hash" do
-        expect { subject.create([1,2,3]) }.to raise_error(Goliath::Validation::Error, /Hash/)
+        expect { subject.create([1,2,3]) }.to raise_error(Vayacondios::Document::Error, /Hash/)
       end
       it "accepts and returns a Hash" do
         collection.should_receive(:update)

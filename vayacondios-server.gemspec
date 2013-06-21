@@ -12,7 +12,7 @@ Gem::Specification.new do |gem|
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
   gem.files         = `git ls-files`.split("\n")
-  gem.executables   = ['vcd-server']
+  gem.executables   = ['vcd-server', 'vcd-clean']
   gem.test_files    = gem.files.grep(/^spec/)
   gem.require_paths = ['lib']
 
@@ -25,4 +25,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency('em-http-request', '~> 1.0')
   gem.add_dependency('em-mongo',        '~> 0.4.3')
   gem.add_dependency('bson_ext')
+  gem.add_dependency('chronic_duration') # for vcd-clean
 end

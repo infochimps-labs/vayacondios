@@ -1,188 +1,524 @@
-# Vaya con Dios
+# Vayacondios
 
-## Warning
+Vayacondios is a server-client program designed to make it simple to
+collect and centralize information and metrics from a large number of
+disparate sources from multiple application domains.
 
-Some of the documentation on this page is for legacy versions of
-Vayacondios. Until this document is updated, please see the specs for
-the Ruby code or compile the javadocs for the Java API.
+Vayacondios has the following design goals:
 
-> "Data goes in. The right thing happens."
+The client is simple enough to use in a shell script and the server is
+performant enough to support ubiquitous use across a large
+installation with many clients.
 
-Simple enough to use in a shell script, performant enough to use everywhere.
+* *Decentralized* -- Any client can dispatch stashes or events from anywhere
+* *Dynamic* -- No data types or schemas need to be created in advance
+* *Ubiquitous* -- Clients require minimal dependencies because the API is simple to use and access
+* *Simple* -- Clients can write data in whatever way is natural for them
+* *Scalable* -- Server and storage can be scaled horizontally to allow for ever-increasing loads
+* *Fast* -- No client should have to worry that sending data to Vayacondios will affect its performance
 
-You can chuck the following into Vaya con Dios from Ruby, the shell, over HTTP, or in a repeated polling loop:
+The basic objects of Vayacondios are **stash** and the **event**:
 
-* *value*   -- 'there are 3 cups of coffee remaining':
-* *timing*  -- 'this response took 100ms'
-* *count*   -- 'I just served a 404 response code'
-* *fact*    -- 'here's everything to know about the coffee machine: `{"cups_remaining":3,"uptime":127,room:"hyrule"}`' -- an arbitrary JSON hash
+* a **stash** is an "object", a "configuration", or "setting" designed to be shared among many services
+* an **event** is a "fact", "measurement", or "metric" announced by an arbitrary service, possibly related to some stash
 
-### Design goals
+Stashes and events are each documents which can contain arbitrary
+JSON-serializable data: hashes/maps/dictionarys, arrays/lists,
+strings, numbers, floats, null, &c.
 
-* *Decentralized* -- Any (authorized) system can dispatch facts or metrics using an arbitrary namespace and schema. Nothing needs to be created in advance.
-* *Bulletproof* -- UDP clients will never fail because of network loss or timeout.
-* *Fast* -- UDP clients are non-blocking and happily dispatch thousands of requests per second.
-* *Minimal Dependency* -- Ruby clients uses nothing outside of the standard libraries.
-* *Ubiquitous* -- Can send facts from the shell (with nothing besides `curl`)
-* *writes are simple, reads are clever* -- A writer gets to chuck things in according to its conception of the world.
+The client and server communicate over a RESTful, HTTP-based API which
+speaks JSON.
 
 See also [Coda Hale's metrics](https://github.com/codahale/metrics/).
 
-## Namespacing
+<a name="architecture" />
+## Architecture
 
-The first path segment defines a collection, and the remainder defines a [materialized path](http://www.mongodb.org/display/DOCS/Trees+in+MongoDB#TreesinMongoDB-MaterializedPaths%28FullPathinEachNode%29).
-All hashes within a given path should always have the same structure. Writes to an overlapping key will overwrite.
+<a name="architecture-database" />
+### Database
 
-A full Vaya con Dios path is broken down into specific segments.
+Vayacondios stores all its data in a database.  Access to the database
+within Vayacondios is strictly contained within model classes within
+`lib/vayacondios/server/models`.  This is so that the backend database
+can one day be changed easily without affecting the rest of the
+application.
 
-`/:organization/(event|config)/:topic.format`
+[MongoDB](http://www.mongodb.org/) is currently the only supported
+database.  MongoDB is a natural choice because it exposes atomic query
+primitives which map very closely to the operations exposed by the
+Vayacondios API.
 
-* `:organization` is the top level collection that all info is contained in.
-* `(event|config)` changes the context of the message. Events are timestamped and scope destructive. Config is merged with the current configuration.
-* `topic` is the materialized path we referred to that specifies its unique location.
-* `format` will change the serialization format for the data. Only JSON is currently supported.
+<a name="architecture-server" />
+### Server
 
+The Vayacondios server process is a
+[Goliath](https://github.com/postrank-labs/goliath) web server which
+implements the Vayacondios API over HTTP using JSON.
+
+A single server process can easily handle hundreds of client requests
+per second.  Multiple Vayacondios servers can easily be deployed
+behind a load-balancer.
+
+Each running server process reads and writes all its data in a single
+MongoDB database specified at runtime.
+
+<a name="architecture-client" />
+### Client
+
+Clients communicate with the Vayacondios server via the HTTP API it
+exposes.  This makes it extremely simply for applications in any
+language to communicate with the server.
+
+Vayacondios comes with several clients:
+
+* a Ruby-language client (`Vayacondios::HttpClient`)
+* a Java-language client (`com.infochimps.vayacondios.HTTPClient`)
+* a command-line client (the `vcd` program)
+
+The Ruby-language client and the command-line client are bundled with
+the `vayacondios-client` Ruby gem.  The Java-language client is part
+of the `com.infochimps.vayacondios` package.
+
+<a name="datamodel" />
+## Data Model
+
+Vayacondios uses a two-level hierarchical data model to organize
+events and stashes.
+
+The top-level is the **organization**.  Data from multiple
+organizations is stored together but accessed separately by a running
+Vayacondios server.  An organization could be the name of a user,
+workgroup, application, or service using Vayacondios.
+
+The next level is the **topic**.  Each topic within Vayacondios has a
+single stash and can have multiple events.  An "object" like a server,
+a database, an application, a service, or a user maps to the concept
+of "topic".
+
+Topics and organizations are strings which can only contain letters,
+digits, underscores, periods, and hypens, though periods cannot be the
+first or last character.  Organizations cannot begin with the string
+`system.`.
+
+<a name="datamodel-events" />
 ### Events
 
-Events are the primary piece of information stored. An event is anything that happened that you'd want to write down.
+Events belong to a topic within an organization.  Each event
+additionally has
 
-For example a `POST` to `http://vayacondios.whatever.com/v1/code/commit` with the
-```
+* an ID which is automatically set by the server to a random, unique value if none is provided when the event is announced.  Provided IDs cannot contain periods or dollar signs.
+* a timestamp which is automatically set by the server to the current UTC time if none is provided when the event is announced.  Provided timestamps will attempt to be parsed either from a string or from an integer UNIX timestamp.
+* arbitrary key/value data.  Keys cannot contain periods or dollar signs.
+
+Events are used for storing facts, measurements, metrics, errors,
+occurrences, &c.  If you anticipate wanting to see a time series or a
+histogram of a certain kind of data then you should consider writing
+that data into Vayacondios as events on some topic.
+
+Events are stored in MongoDB in a collection named after their
+organization and topic: an event on the `ci` topic for the `example`
+organization would be stored in the MongoDB collection
+`example.ci.events`.  The ID of the event, whether auto-generated by
+the server or specified by the client, will be used as the `_id` field
+of the resulting document within this collection.
+
+Here are some examples of data that it would make sense to store as
+events (in JSON format):
+
+* the output of a build from a CI system might be written to topic `ci`
+```json
 {
-  "_id":     "f93f2f08a0e39648fe64",     # commit SHA as unique id
-  "_path":   "code.commit",              # materialized path
-  "_ts":     "20110614104817",           # utc flat time
-  "repo":    "infochimps/wukong"
-  "message": "...",
-  "lines":   69,
-  "author":  "mrflip"
+  "environment": "Jenkins CI v. 1.519",
+  "project": {
+    "name":    "website",
+	"version": "0b4d99ded50a19e495d2472477bbb0784d8a18d8",
+    "url":     "https://github.com/mycompany/website.git",
+  },
+  "build": {
+    "time":   182,
+	"status": "success"
+  },
+  "test": {
+    "time":   97,
+	"ran":    102,
+	"passed": 102,
+	"failed": 0
+  }
+}  
+```
+* an intrusion event picked up by the firewall might be written to topic `firewall.intrusions`
+```json
+{
+  "ip":     "74.210.29.117",
+  "port":   22,
+  "type":   "ssh",
+  "reason": "blacklisted"
+}
+```
+* some performance statistics for a running server might be written topic `phoenix.servers.webserver-16`
+```json
+{
+  "data_center": "Phoenix",
+  "rack":        "14",
+  "server":      "webserver-16",
+  "cpu": {
+    user:   3.17,
+	nice:   0.01,
+	system: 0.27,
+	iowait: 0.18,
+	steal:  0.00,
+	idle:   96.38
+  },
+  "mem": {
+    "total": 12304632,
+	"used":  10335900,
+	"free":  1968732
+  },
+  "net": {
+    "out": 2.25,
+	"in":  10.28,
+  },
+  "disk": {
+    "write": 16.182,
+	"read":  0.11
+  }
+```
+<a name="datamodel-stashes" />
+### Stashes
+
+Stashes belong to a topic within an organization.  Each stash
+additionally has arbitrary key/value data that it can store.  Keys
+cannot contain dollar signs or periods.
+
+Stashes are used for storing objects, configuration, settings, &c.  If
+you anticipate wanting to lookup a value by name then you should
+consider writing that data into Vayacondios as (or within) a stash on
+some topic.
+
+The names of top-level keys within a stash can be used as the "ID"
+when retrieving/setting/deleting values via the API.
+
+Stashes are stored in MongoDB in a collection named after their
+organization: a stash for the `example` organization would be stored
+in the MongoDB collection `example.stash`.  The topic of the stash
+will be used as the `_id` field of the resulting document within this
+collection.
+
+Here are some examples of data that it would make sense to store as
+stashes (in JSON format):
+
+* a collection of projects to run through a CI system might be stored on topic `ci`
+```json
+{
+  "projects": {
+    {
+	  "name": "website",
+	  "url":  "https://github.com/mycompany/website.git",
+	},
+    {
+	  "name": "client_tool",
+	  "url":  "https://github.com/mycompany/client_tool.git",
+	},
+	...
+  }
+}
+```
+* firewall settings might be stored on topic `firewall`
+```json
+{
+  "firewall": {
+    "rules": [
+	  {
+	    "range":    "0.0.0.0",
+		"port":     80,
+		"protocol": "tcp"
+      },
+	  {
+	    "range":    "10.0.0.0",
+		"port";     22,
+		"protocol": "ssh"
+	  }
+	]
+  }
+}
+```
+* a mapping of servers within some data center might be stored on topic `data_centers.phoenix`
+```json
+{
+  "name":     "PHX",
+  "location": "Phoenix, AZ",
+  "servers": [
+    "webserver-0",
+	"webserver-1",
+	"webserver-2",
+	...
+  ]
 }
 ```
 
-Will write the hash as shown into the `code` collection. Vaya con Dios fills in the _path always, and the _id and _ts if missing. This can be queried with path of "^commit/infochimps" or "^commit/.*".
+<a name="installation" />
+## Installation & Configuration
 
-The hash will contain:
+<a name="installation-database" />
+## Database
 
-* `_id` -- unique _id
-* `_ts` -- timestamp, set if blank
-* `_path` -- `name.spaced.path.fact_name`, omits the collection part
+Vayacondios server depends on a database to store all its data.
+Currently, only MongoDB is supported: here are some
+[installation instructions](http://docs.mongodb.org/manual/installation/).
 
+<a name="installation-server" />
+## Server
 
-### Writes
+Vayacondios server is distributed via Rubygems:
 
-* value
-* count
-* timing
-* fact
+```
+$ sudo gem install vayacondios-server
+```
 
-`echo 'bob.dobolina.mr.bob.dobolina:320|ms:320' | netcat -c -u 127.0.0.1 8125`
+Once installed, you can launch a copy of the server from the
+command-line running locally on port 9000:
+```
+$ vcd-server --verbose --stdout
+```
 
-`http://vayacondios:9000/bob/dobolina/mr/bob/dobolina?_count=1`
+Ports, logging, the location of MongoDB, and much more can be
+configured via command-line options.  Try `vcd-server --help` for more
+details.
 
-`http://vayacondios:9000/bob/dobolina/mr/bob/dobolina?_count=1&_sampling=0.1`
+<a name="installation-client" />
+## Client
 
-`http://vayacondios:9000/bob/dobolina/mr/bob/dobolina?_timing=320`
+The server exposes its API via HTTP so all sorts of clients can talk
+to Vayacondios server.  Most simply, a command like
 
-### also
+```
+$ curl -X POST http://localhost:9000/v2/my_organization/event/some_topic -d '{"event": "data"}'
+```
 
-* Path components must be ASCII strings matching `[a-z][a-z0-9_]+` -- that is,  start with [a-z] and contain only lowercase alphanumeric, underscore, or hyphen. Components starting with a '_' have reserved meanings. The only valid underscored fields that a request can fill in are _id, _ts and _path.
+will work "right out of the box".
 
-* Vaya con Dios reserves the right to read and write paths in `/vayacondios`, and the details of those paths will be documented; it will never read or write other paths unless explicitly asked to.
+You can also install some pre-written clients that are aware of the
+Vayacondios API.
 
-* tree_merge rules:
+<a name="installation-client-cli" />
+### Command-Line
 
-  - hash1 + hash = hash1.merge(hash)
-  - arr1 + arr2  = arr1 + arr2
-  - val1 + val2  = val2
+The `vcd` command-line client is installed via Rubygems:
 
-  - hsh1 + nil   = hsh1
-  - arr1 + nil   = arr1
-  - val1 + nil   = val1
+```
+$ sudo gem install vayacondios-client
+```
 
-  - nil  + hs## = hsh2
-  - nil  + arr2  = arr2
-  - nil  + val2  = val2
+You can now run the `vcd` program.  The equivalent to the above `curl`
+command would be
 
-  - otherwise, exception
+```
+$ vcd announce 'some_topic' '{"event": "data"}'
+```
 
-  types: Hash, Array, String, Time, Integer, Float, Nil
+The `vcd` program looks for its configuration (where is the
+Vayacondios server?  what organization am I in?) in the files
+`/etc/vayacondios/vayacondios.yml` and `~/.vayacondios.yml`.  The
+following can be put in either location to customize the behavior of
+`vcd` for a given server or user.
 
-    mongo: string, int, double, boolean, date, bytearray, object, array, others
-    couch: string,number,boolean,array,object
+```yml
+---
+host: vcd.example.com
+port: 9000
+organization: my_company
+```
 
-#### add (set? send?)
+<a name="installation-client-ruby" />
+### Ruby Client
 
-GET  http://vayacondios:9099/f/{clxn}/{arbitrary/name/space}.{ext}?auth=token&query=predicate
+A Ruby client is also avialable via Rubygems:
 
-  db.collection(collection).save
+```
+$ sudo gem install vayacondios-client
+```
 
+You can now use the `Vayacondios::HttpClient` class in your code:
 
-get
+```ruby
+require 'vayacondios-client'
+client = Vayacondios::HttpClient.new(organization: 'my_company')
+client.announce('some_topic', foo: 'bar')
+```
 
+The Ruby client exposes several API requests as named methods (like
+`announce` above, which maps to a <a
+href="#api-events-announce">announce event</a> API endpoint).
 
-#### get
+<a name="installation-client-java" />
+### Java Client
 
-POST http://vayacondios:9099/f/arbitrary/name/space  with JSON body
+A Java client is also available.  Put the following into your
+`pom.xml`:
 
-#### Increment
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  ...
+  <repositories>
+    ...
+    <repository>
+      <id>infochimps.releases</id>
+      <name>Infochimps Internal Repository</name>
+      <url>https://s3.amazonaws.com/artifacts.chimpy.us/maven-s3p/releases</url>
+    </repository>
+	...
+  </repositories>
+  ...
+  <dependencies>
+    ...
+    <dependency>
+      <groupId>com.infochimps</groupId>
+      <artifactId>vayacondios</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+	...
+  </dependencies>
+  ...
+</project>  
+```
 
-#### Add to set
+You can now use the `com.infochimps.vayacondios.HTTPClient` class in
+your code:
 
-what do we need to provide the 'I got next' feature (to distribute resources uniquely from a set)?
+```java
+import com.infochimps.vayacondios.VayacondiosClient;
+import com.infochimps.vayacondios.HTTPClient;
 
-#### Auth
+class public HelloVayacondios {
+  public static void main(String[] args) throws Exception {
+    VayacondiosClient client = new HTTPClient("my_organization");
+	Map event = new HashMap();
+	event.put("foo", "bar");
+	client.announce("my_topic", event);
+	Thread.sleep(50) // ensures async HTTP request finishes
+    client.close();
+  }
+}
+```
 
-`/vayacondios/_auth/` holds one hash giving public key.
-* walk down the hash until you see _tok
-* can only auth at first or second level?
-* or by wildcard?
-* access is read or read_write; by default allows read_write
+The Java client exposes several API requests as named methods (like
+`announce` above, which maps to a <a
+href="#api-events-announce">announce event</a> API endpoint).
 
-## Others
+<a name="api" />
+## API
 
-GET latest
-GET all
-GET next
+The following describes each HTTP endpoint exposed by the Vayacondios
+server:
 
-## Configuration
+<a name="api-events" />
+### Events
 
-All organizations have a special topic called, "config" that allows for storage and retrieval of configuration data via standard [CRUD requests](http://en.wikipedia.org/wiki/Create,_read,_update_and_delete).
+<a name="api-events-announce" />
+#### Announce a new event
 
-### Writing config data
+Method: `POST`
+Path:   `/v2/ORGANIZATION/event/TOPIC`
+Action: Stores a new event with an auto-generated ID
 
-A `POST` request can be made to a full URL such as: `http://vayacondios:9000/organization/topic/some/deep/key`
+Method: `POST`
+Path:   `/v2/ORGANIZATION/event/TOPIC/ID`
+Action: Stores/overwrites a new event with the given ID
 
-Vaya con Dios stores configuration data in special collections (`"#{organization}.config"`). The topic acts as the primary key while `/some/deep/key` acts as a materialized path for selection.
+| Parameter | Description                    | Default      | Example Values                           |
+| --------- | ------------------------------ | ------------ | ---------------------------------------- |
+| time      | Set the timestamp of the event | current time |`2013-06-20 16:20:48 -0500`, `1371763237` |
 
-## Notes
+All other key/value in the request body will be stored as data for the
+event.
 
-### When to use HTTP vs UDP
+<a name="api-events-get" />
+#### Get an existing event
 
-#### HTTP is connectionful
+Method: `GET`
+Path:   `/v2/ORGANIZATION/event/TOPIC/ID`
+Action: Retrieve an existing event given its ID
 
-* you get acknowledgement that a metric was recorded (this is good).
-* if the network is down, your code will break (this is bad). (Well, usually. For some accounting and auditing metrics one might rather serve nothing at all than something unrecorded. Vayacondios doesn't address this use case.)
+<a name="api-events-search" />
+#### Search for events
 
-#### UDP has Packet Size limitations
+Method: `GET`
+Path:   `/v2/ORGANIZATION/events/TOPIC`
+Action: Search for events on the given topic.
 
-If you're using UDP for facts, you need to be *very* careful about payload size.
+| Parameter | Description                                  | Default              | Example Values                                         |
+| --------- | -------------------------------------------- | -------------------- | ------------------------------------------------------ |
+| from      | Occurred after this time                     | 1 hour ago           | `2013-06-20 Thu 00:00:00 -0500`, 1371704400            |
+| upto      | Occurred before this time                    | current time         | `2013-06-20 Thu 23:59:59 -0500`, 1371790799            |
+| limit     | Return up to this many events                | 50                   | 100, 200                                               |
+| fields    | Return only these fields from the event body | all fields           | `["account_id", "ip_address"]`                         |
+| sort      | Sort returned events by this field           | descending by time   | `["time", "ascending"]`, `["ip_address", "ascending"]` |
 
-From the [EventMachine docs](http://eventmachine.rubyforge.org/EventMachine/Connection.html#M000298)
+All other key/value in the request body will be used as conditions
+that the event body must match.
 
-> You may not send an arbitrarily-large data packet because your operating system will enforce a platform-specific limit on the size of the outbound packet. (Your kernel will respond in a platform-specific way if you send an overlarge packet: some will send a truncated packet, some will complain, and some will silently drop your request). On LANs, it’s usually OK to send datagrams up to about 4000 bytes in length, but to be really safe, send messages smaller than the Ethernet-packet size (typically about 1400 bytes). Some very restrictive WANs will either drop or truncate packets larger than about 500 bytes.
+<a name="api-stashes" />
+### Stashes
 
-## Colophon
+<a name="api-stashes-set" />
+#### Set a stashed value
 
-### Contributing to vayacondios
+Method: `POST`
+Path:   `/v2/ORGANIZATION/stash/TOPIC`
+Action: Overwrites the stash with the given topic.
 
-* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
-* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
-* Fork the project
-* Start a feature/bugfix branch
-* Commit and push until you are happy with your contribution
-* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
-* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+Method: `POST`
+Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
+Action: Overwrites the ID field of the stash with the given topic.
+
+Method: `PUT`
+Path:   `/v2/ORGANIZATION/stash/TOPIC`
+Action: Merges new data into the stash with the given topic.
+
+Method: `PUT`
+Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
+Action: Merges new data into the ID field of the stash with the given topic.
+
+All other key/value in the request body will be stored as data for the
+event.
+
+<a name="api-stashes-get" />
+#### Get a stashed value
+
+Method: `GET`
+Path:   `/v2/ORGANIZATION/stash/TOPIC`
+Action: Retrieve the stash with the given topic.
+
+Method: `GET`
+Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
+Action: Retrieve the ID field of the stash with the given topic.
+
+<a name="api-stashes-delete" />
+#### Delete a stashed value
+
+Method: `DELETE`
+Path:   `/v2/ORGANIZATION/stash/TOPIC`
+Action: Delete the stash with the given topic.
+
+Method: `DELETE`
+Path:   `/v2/ORGANIZATION/stash/TOPIC/ID`
+Action: Delete the ID field of the stash with the given topic.
+
+<a name="api-stashes-search" />
+#### Search for stashes
+
+Method: `GET`
+Path:   `/v2/ORGANIZATION/stashes`
+Action: Search for stashes.
+
+| Parameter | Description                                  | Default              | Example Values                 |
+| --------- | -------------------------------------------- | -------------------- | ------------------------------ |
+| limit     | Return up to this many stashes               | 50                   | 100, 200                       |
+| sort      | Sort returned stashes by this field          | ascending by topic   | `["ip_address", "ascending"]`  |
+
+All other key/value in the request body will be used as conditions
+that the stash's body must match.
 
 ### Copyright
 
-Copyright (c) 2011, 2012 Infochimps. See [LICENSE.md](LICENSE.md) for further details.
+Copyright (c) 2011 - 2013 Infochimps. See [LICENSE.md](LICENSE.md) for further details.

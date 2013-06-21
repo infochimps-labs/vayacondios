@@ -5,8 +5,8 @@ describe Vayacondios::HttpServer, stashes: true do
 
   context "GET" do
     let(:verb) { 'GET' }
-    context "/v1/organization/stash/topic" do
-      let(:path) { "/v1/organization/stash/topic" }
+    context "/v2/organization/stash/topic" do
+      let(:path) { "/v2/organization/stash/topic" }
       context "if the stash isn't found" do
         it "returns a 404" do
           vcd(verb: verb, path: path, status: 404)
@@ -26,8 +26,8 @@ describe Vayacondios::HttpServer, stashes: true do
         end
       end
     end
-    context "/v1/organization/stash/topic/id" do
-      let(:path) { "/v1/organization/stash/topic/id" }
+    context "/v2/organization/stash/topic/id" do
+      let(:path) { "/v2/organization/stash/topic/id" }
       context "if the stash isn't found" do
         it "returns a 404" do
           vcd(verb: verb, path: path, status: 404)
@@ -51,8 +51,8 @@ describe Vayacondios::HttpServer, stashes: true do
 
   context "POST" do
     let(:verb) { "POST" }
-    context "/v1/organization/stash/topic" do
-      let(:path) { "/v1/organization/stash/topic" }
+    context "/v2/organization/stash/topic" do
+      let(:path) { "/v2/organization/stash/topic" }
       context "with an empty stash" do
         it "returns a 200" do
           vcd(verb: verb, path: path, status: 200)
@@ -99,8 +99,8 @@ describe Vayacondios::HttpServer, stashes: true do
       end
     end
     
-    context "/v1/organization/stash/topic/id" do
-      let(:path) { "/v1/organization/stash/topic/id" }
+    context "/v2/organization/stash/topic/id" do
+      let(:path) { "/v2/organization/stash/topic/id" }
       context "with an empty stash" do
         it "returns a 200" do
           vcd(verb: verb, path: path, status: 200)
@@ -187,7 +187,7 @@ end
 #     it 'requires a topic' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/',
+#           :path => '/v2/infochimps/config/',
 #           :body => MultiJson.dump({:level=>"awesome"}),
 #           :head => { :content_type => 'application/json' }
 #         }, err) do |c|
@@ -199,7 +199,7 @@ end
 #     it 'requires an id' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/power',
+#           :path => '/v2/infochimps/config/power',
 #           :body => MultiJson.dump({:level=>"awesome"}),
 #           :head => { :content_type => 'application/json' }
 #         }, err) do |c|
@@ -211,7 +211,7 @@ end
 #     it 'stores configuration' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/power/level',
+#           :path => '/v2/infochimps/config/power/level',
 #           :body => MultiJson.dump({:level=>"awesome"}),
 #           :head => { :content_type => 'application/json' }
 #         }, err) do |c|
@@ -227,7 +227,7 @@ end
 #     it 'rejects deep IDs' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/power/level/is/invalid',
+#           :path => '/v2/infochimps/config/power/level/is/invalid',
 #           :body => MultiJson.dump({:level=>"awesome"}),
 #           :head => { :content_type => 'application/json' }
 #         }, err) do |c|
@@ -243,13 +243,13 @@ end
 #     it 'retrieves configuration' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/power/level',
+#           :path => '/v2/infochimps/config/power/level',
 #           :body => MultiJson.dump({:level=>"awesome"}),
 #           :head => { :content_type => 'application/json' }
 #         }, err)
 #       end
 #       with_api(Vayacondios::HttpServer) do |api|
-#         get_request({:path => '/v1/infochimps/config/power/level'}, err) do |c|
+#         get_request({:path => '/v2/infochimps/config/power/level'}, err) do |c|
 #           c.response_header.status.should == 200 
 #           MultiJson.load(c.response).should eql({"level" => "awesome"})
 #         end
@@ -259,20 +259,20 @@ end
 #     it 'merge deep configuration' do
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/merge/test',
+#           :path => '/v2/infochimps/config/merge/test',
 #           :body => MultiJson.dump({ :foo => { :bar => 3 } }),
 #           :head => { :content_type => 'application/json' }
 #         }, err)
 #       end
 #       with_api(Vayacondios::HttpServer) do |api|
 #         put_request({
-#           :path => '/v1/infochimps/config/merge/test',
+#           :path => '/v2/infochimps/config/merge/test',
 #           :body => MultiJson.dump({ :foo => { :baz => 7 } }),
 #           :head => { :content_type => 'application/json' }
 #         }, err)
 #       end
 #       with_api(Vayacondios::HttpServer) do |api|
-#         get_request({:path => '/v1/infochimps/config/merge/test'}, err) do |c|
+#         get_request({:path => '/v2/infochimps/config/merge/test'}, err) do |c|
 #           c.response_header.status.should == 200
 #           MultiJson.load(c.response).should eql({
 #             "foo" => {

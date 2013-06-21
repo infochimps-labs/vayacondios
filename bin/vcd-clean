@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'vayacondios/server/cleaner'
+Vayacondios::Cleaner.run

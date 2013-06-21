@@ -60,15 +60,6 @@ describe Vayacondios::MongoDocument do
     end
   end
 
-  describe "#topic=" do
-    it "replaces non-word characters, non-(period|hyphen|underscore)s from a topic with underscores" do
-      Vayacondios::MongoDocument.new(log, database, organization: organization, topic: 'hello-.there buddy').topic.should == 'hello-.there_buddy'
-    end
-    it "replaces periods from the beginning and end of a topic with underscores" do
-      Vayacondios::MongoDocument.new(log, database, organization: organization, topic: '.hello.there.').topic.should == '_hello.there_'
-    end
-  end
-
   describe "#organization=" do
     it "replaces non-word characters and non-(period|hyphen|underscore)s from a topic with underscores" do
       Vayacondios::MongoDocument.new(log, database, topic: topic, organization: 'hello-.there buddy').organization.should == 'hello-.there_buddy'
@@ -76,6 +67,10 @@ describe Vayacondios::MongoDocument do
     it "replaces periods from the beginning and end of a topic with underscores" do
       Vayacondios::MongoDocument.new(log, database, topic: topic, organization: '.hello.there.').organization.should == '_hello.there_'
     end
+    it "prepends an underscore to the reserved prefix 'system.'" do
+      Vayacondios::MongoDocument.new(log, database, topic: topic, organization: 'system.foobar').organization.should == '_system.foobar'
+    end
+    
   end
   
 end
