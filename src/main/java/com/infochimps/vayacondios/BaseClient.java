@@ -93,7 +93,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public void announce(String topic, Map event) {
+    public void announce(String topic, Map<String,Object> event) {
 	logRequest("Announcing <" + topic + ">");
 	if (dryRun()) return;
 	try {
@@ -106,7 +106,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public void announce(String topic, Map event, String id) {
+    public void announce(String topic, Map<String,Object> event, String id) {
 	logRequest("Announcing <" + topic + "/" + id + ">");
 	if (dryRun()) return;
 	try {
@@ -120,7 +120,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public List<Map> events(String topic, Map query) {
+    public List<Map<String,Object>> events(String topic, Map<String,Object> query) {
 	logRequest("Searching events <" + topic + ">");
 	if (dryRun()) return null;
 	try { 
@@ -135,7 +135,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public Map get(String topic) {
+    public Map<String,Object> get(String topic) {
 	logRequest("Fetching <" + topic + ">");
 	if (dryRun()) return null;
 	try {
@@ -150,7 +150,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public Map getMap(String topic, String id) {
+    public Map<String,Object> getMap(String topic, String id) {
 	logRequest("Fetching Map <" + topic + "/" + id + ">");
 	if (dryRun()) return null;
 	try {
@@ -207,7 +207,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public List<Map> stashes(Map query) {
+    public List<Map<String,Object>> stashes(Map<String,Object> query) {
 	logRequest("Searching stashes");
 	if (dryRun()) return null;
 	try { 
@@ -222,7 +222,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public void set(String topic, Map value) {
+    public void set(String topic, Map<String,Object> value) {
 	logRequest("Replacing <" + topic + ">");
 	if (dryRun()) return;
 	try {
@@ -249,7 +249,7 @@ public class BaseClient implements VayacondiosClient {
      * {@inheritDoc}
      */
     @Override
-    public void merge(String topic, Map value) {
+    public void merge(String topic, Map<String,Object> value) {
 	logRequest("Merging <" + topic + ">");
 	if (dryRun()) return;
 	try {
@@ -309,25 +309,25 @@ public class BaseClient implements VayacondiosClient {
   // Private API 
   //----------------------------------------------------------------------------
     
-    protected void performAnnounce(String topic, Map event, String id) throws IOException {}
-    protected void performAnnounce(String topic, Map event) throws IOException {}
+    protected void performAnnounce(String topic, Map<String,Object> event, String id) throws IOException {}
+    protected void performAnnounce(String topic, Map<String,Object> event) throws IOException {}
     
-    protected List<Map> performEvents(String topic, Map query) throws IOException { return null; }
+    protected List<Map<String,Object>> performEvents(String topic, Map<String,Object> query) throws IOException { return null; }
 
-    protected Map performGet(String topic) throws IOException { return null; }
+    protected Map<String,Object> performGet(String topic) throws IOException { return null; }
     
-    protected Map performGetMap(String topic, String id) throws IOException { return null; }
+    protected Map<String,Object> performGetMap(String topic, String id) throws IOException { return null; }
     protected List performGetList(String topic, String id) throws IOException { return null; }
     protected String performGetString(String topic, String id) throws IOException { return null; }
     protected Double performGetDouble(String topic, String id) throws IOException { return null; }
 
-    protected List<Map> performStashes(Map query) throws IOException { return null; }
+    protected List<Map<String,Object>> performStashes(Map<String,Object> query) throws IOException { return null; }
 
     protected void performMerge(String topic, String id, Object value) throws IOException {}
-    protected void performMerge(String topic, Map value) throws IOException {}
+    protected void performMerge(String topic, Map<String,Object> value) throws IOException {}
 
     protected void performSet(String topic, String id, Object value) throws IOException {}
-    protected void performSet(String topic, Map value) throws IOException {}
+    protected void performSet(String topic, Map<String,Object> value) throws IOException {}
 
     protected void performDelete(String topic, String id) throws IOException {}
     protected void performDelete(String topic) throws IOException {}

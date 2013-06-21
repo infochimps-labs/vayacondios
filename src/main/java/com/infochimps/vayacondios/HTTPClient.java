@@ -314,16 +314,16 @@ public class HTTPClient extends BaseClient {
     //----------------------------------------------------------------------------
 
     @Override
-    protected void performAnnounce(String topic, Map event, String id) throws IOException {
+    protected void performAnnounce(String topic, Map<String,Object> event, String id) throws IOException {
 	async.preparePost(url("event", topic, id)).setBody(toJson(event)).execute(asyncResponseHandler());
     }
     @Override
-    protected void performAnnounce(String topic, Map event) throws IOException {
+    protected void performAnnounce(String topic, Map<String,Object> event) throws IOException {
 	async.preparePost(url("event", topic)).setBody(toJson(event)).execute(asyncResponseHandler());
     }
     
     @Override
-    protected List<Map> performEvents(String topic, Map query) throws IOException {
+    protected List<Map<String,Object>> performEvents(String topic, Map<String,Object> query) throws IOException {
 	try {
 	    return parseList(sync.execute(new HttpGetWithBody(url("events", topic), toJson(query)), syncResponseHandler()));
 	} catch (URISyntaxException e) {
@@ -333,16 +333,16 @@ public class HTTPClient extends BaseClient {
     }
 
     @Override
-    protected Map performGet(String topic) throws IOException {
+    protected Map<String,Object> performGet(String topic) throws IOException {
 	return parseMap(sync.execute(new HttpGet(url("stash", topic)), syncResponseHandler()));
     }
     
     @Override
-    protected Map performGetMap(String topic, String id) throws IOException {
+    protected Map<String,Object> performGetMap(String topic, String id) throws IOException {
 	return parseMap(sync.execute(new HttpGet(url("stash", topic, id)), syncResponseHandler()));
     }
     @Override
-    protected List performGetList(String topic, String id) throws IOException {
+    protected List<Object> performGetList(String topic, String id) throws IOException {
 	return parseList(sync.execute(new HttpGet(url("stash", topic, id)), syncResponseHandler()));
     }
     @Override
@@ -355,7 +355,7 @@ public class HTTPClient extends BaseClient {
     }
 
     @Override
-    protected List<Map> performStashes(Map query) throws IOException {
+    protected List<Map<String,Object>> performStashes(Map<String,Object> query) throws IOException {
 	try {
 	    return parseList(sync.execute(new HttpGetWithBody(url("stashes"), toJson(query)), syncResponseHandler()));
 	} catch (URISyntaxException e) {
@@ -369,7 +369,7 @@ public class HTTPClient extends BaseClient {
 	async.preparePut(url("stash", topic, id)).setBody(toJson(value)).execute(asyncResponseHandler());
     }
     @Override
-    protected void performMerge(String topic, Map value) throws IOException {
+    protected void performMerge(String topic, Map<String,Object> value) throws IOException {
 	async.preparePut(url("stash", topic)).setBody(toJson(value)).execute(asyncResponseHandler());
     }
     
@@ -378,7 +378,7 @@ public class HTTPClient extends BaseClient {
 	async.preparePost(url("stash", topic, id)).setBody(toJson(value)).execute(asyncResponseHandler());
     }
     @Override
-    protected void performSet(String topic, Map value) throws IOException {
+    protected void performSet(String topic, Map<String,Object> value) throws IOException {
 	async.preparePost(url("stash", topic)).setBody(toJson(value)).execute(asyncResponseHandler());
     }
 
@@ -407,7 +407,7 @@ public class HTTPClient extends BaseClient {
 	return new AsyncResponseHandler();
     }
 
-    private Map parseMap(String json) throws JsonParseException {
+    private Map<String,Object> parseMap(String json) throws JsonParseException {
 	return serializer.fromJson(json, Map.class);
     }
     

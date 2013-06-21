@@ -60,7 +60,7 @@ public interface VayacondiosClient {
      * @param topic the topic for the event
      * @param event the event body
      */
-    void announce(String topic, Map event);
+    void announce(String topic, Map<String,Object> event);
 
     /**
      * Announce an event with a specified ID.
@@ -87,7 +87,7 @@ public interface VayacondiosClient {
      * @param event the event body
      * @param id the ID to save the event with
      */
-    void announce(String topic, Map event, String id);
+    void announce(String topic, Map<String,Object> event, String id);
     
     /**
      * Search for events matching some query.
@@ -155,7 +155,7 @@ public interface VayacondiosClient {
      * @param query a query to match events
      * @return the matched events
      */
-    List<Map> events(String topic, Map query);
+    List<Map<String,Object>> events(String topic, Map<String,Object> query);
 
     /**
      * Lookup a stashed value.
@@ -173,7 +173,7 @@ public interface VayacondiosClient {
      * @param topic the topic to lookup
      * @return the stashed value or <code>null</code> if it is not found
      */
-    Map get(String topic);
+    Map<String,Object> get(String topic);
     
     /**
      * Lookup a stashed value that is a <code>Map</code>.
@@ -208,7 +208,7 @@ public interface VayacondiosClient {
      * @see VayacondiosClient#getString(String topic, String id)
      * @see VayacondiosClient#getDouble(String topic, String id)
      */
-    Map getMap(String topic, String id);
+    Map<String,Object> getMap(String topic, String id);
 
     /**
      * Lookup a stashed value that is a <code>List</code>.
@@ -243,7 +243,7 @@ public interface VayacondiosClient {
      * @see VayacondiosClient#getString(String topic, String id)
      * @see VayacondiosClient#getDouble(String topic, String id)
      */
-    List getList(String topic, String id);
+    List<Object> getList(String topic, String id);
 
     /**
      * Lookup a stashed value that is a <code>String</code>.
@@ -366,7 +366,7 @@ public interface VayacondiosClient {
      * @param query a query to match stashed values
      * @return the matched stashed values
      */
-    List<Map> stashes(Map query);
+    List<Map<String,Object>> stashes(Map<String,Object> query);
     
     /**
      * Stash the given value for the given topic.
@@ -386,7 +386,7 @@ public interface VayacondiosClient {
      * @param topic the topic to stash a value for
      * @param value the value to stash
      */
-    void set(String topic, Map value);
+    void set(String topic, Map<String,Object> value);
 
     /**
      * Stash the given value for the given topic and ID.
@@ -436,7 +436,7 @@ public interface VayacondiosClient {
      * @param topic the topic to merge a value for
      * @param value the new value to merge
      */
-    void merge(String topic, Map value);
+    void merge(String topic, Map<String,Object> value);
 
     /**
      * Merge the given value for the given topic and ID.
