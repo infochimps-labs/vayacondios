@@ -45,7 +45,7 @@ class Vayacondios::MongoDocument < Vayacondios::Document
       raise Error.new("When settings the ID of a #{self.class} with a Hash, an '$oid' key is required") if id['$oid'].nil?
       format_mongo_id(id['$oid'])
     when !id.to_s.empty?
-      id.to_s.match(/^[a-f0-9]{24}$/) ? BSON::ObjectId(id.to_s) : sanitize_mongo_field_name(id.to_s)
+      id.to_s.match(/^[a-f0-9]{24}$/) ? BSON::ObjectId(id.to_s) : id.to_s
     else
       raise Error.new("A #{self} cannot have a blank or empty ID")
     end
