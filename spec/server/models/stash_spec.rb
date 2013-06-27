@@ -34,14 +34,6 @@ describe Vayacondios::Stash, stashes: true do
       subject.topic = '-mongo_ crazy string'
       subject.topic.should == '-mongo_ crazy string'
     end
-    it "replaces dollar-signs with an underscore" do
-      subject.topic = '$foo'
-      subject.topic.should == '_foo'
-    end
-    it "replaces periods with an underscore" do
-      subject.topic = '$foo'
-      subject.topic.should == '_foo'
-    end
     it "will not set a blank topic" do
       subject.topic = ''
       subject.topic.should == topic
