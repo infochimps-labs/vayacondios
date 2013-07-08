@@ -140,7 +140,15 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   def search query
     opts = {}
     opts[:limit]  = (query.delete(:limit)  || query.delete("limit")  || LIMIT).to_i
-    opts[:sort]   = (query.delete(:sort)   || query.delete("sort")   || SORT)
+
+    opts[:sort]   = (query.delete(:sort)   || query.delete("sort"))
+    if opts[:sort].nil?
+      opts[:sort] =  SORT
+      reverse = true
+    else
+      reverse = false
+    end
+    
     opts[:fields] = (query.delete(:fields) || query.delete("fields")) if (query.has_key?(:fields) || query.has_key?('fields'))
     
     selector = {t: {}}
@@ -149,9 +157,10 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     selector["_id"]       = Regexp.new(query.delete(:id) || query.delete("id")) if (query[:id] || query["id"]) # let 'id' map naturally
     selector.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
     
-    (mongo_query(collection, :find, selector, opts) || []).map do |result|
+    results = (mongo_query(collection, :find, selector, opts) || []).map do |result|
       format_event_for_response(result)
     end
+    reverse ? results.reverse : results
   end
 
   # Create a new event.
