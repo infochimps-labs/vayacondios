@@ -5,5 +5,3 @@ end
 require 'configliere'
 
 Settings.read(ENV.root_path('config/vayacondios.yaml'))
-Settings.resolve!
-
