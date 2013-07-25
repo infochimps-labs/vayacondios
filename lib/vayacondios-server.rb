@@ -11,6 +11,7 @@ require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
 require 'multi_json'
 
+require 'vayacondios/version'
 require 'vayacondios/server/models/document'
 require 'vayacondios/server/models/mongo_document'
 require 'vayacondios/server/models/stash'
