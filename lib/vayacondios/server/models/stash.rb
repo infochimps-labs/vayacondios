@@ -95,10 +95,7 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
       end
     else
       result = mongo_query(collection, :find_one, {_id: topic}, {fields: [id]})
-      if result.present? && result.has_key?(id)
-        result.delete("_id")
-        self.body = result[id]
-      end
+      self.body = extract_id(result)
     end
     self.body
   end
@@ -177,6 +174,28 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     end
   end
 
+  # Destroy a stash.
+  #
+  # If no ID is present, will delete the entire stash for the given
+  # topic.
+  #
+  # If an ID is present, will delete only the ID field within the
+  # stash of the given topic.
+  #
+  # @return [Hash] an acknowledgement of the topic and ID which were
+  #   deleted
+  def destroy
+    if id.blank?
+      mongo_query(collection, :delete, {:_id => topic})
+      {topic: topic}
+    else
+      mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
+      {topic: topic, id: id}
+    end
+  end
+
+  protected
+
   # Construct the document that defines how to update an existing
   # Hash.  Is data-type aware.
   #
@@ -206,24 +225,24 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     end
   end
 
-  # Destroy a stash.
+  # Slices a given Mongo `result` with the given `slice` which
+  # defaults to this stash's ID.
   #
-  # If no ID is present, will delete the entire stash for the given
-  # topic.
+  # Parses periods in `slice` to allow recursively fetching data from
+  # within a document.
   #
-  # If an ID is present, will delete only the ID field within the
-  # stash of the given topic.
-  #
-  # @return [Hash] an acknowledgement of the topic and ID which were
-  #   deleted
-  def destroy
-    if id.blank?
-      mongo_query(collection, :delete, {:_id => topic})
-      {topic: topic}
+  # @param [Hash] result the object to slice into
+  # @param [String, nil] slice the slice to take.  Defaults to this Stash's ID.
+  # @return [Object] the resulting object
+  def extract_id result, slice=nil
+    return unless result.present?
+    slice = id.dup unless slice
+    if slice.include?('.')
+      key, new_slice = slice.split('.', 2)
+      extract_id(result[key], new_slice)
     else
-      mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
-      {topic: topic, id: id}
+      result[slice]
     end
   end
-
+  
 end

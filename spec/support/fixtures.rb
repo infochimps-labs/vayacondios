@@ -23,6 +23,8 @@ shared_context "stashes", stashes: true do
   let(:string_stash) { "HELLO"          } ; let(:json_string_stash) { '"HELLO"'       }
   let(:numeric_stash){ 1                } ; let(:json_numeric_stash){ '1'             }
 
+  let(:nested_stash) { { 'root' => {'b' => 2, 'c' => { 'x' => 3 }, 'a' => 1 } } }
+
   let(:stash_query)            { {'foo' => 'bar'} }
   let(:json_stash_query)       { MultiJson.dump(stash_query) }
   

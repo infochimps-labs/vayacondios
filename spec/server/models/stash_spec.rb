@@ -43,29 +43,45 @@ describe Vayacondios::Stash, stashes: true do
   describe "#find" do
     context "with a topic" do
       context "with an ID" do
-        before { subject.id = id }
-        it "sends a find_one request to the database selecting just the specific ID field" do
-          collection.should_receive(:find_one).with({_id: topic}, {fields: [id]})
-          subject.find
+        context "which is flat" do
+          before { subject.id = id }
+          it "sends a find_one request to the database selecting just the specific ID field" do
+            collection.should_receive(:find_one).with({_id: topic}, {fields: [id]})
+            subject.find
+          end
+          context "when a stash with the given topic exists" do
+            before do
+              collection.should_receive(:find_one)
+                .with({_id: topic}, {fields: [id]})
+                .and_return({"_id" => topic, id => hash_stash})
+            end
+            it "returns the value of the ID field" do
+              subject.find.should == hash_stash
+            end
+          end
+          context "when a stash with the given topic doesn't exist" do
+            before do
+              collection.should_receive(:find_one)
+                .with({_id: topic}, {fields: [id]})
+                .and_return(nil)
+            end
+            it "returns nil" do
+              subject.find.should be_nil
+            end
+          end
         end
-        context "when a stash with the given topic exists" do
-          before do
-            collection.should_receive(:find_one)
-              .with({_id: topic}, {fields: [id]})
-              .and_return({"_id" => topic, id => hash_stash})
-          end
-          it "returns the value of the ID field" do
-            subject.find.should == hash_stash
-          end
-        end
-        context "when a stash with the given topic doesn't exist" do
-          before do
-            collection.should_receive(:find_one)
-              .with({_id: topic}, {fields: [id]})
-              .and_return(nil)
-          end
-          it "returns nil" do
-            subject.find.should be_nil
+        
+        context "which is nested" do
+          before { subject.id = 'root.b' }
+          context "when a stash with the given topic exists" do
+            before do
+              collection.should_receive(:find_one)
+                .with({_id: topic}, {fields: [subject.id]})
+                .and_return(nested_stash.merge("_id" => topic))
+            end
+            it "returns the nested field from within the stash" do
+              subject.find.should == nested_stash['root']['b']
+            end
           end
         end
       end
