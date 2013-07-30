@@ -186,7 +186,7 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   #   deleted
   def destroy
     if id.blank?
-      mongo_query(collection, :delete, {:_id => topic})
+      mongo_query(collection, :remove, {:_id => topic})
       {topic: topic}
     else
       mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
