@@ -4,4 +4,4 @@ mongo:
   database:     vayacondios_dev
 
 vayacondios:
-  legacy: true
+  legacy: false
