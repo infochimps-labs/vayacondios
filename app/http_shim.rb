@@ -45,7 +45,7 @@ class HttpShim < Goliath::API
         
       when :show
         record = klass.find(mongo, path_params)
-        [200, {}, MultiJson.dump(record.body)]
+        [200, {}, record.body]
 
       when :update
         record = klass.new(mongo).update(document, path_params)
@@ -57,7 +57,7 @@ class HttpShim < Goliath::API
 
       when :delete
         record = klass.find(mongo, path_params).destroy(document)
-        [200, {}, MultiJson.dump(record.body)]
+        [200, {}, record.body]
       end
     rescue Vayacondios::Error::NotFound => ex
       return [404, {}, MultiJson.dump({ error: "Not Found" })]
