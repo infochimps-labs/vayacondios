@@ -22,6 +22,10 @@ class Vayacondios
       # Will *not* do this if the request was sent to `/status` which
       # is expected to just return the string `OK`.
       #
+      # As per Infomart, the client expects an empty string when there is no body to
+      # return. This does not conform to proper JSON spec and will be an improper response
+      # for most other users.
+      #
       # @param [Hash] env the request environment
       # @param [Integer] status the HTTP status code of the response
       # @param [Hash] headers the HTTP headers of the response
@@ -30,7 +34,7 @@ class Vayacondios
       def post_process(env, status, headers, body)
         return [status, headers, body] if env["REQUEST_PATH"] == '/status'
         headers['Content-Type'] = 'application/json'
-        body                    = [MultiJson.encode(body) + "\n"]
+        body = body.nil? ? [''] : [MultiJson.encode(body)]
         [status, headers, body]
       end
       
