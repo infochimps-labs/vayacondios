@@ -60,9 +60,9 @@ class HttpShim < Goliath::API
         [200, {}, record.body]
       end
     rescue Vayacondios::Error::NotFound => ex
-      return [404, {}, MultiJson.dump({ error: "Not Found" })]
+      return [404, {}, { error: "Not Found" }]
     rescue Vayacondios::Error::BadRequest => ex
-      return [400, {}, MultiJson.dump({ error: "Bad Request" })]
+      return [400, {}, { error: "Bad Request" }]
     rescue StandardError => ex
       puts ex
       ex.backtrace.each{ |l| puts l }
