@@ -148,8 +148,10 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     else
       reverse = false
     end
-    
-    opts[:fields] = (query.delete(:fields) || query.delete("fields")) if (query.has_key?(:fields) || query.has_key?('fields'))
+
+    if fields_spec = (query.delete(:fields) || query.delete('fields'))
+      opts[:fields] = fields_spec.map { |field_name| "d.#{field_name}" } + ["t", "_id"]
+    end
     
     selector = {t: {}}
     selector[:t][:$gte]   = to_timestamp(query.delete(:from) || query.delete('from'), (Time.now - WINDOW).utc)
@@ -216,7 +218,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   def format_event_for_response event
     self.timestamp = event["t"]
     self.body      = event["d"]
-    {id: self.class.format_mongo_id(event["_id"]).to_s, time: event["t"]}.merge(event["d"])
+    {id: self.class.format_mongo_id(event["_id"]).to_s, time: event["t"]}.merge(event["d"] || {})
   end
 
   # Reshape an event for storage in MongoDB.

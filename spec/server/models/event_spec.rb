@@ -123,7 +123,7 @@ describe Vayacondios::Event, events: true do
       subject.search(event_query_with_limit)
     end
     it "accepts the 'fields' parameter" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[bing bam])
+      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[d.bing d.bam t _id])
       subject.search(event_query_with_fields)
     end
     it "interprets the 'id' field as a regular expression search on _id" do
