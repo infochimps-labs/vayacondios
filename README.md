@@ -520,9 +520,9 @@ not.
 
 You can search for events matching a query.
 
-| Method | Path                           | Request | Response    | Action                                          | 
-| ------ | ------------------------------ | ------- | ----------- | ----------------------------------------------- |
-| GET    | /v2/:organization/event/:topic | Hash    | Array<Hash> | Search for events on the given topic.           |
+| Method | Path                            | Request | Response    | Action                                          | 
+| ------ | ------------------------------- | ------- | ----------- | ----------------------------------------------- |
+| GET    | /v2/:organization/events/:topic | Hash    | Array<Hash> | Search for events on the given topic.           |
 
 The default behavior (which will occur with an empty request body) is
 to return the most recent 50 events on the given `topic` sorted in
