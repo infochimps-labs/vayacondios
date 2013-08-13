@@ -6,16 +6,18 @@ class Vayacondios
 
   class StandardContentsHandler
     def wrap_contents(contents) {contents: contents} end
-    def extract_contents(document) document['contents'] end
-    def extract_response(document) document['contents'] end
-    def proper_request(document) true end
+    def extract_contents(document) document.is_a?(Hash) && document['contents'] end
+    def extract_response(document) document.is_a?(Hash) && document['contents'] end
+    def proper_request(document)
+      document.is_a?(Hash) && document['contents'].is_a?(Array)
+    end
   end
 
   class LegacyContentsHandler
     def wrap_contents(contents) contents end
     def extract_contents(document) document end
     def extract_response(document) document end
-    def proper_request(document) true end
+    def proper_request(document) document.is_a? Array end
   end
 
   @@legacy_switch = nil
@@ -40,4 +42,3 @@ class Vayacondios
     (on ? LegacyContentsHandler : StandardContentsHandler).new
   end
 end
-

@@ -13,7 +13,6 @@ class HttpShim < Goliath::API
   use Vayacondios::Rack::ExtractMethods                                  # interpolate GET, PUT into :create, :update, etc
   use Vayacondios::Rack::Path                                            # parse path into parameterized pieces
   use Vayacondios::Rack::PathValidation                                  # validate the existence of env[:vayacondios_path]
-  use Goliath::Rack::Formatters::JSON                                    # JSON output formatter
   use Goliath::Rack::Render                                              # auto-negotiate response format
 
   # The document part of the request, e.g. - params that came
@@ -62,10 +61,13 @@ class HttpShim < Goliath::API
     rescue Vayacondios::Error::NotFound => ex
       return [404, {}, { error: "Not Found" }]
     rescue Vayacondios::Error::BadRequest => ex
+      STDERR.puts("bad request", ex.message, *ex.backtrace, "doc: #{document}")
+      STDERR.flush
       return [400, {}, { error: "Bad Request" }]
     rescue StandardError => ex
-      puts ex
-      ex.backtrace.each{ |l| puts l }
+      STDERR puts ex.message, *ex.backtrace
+      STDERR.flush
+      return [530, {}, { error: ex.message }]
     end
   end
 end

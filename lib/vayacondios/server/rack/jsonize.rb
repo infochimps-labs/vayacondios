@@ -34,7 +34,12 @@ class Vayacondios
       def post_process(env, status, headers, body)
         return [status, headers, body] if env["REQUEST_PATH"] == '/status'
         headers['Content-Type'] = 'application/json'
-        body = body.nil? ? [''] : [MultiJson.encode(body)]
+        body = case body
+               when nil then ['']
+               when Array then [MultiJson.encode(body)]
+               when Hash then [MultiJson.encode(body)]
+               else body
+               end
         [status, headers, body]
       end
       

@@ -31,7 +31,7 @@ class Vayacondios
                           when Goliath::Rack::URL_ENCODED then
                             ::Rack::Utils.parse_nested_query(body)
                           when Goliath::Rack::JSON_ENCODED then
-                            MultiJson.decode(body)
+                            MultiJson.decode(body) rescue body
                           else
                             {}
                           end
