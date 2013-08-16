@@ -71,8 +71,16 @@ class Vayacondios
       # @param [Hash] env the request environment
       def call(env)
         orig_method = env['REQUEST_METHOD']
-        env['REQUEST_METHOD'], env['REQUEST_PATH'], env['rack.input'], env['HTTP_X_METHOD'], version =
-          rewrite(env['REQUEST_METHOD'], env['REQUEST_PATH'], env['rack.input'], env['HTTP_X_METHOD'])
+
+        env['REQUEST_METHOD'],
+        env['REQUEST_PATH'],
+        env['rack.input'],
+        env['HTTP_X_METHOD'],
+        version = rewrite_req(env['REQUEST_METHOD'],
+                              env['REQUEST_PATH'],
+                              env['rack.input'],
+                              env['HTTP_X_METHOD'])
+
         super(env, method: orig_method, version: version)
       end
 
@@ -97,6 +105,67 @@ class Vayacondios
 
       private
 
+      #---------------------------------------------------------------------------------------------
+
+      # Rewrites the v1 request method, path, body_stream, and
+      # x_method. v2 requests are passed on unmodified.
+      #
+      # @param [String] method incoming request HTTP method.
+      # @param [String] path incoming request path
+      #
+      # @return [Array] possibly modified versions of all of its
+      #         inputs, with an appended version number of the
+      #         incoming request.
+      def rewrite_req(method, path, body_stream, x_method)
+
+        # ignore non-v1 requests
+        if (v1_path = parse_path(path)).nil?
+          [method, path, body_stream, x_method, version(path)]
+
+        else
+          item_set = parse_body_stream(body_stream)
+
+          new_method, new_x_method =
+            case method
+            when /DELETE/i then ['PUT', nil]
+            when /PUT/i then
+              x_method.to_s.upcase == 'PATCH' ? ['PUT', 'PATCH'] : ['POST', nil]
+            else [method, x_method]
+            end
+
+          new_body_stream = body_stream.reopen(
+              MultiJson.encode(Hash[item_set.map do |it|
+                                      [Digest::MD5.hexdigest(it), item_repr(method, it)]
+                                    end]))
+
+          new_path = v1_path.nil? ? path : v2_path_str(v1_path)
+
+          [new_method, new_path, new_body_stream, nil, 1]
+        end
+      end
+
+      # This method must know about the incoming HTTP method
+      # from the v1 request: the way the response is rewritten is
+      # dependent on it.
+      #
+      # @param [String] method HTTP method from incoming v1 request
+      # @param [Integer] status HTTP status from Vayacondios v2 response
+      # @param [Hash] headers HTTP headers from Vayacondios v2 response
+      # @param [Hash] body decoded (represented as JSON hash) version of v2 response
+      # 
+      # @return the possibly modified versions of status, headers, and
+      # body.
+      def rewrite_resp(method, status, headers, body)
+        case method
+        when /(DELETE|GET)/i
+          [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
+        else
+          [status, headers, '']
+        end
+      end
+
+      #---------------------------------------------------------------------------------------------
+
       # Changes the formatting of an item appropriately so it can be
       # put into a stash.
       #
@@ -110,17 +179,6 @@ class Vayacondios
         when /DELETE/i then ''
         else it
         end
-      end
-
-      # Creates a v2 path string.
-      # 
-      # @param [OpenStruct] v1_path an ostruct containing
-      #        'organization', 'topic', and 'id' fields corresponding
-      #        to the decoded parts of the incoming v1 request.
-      #        
-      # @return a v2 path string given a parsed v1 string.
-      def v2_path_str(v1_path)
-        "/v2/#{v1_path.organization}/stashes/#{v1_path.topic}/#{v1_path.id}"
       end
 
       # Parses the body of an incoming v1 request.
@@ -159,61 +217,15 @@ class Vayacondios
         path[/^\/v([^\/]+)/, 1].to_i
       end
 
-      # This method must know about the incoming HTTP method
-      # from the v1 request: the way the response is rewritten is
-      # dependent on it.
-      #
-      # @param [String] method HTTP method from incoming v1 request
-      # @param [Integer] status HTTP status from Vayacondios v2 response
-      # @param [Hash] headers HTTP headers from Vayacondios v2 response
-      # @param [Hash] body decoded (represented as JSON hash) version of v2 response
+      # Creates a v2 path string.
       # 
-      # @return the possibly modified versions of status, headers, and
-      # body.
-      def rewrite_resp(method, status, headers, body)
-        case method
-        when /(DELETE|GET)/i
-          [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
-        else
-          [status, headers, '']
-        end
-      end
-
-      # Rewrites the v1 request method, path, body_stream, and
-      # x_method. v2 requests are passed on unmodified.
-      #
-      # @param [String] method incoming request HTTP method.
-      # @param [String] path incoming request path
-      #
-      # @return [Array] possibly modified versions of all of its
-      #         inputs, with an appended version number of the
-      #         incoming request.
-      def rewrite(method, path, body_stream, x_method)
-
-        # ignore non-v1 requests
-        if (v1_path = parse_path(path)).nil?
-          [method, path, body_stream, x_method, version(path)]
-
-        else
-          item_set = parse_body_stream(body_stream)
-
-          new_method, new_x_method =
-            case method
-            when /DELETE/i then ['PUT', nil]
-            when /PUT/i then
-              x_method.to_s.upcase == 'PATCH' ? ['PUT', 'PATCH'] : ['POST', nil]
-            else [method, x_method]
-            end
-
-          new_body_stream = body_stream.reopen(
-              MultiJson.encode(Hash[item_set.map do |it|
-                                      [Digest::MD5.hexdigest(it), item_repr(method, it)]
-                                    end]))
-
-          new_path = v1_path.nil? ? path : v2_path_str(v1_path)
-
-          [new_method, new_path, new_body_stream, nil, 1]
-        end
+      # @param [OpenStruct] v1_path an ostruct containing
+      #        'organization', 'topic', and 'id' fields corresponding
+      #        to the decoded parts of the incoming v1 request.
+      #        
+      # @return a v2 path string given a parsed v1 string.
+      def v2_path_str(v1_path)
+        "/v2/#{v1_path.organization}/stashes/#{v1_path.topic}/#{v1_path.id}"
       end
     end
   end
