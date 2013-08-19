@@ -75,14 +75,12 @@ class Vayacondios
         env['REQUEST_METHOD'],
         env['REQUEST_PATH'],
         env['rack.input'],
-        x_method,
+        env['HTTP_X_METHOD'],
         version = rewrite_req(env['REQUEST_METHOD'],
                               env['REQUEST_PATH'],
                               env['rack.input'],
                               env['HTTP_X_METHOD'])
 
-        env['HTTP_X_METHOD'] = x_method unless x_method.nil?
-        
         super(env, method: orig_method, version: version)
       end
 
