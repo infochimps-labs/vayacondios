@@ -75,12 +75,14 @@ class Vayacondios
         env['REQUEST_METHOD'],
         env['REQUEST_PATH'],
         env['rack.input'],
-        env['HTTP_X_METHOD'],
+        x_method,
         version = rewrite_req(env['REQUEST_METHOD'],
                               env['REQUEST_PATH'],
                               env['rack.input'],
                               env['HTTP_X_METHOD'])
 
+        env['HTTP_X_METHOD'] = x_method unless x_method.nil?
+        
         super(env, method: orig_method, version: version)
       end
 
@@ -96,7 +98,7 @@ class Vayacondios
       # @param [Object] body the upstream response body
       # @return [Array] the response
       def post_process(env, status, headers, body, args)
-        body = MultiJson.decode(body.first)
+        body = (body.first.nil? || body.first.empty?) ? {} : MultiJson.decode(body.first)
         case args.fetch(:version)
         when 1 then rewrite_resp(args.fetch(:method), status, headers, body)
         when 2 then [status, headers, body]
@@ -203,7 +205,7 @@ class Vayacondios
         /^
          \/v1
          \/(?<organization>[a-z][-_\w]+)
-         \/(?<type>itemset)
+         \/(?:itemset)
          \/(?<topic>[-\.\w]+)
          \/(?<id>[-\.\w]+)
          \/?
@@ -225,7 +227,7 @@ class Vayacondios
       #        
       # @return a v2 path string given a parsed v1 string.
       def v2_path_str(v1_path)
-        "/v2/#{v1_path.organization}/stashes/#{v1_path.topic}/#{v1_path.id}"
+        "/v2/#{v1_path.organization}/stash/#{v1_path.topic}/#{v1_path.id}"
       end
     end
   end
