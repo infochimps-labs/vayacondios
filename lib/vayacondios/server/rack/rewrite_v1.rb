@@ -158,11 +158,17 @@ class Vayacondios
       # @return the possibly modified versions of status, headers, and
       # body.
       def rewrite_resp(method, status, headers, body)
-        case method
-        when /(DELETE|GET)/i
-          [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
-        else
-          [status, headers, '']
+        case status
+          when 200..299
+          case method
+          when /(DELETE|GET)/i
+            [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
+          else
+            [status, headers, '']
+          end
+
+        when 404
+          [status, headers, '{"error":"Not Found"}']
         end
       end
 
