@@ -46,6 +46,7 @@ def error msg
 end
 
 itemset = uri_str(host, port, org, id, topic)
+noexist_itemset = uri_str(host, port, org, 'hsaxbz', topic)
 
 def assert_equals(expected, actual)
   unless expected == actual
@@ -60,5 +61,6 @@ assert_equals("[\"foo\"]", get(itemset).response.body)
 assert_equals("", update(itemset, ["bar"]).response.body)
 assert_equals("[\"foo\",\"bar\"]", get(itemset).response.body)
 assert_equals("[\"foo\"]", remove(itemset, ["bar"]).response.body)
+assert_equals("{\"error\":\"Not Found\"}", get(noexist_itemset).response.body)
 
 STDERR.puts("-"*80,"tests complete.")
