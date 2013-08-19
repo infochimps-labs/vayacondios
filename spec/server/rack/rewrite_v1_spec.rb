@@ -173,5 +173,35 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
           to eq([404, {'Content-Type' => 'application/json'}, '{"error":"Not Found"}'])
       end
     end
+
+    context "it converts error messages for 404s" do
+      let (:v1_patch_req) {
+        env.merge({
+                    'REQUEST_METHOD' => 'GET',
+                    'REQUEST_PATH' => '/v1/testorg/itemset/testtopic/testid',
+                    'rack.input' => StringIO.new(''),
+                    'async.callback' => kind_of(Proc)
+                  })
+      }
+      let (:upstream_items) {
+        Proc.new do |env|
+          [404,
+           {'Content-Type' => 'application/json'},
+           ['["Stash with topic <a> and ID <b> not found"]']]
+        end
+      }
+      it "and makes them consistent with v1" do
+        upstream_items.should_receive(:call)
+          .with(v1_patch_req.merge({
+                            'REQUEST_METHOD' => 'GET',
+                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                          }))
+          .and_return([404,
+                       {'Content-Type' => 'application/json'},
+                       ['["Stash with topic <a> and ID <b> not found"]']])
+        expect(described_class.new(upstream_items).call(v1_patch_req)).
+          to eq([404, {'Content-Type' => 'application/json'}, '{"error":"Not Found"}'])
+      end
+    end
   end
 end
