@@ -41,8 +41,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "translates them to GET requests" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
-                          }))
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
+                                   }))
           .and_return([200,
                        {'Content-Type' => 'application/json'},
                        ['{"hashfoo": "foo", "hashbar": "bar", "hashbaz": ""}']])
@@ -70,8 +71,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "translates them to POST requests" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_METHOD' => 'POST',
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'REQUEST_METHOD' => 'POST',
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
                           }))
           .and_return([200,
                        {'Content-Type' => 'application/json'},
@@ -101,8 +103,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "translates them to PUT requests" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_METHOD' => 'PUT',
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'REQUEST_METHOD' => 'PUT',
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
                           }))
           .and_return([200,
                        {'Content-Type' => 'application/json'},
@@ -131,8 +134,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "translates them to PUT requests" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_METHOD' => 'PUT',
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'REQUEST_METHOD' => 'PUT',
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
                           }))
           .and_return([200,
                        {'Content-Type' => 'application/json'},
@@ -163,8 +167,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "and makes them consistent with v1" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_METHOD' => 'GET',
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'REQUEST_METHOD' => 'GET',
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
                           }))
           .and_return([404,
                        {'Content-Type' => 'application/json'},
@@ -193,8 +198,9 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       it "and makes them consistent with v1" do
         upstream_items.should_receive(:call)
           .with(v1_patch_req.merge({
-                            'REQUEST_METHOD' => 'GET',
-                            'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'REQUEST_METHOD' => 'GET',
+                                     'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
+                                     'HTTP_X_METHOD' => nil,
                           }))
           .and_return([404,
                        {'Content-Type' => 'application/json'},
