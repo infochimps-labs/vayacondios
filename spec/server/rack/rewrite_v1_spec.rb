@@ -74,7 +74,7 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                                      'REQUEST_METHOD' => 'POST',
                                      'REQUEST_PATH' => '/v2/testorg/stash/testtopic/testid',
                                      'HTTP_X_METHOD' => nil,
-                          }))
+                                   }))
           .and_return([200,
                        {'Content-Type' => 'application/json'},
                        ['{"hashfoo": "foo", "hashbar": "bar", "hashbaz": ""}']])

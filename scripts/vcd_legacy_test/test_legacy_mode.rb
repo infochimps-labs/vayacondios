@@ -49,18 +49,19 @@ itemset = uri_str(host, port, org, id, topic)
 noexist_itemset = uri_str(host, port, org, 'hsaxbz', topic)
 
 def assert_equals(expected, actual)
-  unless expected == actual
+  unless (expected == '' and actual == '') or
+      MultiJson.load(expected).sort == MultiJson.load(actual).sort
     STDERR.puts("expected #{expected.inspect} but received #{actual.inspect}")
   end
 end
 
 STDERR.puts("running tests. no news is good news.", "-"*80)
 
-assert_equals("", create(itemset, ["foo"]).response.body)
-assert_equals("[\"foo\"]", get(itemset).response.body)
-assert_equals("", update(itemset, ["bar"]).response.body)
+assert_equals("", create(itemset, ["foo","bar"]).response.body)
 assert_equals("[\"foo\",\"bar\"]", get(itemset).response.body)
-assert_equals("[\"foo\"]", remove(itemset, ["bar"]).response.body)
+assert_equals("", update(itemset, ["baz","bif"]).response.body)
+assert_equals("[\"foo\",\"bar\",\"baz\",\"bif\"]", get(itemset).response.body)
+assert_equals("[\"foo\",\"bar\"]", remove(itemset, ["baz","bif"]).response.body)
 assert_equals("{\"error\":\"Not Found\"}", get(noexist_itemset).response.body)
 
 STDERR.puts("-"*80,"tests complete.")
