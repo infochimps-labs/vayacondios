@@ -107,42 +107,67 @@ class Vayacondios
 
       #---------------------------------------------------------------------------------------------
 
+
+      # Validates v1 requests and raises a ValidationError if they
+      # are bad.
+      #
+      # @param [String] method incoming request HTTP method.
+      # @param [String] path incoming request path
+      # @param [StingIO] body_stream body of request
+      # @param [String] x_method Http-X-Method header
+      #
+      # @return [Array] possibly modified versions of all of its
+      #         inputs, with an appended version number of the
+      #         incoming request.
+      def validate_req(method, path, body_stream, x_method)
+        raise Goliath::Validation::Error.new(405, "Invalid request method") if method =~ /POST/i
+        raise Goliath::Validation::Error.new(400, "Error: bad request.") if
+          (parse_path(path).nil?) or not parse_body_stream(body_stream).is_a? Array
+      end
+
       # Rewrites the v1 request method, path, body_stream, and
       # x_method. v2 requests are passed on unmodified.
       #
       # @param [String] method incoming request HTTP method.
       # @param [String] path incoming request path
+      # @param [StingIO] body_stream body of request
+      # @param [String] x_method Http-X-Method header
       #
       # @return [Array] possibly modified versions of all of its
       #         inputs, with an appended version number of the
       #         incoming request.
       def rewrite_req(method, path, body_stream, x_method)
-
         # ignore non-v1 requests
-        if (v1_path = parse_path(path)).nil?
-          [method, path, body_stream, x_method, version(path)]
+        case (version_or_nil = version(path))
+        when 0 # regex didn't match
+          [method, path, body_stream, x_method, version_or_nil.to_i]
+        when 2
+          [method, path, body_stream, x_method, version_or_nil.to_i]
+        when 1
+          validate_req(method, path, body_stream, x_method)
 
-        else
           item_set = parse_body_stream(body_stream)
 
           new_method, new_x_method =
             case method
-            when /DELETE/i then ['PUT', nil]
-            when /PUT/i then
+            when /DELETE/i
+              ['PUT', nil]
+            when /PUT/i 
               x_method.to_s.upcase == 'PATCH' ? ['PUT', 'PATCH'] : ['POST', nil]
             else [method, x_method]
             end
 
           new_body_stream = body_stream.reopen(
-              MultiJson.encode(Hash[item_set.map do |it|
-                                      [Digest::MD5.hexdigest(it), item_repr(method, it)]
-                                    end]))
+                                               MultiJson.encode(Hash[item_set.map do |it|
+                                                                       [Digest::MD5.hexdigest(it), item_repr(method, it)]
+                                                                     end]))
 
-          new_path = v1_path.nil? ? path : v2_path_str(v1_path)
+          v1_path = parse_path(path)
 
-          [new_method, new_path, new_body_stream, nil, 1]
+          [new_method, v2_path_str(v1_path), new_body_stream, nil, version_or_nil.to_i]
         end
       end
+
 
       # This method must know about the incoming HTTP method
       # from the v1 request: the way the response is rewritten is
@@ -157,7 +182,7 @@ class Vayacondios
       # body.
       def rewrite_resp(method, status, headers, body)
         case status
-          when 200..299
+        when 200..299
           case method
           when /(DELETE|GET)/i
             [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
@@ -195,7 +220,11 @@ class Vayacondios
       #         incoming v1 request.
       def parse_body_stream(body_stream)
         body = body_stream.read; body_stream.rewind
-        body.empty? ? [] : MultiJson.decode(body)
+        begin
+          body.empty? ? [] : MultiJson.decode(body)
+        rescue MultiJson::LoadError => ex
+          raise Goliath::Validation::Error.new(400, "Error: bad request.")
+        end
       end
 
       # Parses the path from an incoming v1 request.
@@ -231,7 +260,7 @@ class Vayacondios
       #        
       # @return a v2 path string given a parsed v1 string.
       def v2_path_str(v1_path)
-        "/v2/#{v1_path.organization}/stash/#{v1_path.topic}/#{v1_path.id}"
+        ['', 'v2', v1_path.organization, 'stash', v1_path.topic, v1_path.id].compact.join('/')
       end
     end
   end
