@@ -22,6 +22,22 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
       end
     end
 
+    context "from other clients" do
+      let (:empty_req) {
+        env.merge({
+                    'REQUEST_METHOD' => 'GET',
+                    'REQUEST_PATH' => '/',
+                    'rack.input' => StringIO.new('')
+                  })
+      }
+      it "passes them on unmodified" do
+        upstream.should_receive(:call)
+          .with(empty_req)
+          .and_return([200, {}, ['']])
+        subject.call(empty_req).should == [200, {}, ['']]
+      end
+    end
+
     context "from v1 clients, if they are fetch requests," do
       let (:v1_get_req) {
         env.merge({
