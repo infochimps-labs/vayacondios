@@ -96,9 +96,10 @@ class Vayacondios
       # @param [Object] body the upstream response body
       # @return [Array] the response
       def post_process(env, status, headers, body, args)
-        body = (body.first.nil? || body.first.empty?) ? {} : MultiJson.decode(body.first)
         case args.fetch(:version)
-        when 1 then rewrite_resp(args.fetch(:method), status, headers, body)
+        when 1 then
+          body = (body.first.nil? || body.first.empty?) ? {} : MultiJson.decode(body.first)
+          rewrite_resp(args.fetch(:method), status, headers, body)
         else [status, headers, body]
         end
       end
