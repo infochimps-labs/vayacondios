@@ -99,7 +99,7 @@ class Vayacondios
         body = (body.first.nil? || body.first.empty?) ? {} : MultiJson.decode(body.first)
         case args.fetch(:version)
         when 1 then rewrite_resp(args.fetch(:method), status, headers, body)
-        when 2 then [status, headers, body]
+        else [status, headers, body]
         end
       end
 
