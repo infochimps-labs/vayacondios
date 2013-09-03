@@ -150,7 +150,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
     end
 
     if fields_spec = (query.delete(:fields) || query.delete('fields'))
-      opts[:fields] = fields_spec.map { |field_name| "d.#{field_name}" } + ["t", "_id"]
+      opts[:fields] = [fields_spec].flatten.map { |field_name| "d.#{field_name}" } + ["t", "_id"]
     end
     
     selector = {t: {}}
