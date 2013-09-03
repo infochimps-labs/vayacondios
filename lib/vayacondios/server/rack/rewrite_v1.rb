@@ -140,10 +140,6 @@ class Vayacondios
       def rewrite_req(method, path, body_stream, x_method)
         # ignore non-v1 requests
         case (version_or_nil = version(path))
-        when 0 # regex didn't match
-          [method, path, body_stream, x_method, version_or_nil.to_i]
-        when 2
-          [method, path, body_stream, x_method, version_or_nil.to_i]
         when 1
           validate_req(method, path, body_stream, x_method)
 
@@ -153,19 +149,27 @@ class Vayacondios
             case method
             when /DELETE/i
               ['PUT', nil]
-            when /PUT/i 
+            when /PUT/i
               x_method.to_s.upcase == 'PATCH' ? ['PUT', 'PATCH'] : ['POST', nil]
             else [method, x_method]
             end
 
-          new_body_stream = body_stream.reopen(
-                                               MultiJson.encode(Hash[item_set.map do |it|
-                                                                       [Digest::MD5.hexdigest(it), item_repr(method, it)]
-                                                                     end]))
+          new_body_stream =
+            case method
+            when /GET/
+              StringIO.new('')
+            else
+              StringIO.new(
+                           MultiJson.encode(Hash[item_set.map do |it|
+                                                   [self.class.hash_item(it), item_repr(method, it)]
+                                                 end]))
+            end
 
           v1_path = parse_path(path)
 
           [new_method, v2_path_str(v1_path), new_body_stream, nil, version_or_nil.to_i]
+        else
+          [method, path, body_stream, x_method, version_or_nil.to_i]
         end
       end
 
@@ -186,7 +190,7 @@ class Vayacondios
         when 200..299
           case method
           when /(DELETE|GET)/i
-            [status, headers, MultiJson.encode(body.values.reject(&:empty?).to_a)]
+            [status, headers, MultiJson.encode(body.values.reject{|x| x.to_s.empty?}.to_a)]
           else
             [status, headers, '']
           end
@@ -197,6 +201,18 @@ class Vayacondios
       end
 
       #---------------------------------------------------------------------------------------------
+
+      public
+      
+      # Readies an item for storage in an itemset represented by a hash.
+      # 
+      # @param [Whatever] item item to be stashed
+      # @return the hash of an item, suitable for use as a Vayacondios key.
+      def self.hash_item item
+        Digest::MD5.hexdigest(item.to_s)
+      end
+
+      private
 
       # Changes the formatting of an item appropriately so it can be
       # put into a stash.
