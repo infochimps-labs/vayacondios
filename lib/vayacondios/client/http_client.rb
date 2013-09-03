@@ -24,9 +24,13 @@ class Vayacondios
     # The default headers to include with each request.
     HEADERS = {'Content-Type' => 'application/json'}
 
+    # The default timeout for HTTP requests.
+    TIMEOUT = 30
+
     attr_accessor :host
     attr_accessor :port
     attr_accessor :headers
+    attr_accessor :timeout
 
     # Create a new Vayacondios::HttpClient.
     #
@@ -39,6 +43,7 @@ class Vayacondios
       self.host         = (options[:host]    || HOST).to_s
       self.port         = (options[:port]    || PORT).to_i
       self.headers      = (options[:headers] || HEADERS)
+      self.timeout      = (options[:timeout] || TIMEOUT).to_i
     end
 
     # The connection maintained to the Vayacondios server.
@@ -168,7 +173,7 @@ class Vayacondios
     # :nodoc:
     def send_request req
       begin
-        Timeout.timeout(5) do
+        Timeout.timeout(self.timeout) do
           handle_response(connection.request(req))
         end
       rescue Timeout::Error => e

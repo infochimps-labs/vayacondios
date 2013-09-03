@@ -24,6 +24,10 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
     it "port 9000" do
       subject.port.should == 9000
     end
+    it "timeout of 30 seconds" do
+      subject.timeout.should == 30
+    end
+    
   end
 
   describe "making requests" do
