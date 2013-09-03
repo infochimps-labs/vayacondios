@@ -68,7 +68,7 @@ BANNER
 
       options[:mongo_host]        = 'localhost'
       options[:mongo_port]        = 27017
-      options[:mongo_database]    = ["vayacondios", env || 'development'].compact.map(&:to_s).join('_')
+      options[:mongo_database]    = 'vayacondios_development'
       options[:mongo_connections] = 20
 
       opts.on('-h', '--host HOST',                "MongoDB host (default: #{options[:mongo_host]})")         { |val| options[:mongo_host]     = val }
