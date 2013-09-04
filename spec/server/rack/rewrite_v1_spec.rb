@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe Vayacondios::Rack::RewriteV1, rack: true do
+  let (:upstream_items) { Proc.new do |env| ignore_this end }
 
   subject { described_class.new(upstream)   }
 
@@ -47,13 +48,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'async.callback' => kind_of(Proc)
                   })
       }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "foo", "hashbar": "bar", "hashbaz": ""}']]
-        end
-      }
       it "translates them to GET requests" do
         upstream_items.should_receive(:call) do |req|
           req['REQUEST_METHOD'].should == 'GET'
@@ -78,13 +72,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'async.callback' => kind_of(Proc)
                   })
       }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "foo", "hashbar": "bar", "hashbaz": ""}']]
-        end
-      }
       it "translates them to POST requests" do
         upstream_items.should_receive(:call) do |req|
           req['REQUEST_METHOD'].should == 'POST'
@@ -108,11 +95,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'async.callback' => kind_of(Proc)
                   })
       }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200, {'Content-Type' => 'application/json'}, ['']]
-        end
-      }
       it "translates them to PUT requests" do
         upstream_items.should_receive(:call) do |req|
           req['REQUEST_METHOD'].should == 'PUT'
@@ -135,13 +117,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'rack.input' => StringIO.new('["foo", "bar"]'),
                     'async.callback' => kind_of(Proc)
                   })
-      }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "", "hashbar": "", "hashbaz": ""}']]
-        end
       }
       it "translates them to PUT requests" do
         upstream_items.should_receive(:call) do |req|
@@ -171,13 +146,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'rack.input' => StringIO.new(''),
                     'async.callback' => kind_of(Proc)
                   })
-      }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [404,
-           {'Content-Type' => 'application/json'},
-           ['["Stash with topic <a> and ID <b> not found"]']]
-        end
       }
       it "and makes them consistent with v1" do
         upstream_items.should_receive(:call) do |req|
@@ -254,20 +222,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'async.callback' => kind_of(Proc)
                   })
       }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "foo", "hashone": 1, "hashbaz": ""}']]
-        end
-      }
-      let (:upstream_items_one) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "1", "hashone": 1, "hashbaz": ""}']]
-        end
-      }
       it "translates them appropriately to POST requests" do
         upstream_items.should_receive(:call) do |req|
           req['REQUEST_METHOD'].should == 'POST'
@@ -314,13 +268,6 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'rack.input' => StringIO.new(''),
                     'async.callback' => kind_of(Proc)
                   })
-      }
-      let (:upstream_items) {
-        Proc.new do |env|
-          [200,
-           {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "foo", "hashone": 1, "hashbaz": ""}']]
-        end
       }
       it "translates them appropriately to GET requests" do
         upstream_items.should_receive(:call) do |req|
