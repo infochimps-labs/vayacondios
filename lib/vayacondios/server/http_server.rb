@@ -80,6 +80,7 @@ BANNER
     end
 
     use Goliath::Rack::Heartbeat                                             # respond to /status with 200, OK (monitoring, etc)
+    use Vayacondios::Rack::RewriteV1                                         # rewrite v1 requests to valid v2 requests
     use Vayacondios::Rack::JSONize                                           # JSON input & output
     use Vayacondios::Rack::Params                                            # parse query string and message body into params hash
     use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE]   # only allow these methods
