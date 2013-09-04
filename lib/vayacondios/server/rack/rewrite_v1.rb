@@ -209,7 +209,7 @@ class Vayacondios
       # @param [Whatever] item item to be stashed
       # @return the hash of an item, suitable for use as a Vayacondios key.
       def self.hash_item item
-        Digest::MD5.hexdigest(item.to_s)
+        Digest::MD5.hexdigest([Digest::MD5.hexdigest(item.to_s), item.class.to_s].join)
       end
 
       private

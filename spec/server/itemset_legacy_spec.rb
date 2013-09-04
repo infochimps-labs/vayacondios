@@ -126,15 +126,13 @@ describe Vayacondios::HttpServer do
       with_api(Vayacondios::HttpServer) do |api|
         get_request({:path => '/v1/infochimps/itemset/merge/test'}, err) do |c|
           c.response_header.status.should == 200
-          MultiJson.load(c.response).should eql(["foo", "bar"])
+          MultiJson.load(c.response).sort.should eql(["foo", "bar"].sort)
         end
       end
     end
   end
 
   context 'on mixed datatypes' do
-    let(:foo123) { ['foo', 1,2,3] }
-
     it 'can create arbitrarily' do
       with_api(Vayacondios::HttpServer) do |api|
         put_request({
@@ -164,8 +162,24 @@ describe Vayacondios::HttpServer do
         get_request({
                       :path => '/v1/infochimps/itemset/foo/bar',
                     }, err) do |c|
-            MultiJson.load(c.response.should) == ["foo", 2, "bar", 1]
+            MultiJson.load(c.response).should == ["foo", 2, "bar", 1]
           end
+        end
+      end
+    end
+    it 'can mix numbers with their string representations' do
+      with_api(Vayacondios::HttpServer) do |api|
+        put_request({
+                      :path => '/v1/infochimps/itemset/foo/bar',
+                      :body => MultiJson.dump(["1", 1]),
+                      :head => ({:content_type => 'application/json' }),
+                    }, err)
+      end
+      with_api(Vayacondios::HttpServer) do |api|
+        get_request({
+                      :path => '/v1/infochimps/itemset/foo/bar',
+                    }, err) do |c|
+          MultiJson.load(c.response).should(eq(["1", 1]))
         end
       end
     end

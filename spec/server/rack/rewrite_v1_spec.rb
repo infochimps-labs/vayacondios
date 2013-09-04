@@ -246,11 +246,26 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
                     'async.callback' => kind_of(Proc)
                   })
       }
+      let (:v1_mixed_create_req_one) {
+        env.merge({
+                    'REQUEST_METHOD' => 'PUT',
+                    'REQUEST_PATH' => '/v1/testorg/itemset/testtopic/testid',
+                    'rack.input' => StringIO.new('["1", 1]'),
+                    'async.callback' => kind_of(Proc)
+                  })
+      }
       let (:upstream_items) {
         Proc.new do |env|
           [200,
            {'Content-Type' => 'application/json'},
            ['{"hashfoo": "foo", "hashone": 1, "hashbaz": ""}']]
+        end
+      }
+      let (:upstream_items_one) {
+        Proc.new do |env|
+          [200,
+           {'Content-Type' => 'application/json'},
+           ['{"hashfoo": "1", "hashone": 1, "hashbaz": ""}']]
         end
       }
       it "translates them appropriately to POST requests" do
@@ -261,9 +276,32 @@ describe Vayacondios::Rack::RewriteV1, rack: true do
           req['HTTP_X_METHOD'].should == nil
           [200,
            {'Content-Type' => 'application/json'},
-           ['{"hashfoo": "foo", "hashone": 1, "hashbaz": ""}']]
+           [
+            MultiJson.encode({
+                               Vayacondios::Rack::RewriteV1.hash_item(1) => 1,
+                               Vayacondios::Rack::RewriteV1.hash_item("1") => "1",
+                             })
+            ]]
         end
         expect(described_class.new(upstream_items).call(v1_mixed_create_req)).
+          to eq([200, {'Content-Type' => 'application/json'}, ''])
+      end
+      it "hashes numbers and their string representations separately" do
+        upstream_items.should_receive(:call) do |req|
+          req['REQUEST_METHOD'].should == 'POST'
+          req['REQUEST_PATH'].should == '/v2/testorg/stash/testtopic/testid'
+          MultiJson.decode(req['rack.input'].read).values.should == ["1", 1]
+          req['HTTP_X_METHOD'].should == nil
+          [200,
+           {'Content-Type' => 'application/json'},
+           [
+            MultiJson.encode({
+                               Vayacondios::Rack::RewriteV1.hash_item(1) => 1,
+                               Vayacondios::Rack::RewriteV1.hash_item("1") => "1",
+                             })
+           ]]
+        end
+        expect(described_class.new(upstream_items).call(v1_mixed_create_req_one)).
           to eq([200, {'Content-Type' => 'application/json'}, ''])
       end
     end
