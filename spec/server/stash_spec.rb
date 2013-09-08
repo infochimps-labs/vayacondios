@@ -72,6 +72,22 @@ describe Vayacondios::HttpServer, stashes: true do
           vcd(verb: verb, path: path, body: {topic: "^topic"}, includes: 3.times.map { |i| {"topic" => "topic-#{i}"}.merge(hash_stash) })
         end
       end
+      context "when projecting down into nested stashes" do
+        before do
+          mongo_query do |db|
+            db.collection("organization.stash").insert({_id: "topic"}.merge(nested_stash))
+          end
+        end
+        it "returns a 200" do
+          vcd(verb: verb, path: path, body: nested_stash_query, status: 200)
+        end
+        it "returns an Array of the matched stashes" do
+          vcd(verb: verb, path: path, body: nested_stash_query, includes: nested_stash.merge('topic' => 'topic'))
+        end
+        it "allows projecting down onto the fields of the matched stashes" do
+          vcd(verb: verb, path: path, body: nested_stash_query.merge(fields: ["root.b"]), includes: {"root" => {"b" => 2}}.merge('topic' => 'topic'))
+        end
+      end
     end
   end
 

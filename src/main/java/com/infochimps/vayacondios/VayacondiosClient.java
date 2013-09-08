@@ -341,8 +341,8 @@ public interface VayacondiosClient {
      * List<Map> events = client.stashes(query);
      * }</pre></blockquote>
      * 
-     * The number of stashes returned and sorting behavior can all be
-     * changed:
+     * The number of stashes returned, the content of each stash, and
+     * sorting behavior can all be changed:
      * 
      * <pre><blockquote>
      * {@code

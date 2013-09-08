@@ -364,6 +364,7 @@ class Vayacondios
     # @param [Hash] query the search query
     # @option query [Integer] :limit (50) the maximum number of stashes to return
     # @option query [Array<Array>] :sort array of [field, direction] pairs to sort by
+    # @option query [Array<Array>] :fields (all fields) array of fields to limit the response to
     # @return the matching stashes
     def stashes query={}
       if dry_run?

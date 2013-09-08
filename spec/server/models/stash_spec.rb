@@ -122,15 +122,15 @@ describe Vayacondios::Stash, stashes: true do
 
   describe ".search" do
     it "has default sorting and limiting behavior" do
-      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
+      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
       Vayacondios::Stash.search(log, database, params, stash_query)
     end
     it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT})
+      collection.should_receive(:find).with(stash_query, {sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT})
       Vayacondios::Stash.search(log, database, params, stash_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: Vayacondios::Stash::SORT, limit: 10})
+      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Stash::SORT, limit: 10})
       Vayacondios::Stash.search(log, database, params, stash_query_with_limit)
     end
     it "interprets the 'topic' parameter as regular expression search on the _id" do

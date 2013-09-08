@@ -4,6 +4,7 @@ shared_context "events", events: true do
   let(:array_event)  { [1,2,3]          } ; let(:json_array_event)  { '[1,2,3]'       }
   let(:string_event) { "HELLO"          } ; let(:json_string_event) { '"HELLO"'       }
   let(:numeric_event){ 1                } ; let(:json_numeric_event){ '1'             }
+  let(:nested_event) { {'A' => 1, 'B' => { 'c' => 2, 'd' => 3 } } } ; let(:json_nested_event) { MultiJson.dump(nested_event) }
   
   let(:event_query)                        { {'foo' => 'bar'} }
   let(:json_event_query)                   { MultiJson.dump(event_query) }
@@ -22,11 +23,11 @@ shared_context "stashes", stashes: true do
   let(:array_stash)  { [1,2,3]          } ; let(:json_array_stash)  { '[1,2,3]'       }
   let(:string_stash) { "HELLO"          } ; let(:json_string_stash) { '"HELLO"'       }
   let(:numeric_stash){ 1                } ; let(:json_numeric_stash){ '1'             }
-
   let(:nested_stash) { { 'root' => {'b' => 2, 'c' => { 'x' => 3 }, 'a' => 1 } } }
 
-  let(:stash_query)            { {'foo' => 'bar'} }
-  let(:json_stash_query)       { MultiJson.dump(stash_query) }
+  let(:stash_query)            { {'foo' => 'bar'} } ;let(:json_stash_query)       { MultiJson.dump(stash_query) }
+  let(:nested_stash_query)      { {"root.b" => 2 } } ; let(:json_nested_stash_query) { MultiJson.dump(nested_stash_query) }
+  
   
   let(:stash_query_with_limit) { {'foo' => 'bar', 'limit' => 10} }
   let(:stash_query_with_sort)  { {'foo' => 'bar', 'sort'  => ['bar', 'ascending']} }

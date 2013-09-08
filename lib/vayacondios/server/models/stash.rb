@@ -107,7 +107,8 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   # @param [Hash] params routing information like `organization`, `topic,`, or `id`
   # @param [Hash] query the search query
   # @option query [Integer] "limit" (50) the number of stashes to return
-  # @option query [Array] "sort" (['_id', 'ascending']) the sort order for returned stashes
+  # @option query [Array<String>] "sort" (['_id', 'ascending']) the sort order for returned stashes
+  # @option query [Array<String>] "fields"  only include these fields in the returned stashes
   # @option query [String, Regexp] "topic" will be matched as a regular expression against the topic of the stash
   # @return [Array<Hash>] the matched stashes
   def self.search(log, database, params={}, query={})
@@ -115,7 +116,7 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     proj = projector(query)
     sel  = selector(query)
     coll = new(log, database, params).collection
-    (mongo_query(log, coll, :find, sel, proj) || []).map do |result|
+    (mongo_query(*p([log, coll, :find, sel, proj])) || []).map do |result|
       format_stash_from_mongo(result)
     end
   end
@@ -338,14 +339,17 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   # @param [Hash] query
   # @option query [Integer, String] limit the earliest time for a matched event
   # @option query [Array<String,Array<String>>] sort sort order for stashes
+  # @option query [Array<String>] fields only include these fields in the returned body of the stash
   # @return [Hash] the projector Hash
   # @see Stash.selector
   def self.projector query
     raise Error.new("Must provide a query when trying to match stashes") unless query
     raise Error.new("Query must be a Hash") unless query.is_a?(Hash)
-    limit = (query.delete(:limit) || query.delete("limit") || LIMIT).to_i
-    sort  = (query.delete(:sort)  || query.delete("sort")  || SORT)
-    { sort: sort, limit: limit }
+    limit  = (query.delete(:limit) || query.delete("limit") || LIMIT).to_i
+    sort   = (query.delete(:sort)  || query.delete("sort")  || SORT)
+    { sort: sort, limit: limit }.tap do |proj|
+      proj[:fields] = [(query.delete(:fields) || query.delete("fields"))].flatten if (query[:fields] || query["fields"])
+    end
   end
 
   # Returns a Hash that can be used as a selector within a MongoDB
@@ -369,9 +373,15 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     query.each_pair do |key, value|
       conditions << { key => value }
     end
-    conditions.empty? ? {} : { :$and => conditions }
+    case
+    when conditions.empty?    then {}
+    when conditions.size == 1 then conditions.first
+    else
+      { :$and => conditions }
+    end
   end
 
+  # :nodoc:
   def self.format_stash_from_mongo result
     result['topic'] = result.delete('_id')
     result

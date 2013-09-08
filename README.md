@@ -645,12 +645,13 @@ Each key in the query body will be interpreted as a condition that the
 data of each stash must match in order to be returned.  Keys with
 periods are interpreted as nested fields.  The following parameters
 have special meaning and can be used to adjust the number of returned
-stashes and the the sort behavior.
+stashes, the fields within each stash, and the the sort behavior.
 
 | Parameter     | Description                                    | Default              | Example Values                     |
 | ------------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
 | limit         | Return up to this many stashes                 | 50                   | 100, 200                           |
 | sort          | Sort returned stashes by this field            | ascending by topic   | `["ip_address", "ascending"]`      |
+| fields        | Array of fields to include in the response     | all fields           | `["name", "address", "phone"]`     |
 | topic         | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
 | topic_in      | List of explicit topics to match               | N/A                  | `["servers.bob", "servers.alan"]`  |
 | topic_not_in  | List of explicit topics to **not** match       | N/A                  | `["servers.bob", "servers.alan"]`  |
