@@ -462,6 +462,93 @@ class Vayacondios
       end
     end
 
+    # Replace values within all stashes that match some criteria.
+    #
+    # Like the #set! method, this method will overwrite existing
+    # values with new ones.
+    #
+    # This method will not create any new stashes.  It can only update
+    # in place stashes which already exist.
+    #
+    # @example Set the state of all servers in the 'dakota' region to be in maintenance mode
+    #
+    #   client.set_many!({region: 'dakota'}, {status: "maintenance"})
+    #
+    # Nested fields are properly interpreted in both the query and the
+    # replacement
+    #
+    # @example Set all Linux servers in the 'dakota' region to be in maintenance mode and disable FTP access
+    #
+    #   client.set_many!({region: 'dakota', 'os.name' => 'Linux'}, {status: "maintenance", "ftp.status" => "down"})
+    #
+    # Several options exist for replacing values within stashes based
+    # on the value of the stash's topic.
+    #
+    # @example Set all servers with topics that match a regular expression to be in maintenance mode
+    #
+    #   client.set_many!({topic: /^servers.pool-[3-6]\./}, {status: "maintenance"})
+    #
+    # @example Set servers with the given topics to be in maintenance mode
+    #
+    #   client.set_many!({topic_in: ["servers.broken-1", "servers.broken-2"]}, {status: "maintenance"})
+    #
+    # @example Set all servers to be in maintenance mode **except** for the ones with the given topics
+    #
+    #   client.set_many!({topic_not_in: ["servers.important-1", "servers.important-2"]}, {status: "maintenance"})
+    #
+    # These options all be combined for precise control
+    #
+    # @example Set all servers with topics that match a regular expression` (**except** those that are explicitly given) and run Linux to be in maintenance mode with disabled FTP access
+    #
+    #   client.set_many!({
+    #     topic:         /^servers\.pool-[3-6]\.*/,
+    #     topic_not_in:  ["servers.pool-3.important-1"", "servers.pool-3.important-2"],
+    #     "os.name" =>   "Linux"
+    #   },{
+    #     status: "maintenance",
+    #     "ftp.status" => "down"
+    #   })
+    #
+    # The `first` option will cause the `replacement` to be applied
+    # only to the **first** matching stash.  This is a useful way to
+    # update a stash when you don't necessarily know its topic but you
+    # do know enough properties about it to identify it uniquely.
+    #
+    # @example Set a particular server to be in maintenance mode
+    #
+    #   client.set_many!({
+    #     region:       "dakota",
+    #     zone:         "2b",
+    #     server_index: "73",
+    #     first:        true
+    #   },{ status: "maintenance"})
+    #
+    # For safety's sake, calling this method with an empty query will
+    # **not** apply the replacement to all stashes but will raise an
+    # error instead.
+    #
+    # @example One way to explicitly ask for the replacement to be applied to all stashes
+    #
+    #   client.set_many!({topic: /.*/}, {status: "maintenance"})
+    #
+    # @param [Hash] query the criteria that each stash must match
+    # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+    # @option query [Array<String>] topic_in an Array of explicit topics to apply the replacement to
+    # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** apply the replacement to
+    # @option query [true,false] first (false) apply the replacement only to the first stash which matches the query
+    # @param [Hash] replacement will be applied to each matching stash
+    #
+    # @see #set_many
+    # @see #stashes
+    def set_many! query={}, replacement={}
+      if dry_run?
+        log.debug("Replacing stashes: #{query.inspect} #{replacement.inspect}")
+        nil
+      else
+        perform_set_many!(query, replacement)
+      end
+    end
+
     # Set a stash by merging the given value into it.
     #
     # A topic is required when setting a stash.
@@ -564,6 +651,112 @@ class Vayacondios
       set *args
     end
 
+    # Update values within all stashes that match some criteria.
+    #
+    # Like the #set method, this method will merge the update into the
+    # existing record.  Whatever value is provided will be merged with
+    # the existing vaue in a type-aware way: Hashes will be merged,
+    # Arrays & Strings will be concatenated, Numeric types will be
+    # incremented.
+    #
+    # This method will not create any new stashes.  It can only update
+    # in place stashes which already exist.
+    #
+    # @example Increment the TTL for all CNAME records
+    #
+    #   client.set_many({type: 'CNAME'}, {ttl: 600})
+    #
+    # Nested fields are properly interpreted in both the query and the
+    # update
+    #
+    # @example Merge in a new health check for all CNAME records that support a given application
+    #
+    #   client.set_many({
+    #     type: 'CNAME',
+    #     'app.name' => 'DataScraper'
+    #   },
+    #   {
+    #     'health_checks.http' => {
+    #       datascraper_health_check: {
+    #         path: "/status",
+    #         max_fails: 10
+    #       }
+    #     }
+    #   })
+    #
+    # Several options exist for updating values within stashes based
+    # on the value of the stash's topic.
+    #
+    # @example Increment the TTL for all DNS entries with topics that match a regular expression
+    #
+    #   client.set_many({topic: /^dns\./}, {ttl: 600})
+    #
+    # @example Increment the TTL for records with the given topics
+    #
+    #   client.set_many({topic_in: ["dns.record-1", "dns.record-2"]}, {ttl: 600})
+    #
+    # @example Increment the TTL for records **except** those with the given topics
+    #
+    #   client.set_many({topic_not_in: ["dns.record-1", "dns.record-2"]}, {ttl: 600})
+    #
+    # These options all be combined for precise control
+    #
+    # @example Increment the TTL and merge in a new health check for all CNAME records that support our application (**except** those that are explicitly given)
+    #
+    #   client.set_many({
+    #     topic:         /^dns\./,
+    #     type:          "CNAME"
+    #     topic_not_in:  ["dns.failover.record-1"", "dns.failover.record-2"],
+    #     "app.name" =>  "DataScraper"
+    #   },{
+    #     ttl: 600,
+    #     'health_checks.http' => {
+    #       datascraper_health_check: {
+    #         path: "/status",
+    #         max_fails: 10
+    #       }
+    #     }
+    #   })
+    #
+    # The `first` option will cause the `update` to be applied
+    # only to the **first** matching stash.  This is a useful way to
+    # update a stash when you don't necessarily know its topic but you
+    # do know enough properties about it to identify it uniquely.
+    #
+    # @example Set a particular server to be in maintenance mode
+    #
+    #   client.set_many({
+    #     type:       "CNAME",
+    #     value:      "datascraper.example.com",
+    #     first:      true
+    #   },{ ttl: 600})
+    #
+    # For safety's sake, calling this method with an empty query will
+    # **not** apply the update to all stashes but will raise an
+    # error instead.
+    #
+    # @example One way to explicitly ask for the update to be applied to all stashes
+    #
+    #   client.set_many({topic: /.*/}, {ttl: 600})
+    #
+    # @param [Hash] query the criteria that each stash must match
+    # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+    # @option query [Array<String>] topic_in an Array of explicit topics to apply the update to
+    # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** apply the update to
+    # @option query [true,false] first (false) apply the update only to the first stash which matches the query
+    # @param [Hash] update will be applied to each matching stash
+    #
+    # @see #set_many
+    # @see #stashes
+    def set_many query={}, update={}
+      if dry_run?
+        log.debug("Updating stashes: #{query.inspect} #{update.inspect}")
+        nil
+      else
+        perform_set_many(query, update)
+      end
+    end
+
     # Delete a stash.
     #
     # Requires a topic.  If an ID is given, will delete the stash at
@@ -606,6 +799,89 @@ class Vayacondios
         nil
       else
         perform_delete(topic, id)
+      end
+    end
+
+    # Delete stashes which match a query.
+    #
+    # Each stash matching the query will be deleted in its entirety.
+    # If you want to delete the same ID *within* several matching
+    # stashes, use the `set_many` method with a `nil` update.
+    #
+    # Most key-value pairs in the passed `query` argument will be
+    # interpreted as a condition against which to match a stash, the
+    # key naming the field within the stash and the value equaling
+    # that field's value.
+    #
+    # @example Delete all firewall rules for servers in the `dakota` region
+    #
+    #   client.delete_many(region: 'dakota')
+    #
+    # Dot-separated keys are interpreted as nested fields:
+    #
+    # @example Delete all firewall rules for servers running Linux:
+    #
+    #   client.delete_many('os.name' => 'Linux')
+    #
+    # Several options exist for deleting based on the value of the
+    # stash's topic.
+    #
+    # @example Delete all stashes related to firewalls using a regular expression applied to the topic.
+    #
+    #   client.delete_many(topic: /^firewall\./)
+    #
+    # @example Delete stashes with the given topics.
+    #
+    #   client.delete_many(topic_in: ["firewall.server-1", "firewall.server-2"])
+    #
+    # @example Delete all stashes **except** those with the given topics.
+    #
+    #   client.delete_many(topic_not_in: ["firewall.server-3", "firewall.server-4"])
+    #
+    # These options all be combined for precise control
+    #
+    # @example Delete all stashes with topics that begin with `firewall` (**except** those that are explicitly given) and run Linux
+    #
+    #   client.delete_many({
+    #     topic:         /^firewall\./,
+    #     topic_not_in:  ["firewall.important-server-1", "firewall.important-server-2"],
+    #     "os.name" =>   "Linux"
+    #   })
+    #
+    # The `first` option will cause only the **first** matching stash
+    # to be deleted.  This is a useful way to delete a stash when you
+    # don't necessarily know its topic but you do know enough
+    # properties about it to identify it uniquely.
+    #
+    # @example Delete the firewall for a particular server, whatever its topic
+    #
+    #   client.delete_any({
+    #     region:       "dakota",
+    #     zone:         "2b",
+    #     server_index: "73",
+    #     first:        true
+    #   })
+    #
+    # For safety's sake, calling this method with an empty query will
+    # **not** delete all stashes but will raise an error instead.
+    #
+    # @example One way to explicitly ask for all stashes to be deleted
+    #
+    #   client.delete_many(topic: /.*/)
+    #
+    # @param [Hash] query the matching criteria for stashes to be deleted
+    # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+    # @option query [Array<String>] topic_in an Array of explicit topics to delete
+    # @option query [Array<String>] topic_not_in an Array of explicit topics which will *not* be deleted
+    # @option query [true,false] first [false] delete only the first stash which matches the query
+    #
+    # @see #set_many
+    def delete_many query={}
+      if dry_run?
+        log.debug("Deleting stashes: #{query.inspect}")
+        nil
+      else
+        perform_delete_many(query)
       end
     end
 

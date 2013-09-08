@@ -7,11 +7,11 @@ describe Vayacondios::Event, events: true do
   
   let(:organization) { 'organization'      }
   let(:topic)        { 'topic'             }
+  let(:id)           { 'id'                }
+  let(:params)       { {topic: topic, organization: organization, id: id} }
   let(:log)          { double("Logger", debug: true)    }
   let(:database)     { double("Mongo::DB") }
-  let(:id)           { 'id'                }
   let(:timestamp)    { Time.now            }
-
   let(:collection)   { double("Mongo::Collection", name: "organization.topic.events") }
   before             { database.stub!(:collection).and_return(collection)             }
 
@@ -30,46 +30,45 @@ describe Vayacondios::Event, events: true do
     end
   end
   
-  describe "#to_timestamp" do
+  describe ".to_timestamp" do
 
     it "returns nil when the timestamp can't be parsed" do
-      subject.to_timestamp(nil).should be_nil
+      Vayacondios::Event.to_timestamp(nil).should be_nil
     end
     
     it "given a default value returns the default value when the timestamp can't be parsed" do
-      subject.to_timestamp(nil, 'hello').should == 'hello'
+      Vayacondios::Event.to_timestamp(nil, 'hello').should == 'hello'
     end
 
     it "given a Time instance returns that instance" do
-      subject.to_timestamp(timestamp).should == timestamp
+      Vayacondios::Event.to_timestamp(timestamp).should == timestamp
     end
 
     it "given a Date instance converts it into a Time" do
       # loses time information...so set to beginning of day
-      subject.to_timestamp(timestamp.to_date).should == timestamp.to_date.to_time
+      Vayacondios::Event.to_timestamp(timestamp.to_date).should == timestamp.to_date.to_time
     end
     
     it "given a String parses it into a Time" do
       # loses millisecond resolution...so round to the second
-      subject.to_timestamp(timestamp.to_s).should == Time.at(timestamp.to_i) 
+      Vayacondios::Event.to_timestamp(timestamp.to_s).should == Time.at(timestamp.to_i) 
     end
 
     it "given a Numeric parses it into a Time" do
-      subject.to_timestamp(timestamp.to_i).should == Time.at(timestamp.to_i) 
+      Vayacondios::Event.to_timestamp(timestamp.to_i).should == Time.at(timestamp.to_i) 
     end
     
     it "converts all times to UTC" do
       tokyo_time = timestamp.getlocal("+09:00")
-      subject.to_timestamp(tokyo_time).zone.should == "UTC"
+      Vayacondios::Event.to_timestamp(tokyo_time).zone.should == "UTC"
     end
     
   end
 
   describe "#find" do
     context "without an ID" do
-      it "performs a search request" do
-        subject.should_receive(:search).with(event_query)
-        subject.find(event_query)
+      it "raises an error" do
+        expect { subject.find }.to raise_error(Vayacondios::Document::Error, /ID/)
       end
     end
     context "with an ID" do
@@ -109,45 +108,45 @@ describe Vayacondios::Event, events: true do
     end
   end
 
-  describe "#search" do
+  describe ".search" do
     it "has default sorting, limiting, and windowing behavior" do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-      subject.search(event_query)
+      Vayacondios::Event.search(log, database, params, event_query)
     end
     it "accepts the 'sort' parameter" do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Event::LIMIT)
-      subject.search(event_query_with_sort)
+      Vayacondios::Event.search(log, database, params, event_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: 10)
-      subject.search(event_query_with_limit)
+      Vayacondios::Event.search(log, database, params, event_query_with_limit)
     end
     it "accepts the 'fields' parameter" do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT, fields: %w[d.bing d.bam t _id])
-      subject.search(event_query_with_fields)
+      Vayacondios::Event.search(log, database, params, event_query_with_fields)
     end
     it "interprets the 'id' field as a regular expression search on _id" do
       collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "_id" => Regexp.new(/baz/), "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-      subject.search(event_query_with_id)
+      Vayacondios::Event.search(log, database, params, event_query_with_id)
     end
     
     
     describe "handling 'time' parameters" do
       it "parses them when they're strings" do
         collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query_with_string_time)
+        Vayacondios::Event.search(log, database, params, event_query_with_string_time)
       end
       it "parses them when they're numeric" do
         collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query_with_int_time)
+        Vayacondios::Event.search(log, database, params, event_query_with_int_time)
       end
       it "ignores them when they are something else" do
         collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query.merge("from" => ['hello']))
+        Vayacondios::Event.search(log, database, params, event_query.merge("from" => ['hello']))
       end
       it "ignores them when they are unparseable" do
         collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
-        subject.search(event_query.merge("from" => "2013-06-73 Sat 100:35"))
+        Vayacondios::Event.search(log, database, params, event_query.merge("from" => "2013-06-73 Sat 100:35"))
       end
       
     end

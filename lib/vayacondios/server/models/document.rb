@@ -32,27 +32,27 @@ class Vayacondios::Document
     self.topic        = @params[:topic]
   end
 
-  # Find a document
+  # Find a particular document.
   def self.find *args
     raise NotImplementedError.new("#{self}.find must be overriden by a subclass.")
   end
 
-  # Create a document
+  # Search for documents.
+  def self.search *args
+    raise NotImplementedError.new("#{self}.search must be overriden by a subclass.")
+  end
+  
+  # Create a document.
   def self.create *args
     raise NotImplementedError.new("#{self}.create must be overriden by a subclass.")
   end
 
-  # Update a document
+  # Update a document.
   def self.update *args
     raise NotImplementedError.new("#{self}.update must be overriden by a subclass.")
   end
 
-  # Patch a document
-  def self.patch *args
-    raise NotImplementedError.new("#{self}.patch must be overriden by a subclass.")
-  end
-
-  # Destroy a document
+  # Destroy a document.
   def self.destroy *args
     raise NotImplementedError.new("#{self}.destroy must be overriden by a subclass.")
   end

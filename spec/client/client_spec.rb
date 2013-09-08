@@ -148,6 +148,11 @@ describe Vayacondios::Client, events: true, stashes: true do
     end
   end
 
+  describe "#set_many" do
+    it "is defined" do
+      should respond_to(:set_many)
+    end
+  end
 
   describe "#set!" do
     it "is defined" do
@@ -170,6 +175,12 @@ describe Vayacondios::Client, events: true, stashes: true do
     end
   end
 
+  describe "#set_many!" do
+    it "is defined" do
+      should respond_to(:set_many!)
+    end
+  end
+  
   describe "#delete" do
     it "is defined" do
       should respond_to(:delete)
@@ -199,6 +210,11 @@ describe Vayacondios::Client, events: true, stashes: true do
       end
     end
   end
-  
+
+  describe "#delete_many" do
+    it "is defined" do
+      should respond_to(:delete_many)
+    end
+  end
   
 end

@@ -26,6 +26,10 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   # The default sort order when searching.
   SORT  = ['_id', 'ascending']
 
+  # Returned as an acknowledgement of the request when there is no
+  # better option (#destroy, #update_many, &c.)
+  OK = {ok: true}
+
   # Create a new Stash.
   #
   # Because of the way Goliath works, the `log` and `database` are
@@ -72,9 +76,6 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
 
   # Find a stash.
   #
-  # If no topic or ID are set, will perform a search using the given
-  # `query`.
-  #
   # If a topic is given but no ID, will return the entire stash for
   # that topic.
   #
@@ -83,11 +84,10 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   #
   # @param [Hash] query a search query (not used if a topic or ID are present)
   # @return [Object] the stash
-  def find query={}
-    case
-    when topic.blank? && id.blank?
-      return search(query)
-    when id.blank?
+  # @raise [Error] if this stash has no topic
+  def find
+    raise Error.new("Cannot find a stash without a topic") unless topic
+    if id.blank?
       result = mongo_query(collection, :find_one, {_id: topic})
       if result.present?
         result.delete("_id")
@@ -102,18 +102,22 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
 
   # Search for stashes.
   #
-  # @param [Hash] query
+  # @param [Logger] log log to write to
+  # @param [Mongo::Database] database MongoDB database
+  # @param [Hash] params routing information like `organization`, `topic,`, or `id`
+  # @param [Hash] query the search query
   # @option query [Integer] "limit" (50) the number of stashes to return
   # @option query [Array] "sort" (['_id', 'ascending']) the sort order for returned stashes
   # @option query [String, Regexp] "topic" will be matched as a regular expression against the topic of the stash
   # @return [Array<Hash>] the matched stashes
-  def search(query={})
-    query["_id"]  = Regexp.new(query.delete(:topic) || query.delete("topic")) if (query[:topic] || query["topic"]) # allow searching on topic naturally
-    
-    limit = (query.delete("limit") || LIMIT).to_i
-    sort  = (query.delete("sort")  || SORT)
-    
-    mongo_query(collection, :find, query, sort: sort, limit: limit)
+  def self.search(log, database, params={}, query={})
+    # Make sure to calculate the projector **before** the selector.
+    proj = projector(query)
+    sel  = selector(query)
+    coll = new(log, database, params).collection
+    (mongo_query(log, coll, :find, sel, proj) || []).map do |result|
+      format_stash_from_mongo(result)
+    end
   end
 
   # Create a new stash.
@@ -137,6 +141,32 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
       mongo_query(collection, :update, {:_id => topic}, {'$set' => {id => document}}, {upsert: true})
     end
     self.body = document
+  end
+
+  # Apply a replacement to all stashes that match a search query
+  #
+  # @param [Logger] log log to write to
+  # @param [Mongo::Database] database MongoDB database
+  # @param [Hash] params routing information like `organization`, `topic,`, or `id`
+  # @param [Hash] document the body of the request
+  # @param [Hash] query the query that stashes must match
+  # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+  # @option query [Array<String>] topic_in an Array of explicit topics to apply the replacement to
+  # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** apply the replacement to
+  # @option query [true,false] first (false) apply the replacement only to the first stash which matches the query
+  # @param [Hash] replacement update the replacement applied to each matched stash
+  def self.replace_many log, database, params={}, query={}, replacement={}
+    # Calculate projector and `first` **before** query otherwise their
+    # options will be interpreted as fields within the document.
+    first = (query.delete(:first) || query.delete('first')) rescue false
+    proj  = projector(query)
+    sel   = selector(query, true)
+    coll  = new(log, database, params).collection
+    mongo_query(log, coll, :update, sel, {:$set => replacement}, {
+      upsert: false,
+      multi:  (first ? false : true)
+    })
+    OK
   end
 
   # Update a stash.
@@ -174,6 +204,45 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     end
   end
 
+  # Apply an update to all stashes that match a search query.
+  #
+  # @param [Logger] log log to write to
+  # @param [Mongo::Database] database MongoDB database
+  # @param [Hash] params routing information like `organization`, `topic,`, or `id`
+  # @param [Hash] query the query that stashes must match
+  # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+  # @option query [Array<String>] topic_in an Array of explicit topics to apply the update to
+  # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** apply the update to
+  # @option query [true,false] first (false) apply the update only to the first stash which matches the query
+  # @param [Hash] update the update applied to each matched stash
+  def self.update_many log, database, params={}, query={}, update={}
+    # Calculate projector and `first` **before** query otherwise their
+    # options will be interpreted as fields within the document.
+    first = (query.delete(:first) || query.delete('first')) rescue false
+    proj  = projector(query)
+    sel   = selector(query, true)
+    coll  = new(log, database, params).collection
+
+    mutation = {:$inc => {}, :$push => {}, :$set => {}}
+    update.each_pair do |key, value|
+      case value
+      when Numeric
+        mutation[:$inc][key]  = value
+      when Array
+        mutation[:$push][key] = {:$each => value}
+      else
+        mutation[:$set][key]  = value
+      end
+    end
+    
+    mongo_query(log, coll, :update, sel, mutation, {
+      upsert: false,
+      multi:  (first ? false : true)
+    })
+
+    OK
+  end
+  
   # Destroy a stash.
   #
   # If no ID is present, will delete the entire stash for the given
@@ -187,11 +256,29 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
   def destroy
     if id.blank?
       mongo_query(collection, :remove, {:_id => topic})
-      {topic: topic}
     else
       mongo_query(collection, :update, {:_id => topic}, {'$unset' => { id => 1}})
-      {topic: topic, id: id}
     end
+    OK
+  end
+
+  # Apply an update to all stashes that match a search query.
+  #
+  # @param [Logger] log log to write to
+  # @param [Mongo::Database] database MongoDB database
+  # @param [Hash] params routing information like `organization`, `topic,`, or `id`
+  # @param [Hash] query the query that deleted stashes must match
+  # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+  # @option query [Array<String>] topic_in an Array of explicit topics to delete
+  # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** delete
+  def self.destroy_many log, database, params={}, query={}
+    # Calculate projector **before** query otherwise their options
+    # will be interpreted as fields within the document.
+    proj  = projector(query)
+    sel   = selector(query, true)
+    coll  = new(log, database, params).collection
+    mongo_query(log, coll, :remove, sel)
+    OK
   end
 
   protected
@@ -243,6 +330,51 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     else
       result[slice]
     end
+  end
+
+  # Returns a Hash that can be used as a projector within a MongoDB
+  # query.
+  #
+  # @param [Hash] query
+  # @option query [Integer, String] limit the earliest time for a matched event
+  # @option query [Array<String,Array<String>>] sort sort order for stashes
+  # @return [Hash] the projector Hash
+  # @see Stash.selector
+  def self.projector query
+    raise Error.new("Must provide a query when trying to match stashes") unless query
+    raise Error.new("Query must be a Hash") unless query.is_a?(Hash)
+    limit = (query.delete(:limit) || query.delete("limit") || LIMIT).to_i
+    sort  = (query.delete(:sort)  || query.delete("sort")  || SORT)
+    { sort: sort, limit: limit }
+  end
+
+  # Returns a Hash that can be used as a selector within a MongoDB
+  # query.
+  #
+  # @param [Hash] query the query that deleted stashes must match
+  # @option query [String, Regexp] topic interpreted as a regular expression applied to the topic of the stash
+  # @option query [Array<String>] topic_in an Array of explicit topics to delete
+  # @option query [Array<String>] topic_not_in an Array of explicit topics to **not** delete
+  # @param [true,false] raise_if_empty whether or not to throw an error if the query is blank
+  # @raise [Error] if the query is missing or malformed or if the query is empty and the `raise_if_empty` option is `true`
+  # @see Stash.projector
+  def self.selector query={}, raise_if_empty=false
+    raise Error.new("Must provide a query when trying to match stashes") unless query
+    raise Error.new("Query must be a Hash") unless query.is_a?(Hash)
+    raise Error.new("Query cannot be empty") if raise_if_empty && query.empty?
+    conditions = []
+    conditions << { "_id" => Regexp.new(query.delete(:topic) || query.delete('topic'))                  } if (query[:topic]        || query['topic'])
+    conditions << { "_id" => { :$in  => (query.delete(:topic_in)     || query.delete('topic_in'))     } } if (query[:topic_in]     || query['topic_in'])
+    conditions << { "_id" => { :$nin => (query.delete(:topic_not_in) || query.delete('topic_not_in')) } } if (query[:topic_not_in] || query['topic_not_in'])
+    query.each_pair do |key, value|
+      conditions << { key => value }
+    end
+    conditions.empty? ? {} : { :$and => conditions }
+  end
+
+  def self.format_stash_from_mongo result
+    result['topic'] = result.delete('_id')
+    result
   end
   
 end

@@ -31,6 +31,9 @@ shared_context "stashes", stashes: true do
   let(:stash_query_with_limit) { {'foo' => 'bar', 'limit' => 10} }
   let(:stash_query_with_sort)  { {'foo' => 'bar', 'sort'  => ['bar', 'ascending']} }
   let(:stash_query_with_topic) { {'foo' => 'bar', 'topic' => 'baz' } }
+
+  let(:stash_replacement)      { {'foo' => 'baz'} } ; let(:json_stash_replacement) { '{"foo":"baz"}' }
+  let(:stash_update)           { {'counter' => 1} } ; let(:json_stash_update)      { '{"counter":1}' }
 end
 
 shared_context "rack", rack: true do

@@ -13,17 +13,8 @@ describe Vayacondios::HttpServer, events: true do
 
     context "/v2/organization/event/topic/id" do
       let(:path)  { '/v2/organization/event/topic/id' }
-      it "returns a 400" do
-        vcd(verb: verb, path: path, status: 400)
-      end
-    end
-
-    context "/v2/organization/event/topic/id" do
-      let(:path)  { '/v2/organization/event/topic/id' }
-      context "if the event isn't found" do
-        it "returns a 404" do
-          vcd(verb: verb, path: path, status: 404)
-        end
+      it "returns a 404 when no event with the given ID can be found" do
+        vcd(verb: verb, path: path, status: 404)
       end
       context "if the event is found" do
         before do
@@ -45,6 +36,33 @@ describe Vayacondios::HttpServer, events: true do
         end
       end
     end
+
+    context "/v2/organization/events/topic" do
+      let(:path) { "/v2/organization/events/topic" }
+      context "when no events match" do
+        it "returns a 200" do
+          vcd(verb: verb, path: path, status: 200)
+        end
+        it "with a response body that is an empty array" do
+          vcd(verb: verb, path: path, equals: [])
+        end
+      end
+      context "when some events match" do
+        before do
+          mongo_query do |db|
+            3.times do |i|
+              db.collection("organization.topic.events").insert({_id: "id-#{i}", t: (timestamp.utc - i), d: hash_event})
+            end
+          end
+        end
+        it "returns a 200" do
+          vcd(verb: verb, path: path, status: 200)
+        end
+        it "with a response body that includes each matching event " do
+          vcd(verb: verb, path: path, includes: 3.times.map { |i| {"id" => "id-#{i}", "time" => (timestamp.utc - i).to_s}.merge(hash_event) }.reverse)
+        end
+      end
+    end
   end
 
   context "POST" do
@@ -59,7 +77,7 @@ describe Vayacondios::HttpServer, events: true do
         it "with a response that includes an ID and the time" do
           vcd(verb: verb, path: path, includes: %w[id time])
         end
-        it "stores the event in the organization.topic.events collection with an auto-generated ID" do
+        it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path)
           mongo_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
@@ -81,9 +99,9 @@ describe Vayacondios::HttpServer, events: true do
           vcd(verb: verb, path: path, body: hash_event, includes: %w[id])
         end
         it "and the timestamp" do
-          vcd(verb: verb, path: path, body: hash_event, includes: {'time' => timestamp})
+          vcd(verb: verb, path: path, body: hash_event, includes: {'time' => timestamp.utc.to_s})
         end
-        it "stores the event in the organization.topic.events collection with an auto-generated ID" do
+        it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path, body: hash_event)
           mongo_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
@@ -120,9 +138,9 @@ describe Vayacondios::HttpServer, events: true do
           vcd(verb: verb, path: path, includes: {"id" => 'id'})
         end
         it "and a timestamp" do
-          vcd(verb: verb, path: path, includes: {'time' => timestamp})
+          vcd(verb: verb, path: path, includes: {'time' => timestamp.utc.to_s})
         end
-        it "stores the event in the organization.topic.events collection with an auto-generated ID" do
+        it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path)
           mongo_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
@@ -141,12 +159,12 @@ describe Vayacondios::HttpServer, events: true do
           vcd(verb: verb, path: path, body: hash_event, includes: hash_event)
         end
         it "and the ID" do
-          vcd(verb: verb, path: path, body: hash_event, includes: {'id' => id})
+          vcd(verb: verb, path: path, body: hash_event, includes: {'id' => 'id'})
         end
         it "and a timestamp" do
-          vcd(verb: verb, path: path, body: hash_event, includes: { 'time' => timestamp })
+          vcd(verb: verb, path: path, body: hash_event, includes: { 'time' => timestamp.utc.to_s })
         end
-        it "stores the event in the organization.topic.events collection with the given ID" do
+        it "stores the event in the organization.topic.events collection with an _id field given by the ID" do
           vcd(verb: verb, path: path, body: hash_event)
           mongo_query do |db|
             event = db.collection("organization.topic.events").find_one({_id: 'id'}, sort: {t: -1})
@@ -178,20 +196,20 @@ describe Vayacondios::HttpServer, events: true do
     let(:verb) { 'PUT' }
     context "/v2/organization/event/topic" do
       let(:path) { "/v2/organization/event/topic" }
-      it "returns a 400" do
-        vcd(verb: verb, path: path, status: 400)
+      it "returns a 404" do
+        vcd(verb: verb, path: path, status: 404)
       end
-      it "with an error message explaining that you can't update events" do
-        vcd(verb: verb, path: path, error: /update/)
+      it "with an error message explaining the route doesn't exist" do
+        vcd(verb: verb, path: path, error: /PUT/)
       end
     end
     context "/v2/organization/event/topic/id" do
       let(:path) { "/v2/organization/event/topic/id" }
-      it "returns a 400" do
-        vcd(verb: verb, path: path, status: 400)
+      it "returns a 404" do
+        vcd(verb: verb, path: path, status: 404)
       end
-      it "with an error message explaining that you can't update events" do
-        vcd(verb: verb, path: path, error: /update/)
+      it "with an error message explaining the route doesn't exist" do
+        vcd(verb: verb, path: path, error: /PUT/)
       end
     end
   end
@@ -200,20 +218,20 @@ describe Vayacondios::HttpServer, events: true do
     let(:verb) { 'DELETE' }
     context "/v2/organization/event/topic" do
       let(:path) { "/v2/organization/event/topic" }
-      it "returns a 400" do
-        vcd(verb: verb, path: path, status: 400)
+      it "returns a 404" do
+        vcd(verb: verb, path: path, status: 404)
       end
-      it "with an error message explaining that you can't delete events" do
-        vcd(verb: verb, path: path, error: /delete/)
+      it "with an error message explaining the route doesn't exist" do
+        vcd(verb: verb, path: path, error: /DELETE/)
       end
     end
     context "/v2/organization/event/topic/id" do
       let(:path) { "/v2/organization/event/topic/id" }
-      it "returns a 400" do
-        vcd(verb: verb, path: path, status: 400)
+      it "returns a 404" do
+        vcd(verb: verb, path: path, status: 404)
       end
-      it "with an error message explaining that you can't delete events" do
-        vcd(verb: verb, path: path, error: /delete/)
+      it "with an error message explaining the route doesn't exist" do
+        vcd(verb: verb, path: path, error: /DELETE/)
       end
     end
   end

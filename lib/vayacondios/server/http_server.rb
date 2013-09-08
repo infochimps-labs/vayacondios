@@ -59,6 +59,9 @@ Stashes:
   POST   /v2/ORG/stash/TOPIC[/ID]      (set!)
   DELETE /v2/ORG/stash/TOPIC[/ID]      (delete)
   GET    /v2/ORG/stashes               (stashes)
+  PUT    /v2/ORG/stashes               (set_many)
+  POST   /v2/ORG/stashes               (set_many!)
+  DELETE /v2/ORG/stashes               (delete_many)
 
 The server requires MongoDB as a data store.
 BANNER
@@ -84,9 +87,9 @@ BANNER
     use Vayacondios::Rack::Params                                            # parse query string and message body into params hash
     use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE]   # only allow these methods
     
-    use Vayacondios::Rack::ExtractMethods                                    # interpolate GET, PUT into :create, :update, etc
     use Vayacondios::Rack::Routing                                           # parse path into parameterized pieces
-    use Vayacondios::Rack::Validation                                        # validate the existence of env[:vayacondios_route]
+    use Vayacondios::Rack::ExtractMethods                                    # interpolate GET, PUT into :create, :update, etc
+    use Vayacondios::Rack::Validation                                        # validation
 
     use Goliath::Rack::Render                                                # auto-negotiate response format
 
@@ -138,29 +141,17 @@ BANNER
     #
     # @param [Hash] env the current request environment
     def response(env)
-      begin
-        case env[:vayacondios_method]
-        when :show
-          [200, {}, handler.find(env[:vayacondios_route], document)]
-        when :create
-          [200, {}, handler.create(env[:vayacondios_route], document)]
-        when :update
-          [200, {}, handler.update(env[:vayacondios_route], document)]
-        when :patch
-          [200, {}, handler.patch(env[:vayacondios_route], document)]
-        when :delete
-          [200, {}, handler.delete(env[:vayacondios_route])]
-        end
-      rescue Goliath::Validation::Error => e
-        return [e.status_code, {}, {error: e.message}]
-      rescue Vayacondios::Document::Error => e
-        return [400, {}, {error: e.message}]
-      rescue => e
-        env.logger.error "#{e.class} -- #{e.message}"
-        e.backtrace.each{ |line| env.logger.error(line) }
-        return [500, {}, {error: "#{e.class} -- #{e.message}"}]
-      end
+      body = handler.send(env[:vayacondios_method], env[:vayacondios_route], document)
+      [200, {}, body]
+    rescue Goliath::Validation::Error => e
+      return [e.status_code, {}, {error: e.message}]
+    rescue Vayacondios::Document::Error => e
+      return [400, {}, {error: e.message}]
+    rescue => e
+      env.logger.error "#{e.class} -- #{e.message}"
+      e.backtrace.each{ |line| env.logger.error(line) }
+      return [500, {}, {error: "#{e.class} -- #{e.message}"}]
     end
-    
   end
+  
 end

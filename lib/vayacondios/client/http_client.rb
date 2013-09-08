@@ -129,6 +129,16 @@ class Vayacondios
     def perform_set topic, id, document
       request(:put, 'stash', topic, id, body: document)
     end
+
+    # Perform the actual set_many request.
+    #
+    # @param [Hash] query
+    # @param [Hash] update
+    #
+    # @see Client#set_many
+    def perform_set_many query, update
+      request(:put, 'stashes', body: {query: query, update: update})
+    end
     
     # Perform the actual set! request.
     # 
@@ -142,6 +152,16 @@ class Vayacondios
       request(:post, 'stash', topic, id, body: document)
     end
 
+    # Perform the actual set_many! request.
+    #
+    # @param [Hash] query
+    # @param [Hash] update
+    #
+    # @see Client#set_many!
+    def perform_set_many! query, replacement
+      request(:post, 'stashes', body: {query: query, update: replacement})
+    end
+
     # Perform the delete request.
     # 
     # @param [String] topic
@@ -153,6 +173,15 @@ class Vayacondios
       request(:delete, 'stash', topic, id)
     end
 
+    # Perform the actual delete_many request.
+    #
+    # @param [Hash] query
+    #
+    # @see Client#delete_many
+    def perform_delete_many query
+      request(:delete, 'stashes', body: query)
+    end
+    
     private
 
     # :nodoc:

@@ -39,6 +39,8 @@ usage:
   vcd [ --param=val|--param|-p val|-p ] get|set|set!|delete TOPIC ID [DOCUMENT]
   vcd [ --param=val|--param|-p val|-p ] events TOPIC QUERY
   vcd [ --param=val|--param|-p val|-p ] stashes QUERY
+  vcd [ --param=val|--param|-p val|-p ] set_many|set_many! QUERY_AND_UPDATE
+  vcd [ --param=val|--param|-p val|-p ] delete_many QUERY
 USAGE
         end
         
@@ -152,16 +154,19 @@ DESCRIPTION
     def run
       command = settings.rest.shift
       case command
-      when 'announce' then announce
-      when 'events'   then events
-      when 'get'      then get
-      when 'stashes'  then stashes
-      when 'set'      then set
-      when 'set!'     then set!
-      when 'delete'   then delete
-      when nil        then settings.dump_help
+      when 'announce'    then announce
+      when 'events'      then events
+      when 'get'         then get
+      when 'stashes'     then stashes
+      when 'set'         then set
+      when 'set!'        then set!
+      when 'delete'      then delete
+      when 'set_many'    then set_many
+      when 'set_many!'   then set_many!
+      when 'delete_many' then delete_many
+      when nil           then settings.dump_help
       else
-        raise Error.new("Unknown command: <#{command}>.  Must be either 'announce', one of 'get', 'set', 'set!', or 'delete', or one of 'events' or 'stashes'")
+        raise Error.new("Unknown command: <#{command}>.  Must be either 'announce', one of 'get', 'set', 'set!', or 'delete', one of 'events' or 'stashes', or one of 'set_many', 'set_many!', or 'delete_many'")
       end
     end
 
@@ -274,6 +279,22 @@ DESCRIPTION
       end
     end
 
+    # Update many stashes that match a criteria by merging in an
+    # update.
+    #
+    # Each input should be an Array consisting of a query Hash
+    # followed by an update Hash.
+    #
+    # @raise [Error] if no input was given
+    def set_many
+      self.document = settings.rest.shift
+      raise Error.new("Must provide a [query, update] pair via the second command-line argument, the --file argument, or STDIN.") unless input?
+      inputs do |(query, update)|
+        raise Error.new("Each input record must be an Array consisting of a query Hash and an update Hash") unless query.is_a?(Hash) && update.is_a?(Hash)
+        handle_response(client.set_many(query, update))
+      end
+    end
+
     # Set a value by overwriting a (potentially) existing value.
     #
     # Will read the topic as the first argument, ID as the second, and
@@ -294,6 +315,22 @@ DESCRIPTION
       end
     end
 
+    # Update many stashes that match a criteria by applying a
+    # replacement.
+    #
+    # Each input should be an Array consisting of a query Hash
+    # followed by a replacement Hash.
+    #
+    # @raise [Error] if no input was given
+    def set_many!
+      self.document = settings.rest.shift
+      raise Error.new("Must provide a [query, replacement] pair via the second command-line argument, the --file argument, or STDIN.") unless input?
+      inputs do |(query, replacement)|
+        raise Error.new("Each input record must be an Array consisting of a query Hash and an replacement Hash") unless query.is_a?(Hash) && replacement.is_a?(Hash)
+        handle_response(client.set_many!(query, replacement))
+      end
+    end
+    
     # Delete a stashed value.
     #
     # Will read the topic as the first argument and ID as the second.
@@ -315,6 +352,19 @@ DESCRIPTION
       end
     end
 
+    # Delete many stashes that match some criteria.
+    #
+    # Each input should be a query Hash.
+    #
+    # @raise [Error] if no input was given
+    def delete_many
+      self.document = settings.rest.shift
+      raise Error.new("Must provide a query via the second command-line argument, the --file argument, or STDIN.") unless input?
+      inputs do |query|
+        handle_response(client.delete_many(query))
+      end
+    end
+    
     #
     # == Inputs == 
     #

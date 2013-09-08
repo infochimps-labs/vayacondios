@@ -4,11 +4,11 @@ describe Vayacondios::Stash, stashes: true do
 
   let(:organization) { 'organization'      }
   let(:topic)        { 'topic'             }
+  let(:id)           { 'id'                }
+  let(:params)       { {topic: topic, organization: organization, id: id} }
   let(:log)          { double("Logger", debug: true)    }
   let(:database)     { double("Mongo::DB") }
-  let(:id)           { 'id'                }
   let(:timestamp)    { Time.now            }
-
   let(:collection)   { double("Mongo::Collection", name: "organization.stash") }
   before             { database.stub!(:collection).and_return(collection)       }
 
@@ -114,33 +114,29 @@ describe Vayacondios::Stash, stashes: true do
     end
     context "without a topic" do
       before { subject.topic = nil }
-      it "performs a search request" do
-        subject.should_receive(:search).with(stash_query)
-        subject.find(stash_query)
+      it "raises an error" do
+        expect { subject.find }.to raise_error(Vayacondios::Document::Error, /topic/)
       end
     end
   end
 
-  describe "#search" do
+  describe ".search" do
     it "has default sorting and limiting behavior" do
-      collection.should_receive(:find).with(stash_query, sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT)
-        subject.search(stash_query)
+      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
+      Vayacondios::Stash.search(log, database, params, stash_query)
     end
     it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with(stash_query_with_sort, sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT)
-      subject.search(stash_query_with_sort)
+      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT})
+      Vayacondios::Stash.search(log, database, params, stash_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with(stash_query_with_limit, sort: Vayacondios::Stash::SORT, limit: 10)
-      subject.search(stash_query_with_limit)
+      collection.should_receive(:find).with({:$and => [stash_query]}, {sort: Vayacondios::Stash::SORT, limit: 10})
+      Vayacondios::Stash.search(log, database, params, stash_query_with_limit)
     end
     it "interprets the 'topic' parameter as regular expression search on the _id" do
-      modified_stash_query_with_topic = stash_query_with_topic.dup
-      modified_stash_query_with_topic["_id"] = Regexp.new(modified_stash_query_with_topic.delete('topic'))
-      collection.should_receive(:find).with(modified_stash_query_with_topic, sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT)
-      subject.search(stash_query_with_topic)
+      collection.should_receive(:find).with({:$and => [{"_id" => Regexp.new(stash_query_with_topic['topic'])}, stash_query]}, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
+      Vayacondios::Stash.search(log, database, params, stash_query_with_topic)
     end
-    
   end
 
   describe "#create" do

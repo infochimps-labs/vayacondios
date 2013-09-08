@@ -216,6 +216,22 @@ describe Vayacondios::CLI, events: true, stashes: true do
     end
   end
 
+  describe "set_many" do
+    before { ARGV.replace(["set_many"]) }
+    it "raises an error without a document, --file or STDIN" do
+      cli.boot
+      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+    end
+    context "with input" do
+      before { ARGV << MultiJson.dump([stash_query, stash_update]) }
+      it "calls the set_many method on the client" do
+        client.should_receive(:set_many).with(stash_query, stash_update)
+        cli.boot
+        cli.run
+      end
+    end
+  end
+
   describe "set!" do
     before { ARGV.replace(['set!']) }
 
@@ -258,6 +274,22 @@ describe Vayacondios::CLI, events: true, stashes: true do
     end
   end
 
+  describe "set_many!" do
+    before { ARGV.replace(["set_many!"]) }
+    it "raises an error without a document, --file or STDIN" do
+      cli.boot
+      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+    end
+    context "with input" do
+      before { ARGV << MultiJson.dump([stash_query, stash_replacement]) }
+      it "calls the set_many! method on the client" do
+        client.should_receive(:set_many!).with(stash_query, stash_replacement)
+        cli.boot
+        cli.run
+      end
+    end
+  end
+  
   describe "delete" do
     before { ARGV.replace(['delete']) }
 
@@ -280,6 +312,22 @@ describe Vayacondios::CLI, events: true, stashes: true do
           cli.boot
           cli.run
         end
+      end
+    end
+  end
+
+  describe "delete_many" do
+    before { ARGV.replace(["delete_many"]) }
+    it "raises an error without a document, --file or STDIN" do
+      cli.boot
+      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+    end
+    context "with input" do
+      before { ARGV << json_stash_query }
+      it "calls the delete_many method on the client" do
+        client.should_receive(:delete_many).with(stash_query)
+        cli.boot
+        cli.run
       end
     end
   end

@@ -103,7 +103,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # @param [String, Numeric, Time, nil] t
   # @return [Time]
   def timestamp= t
-    @timestamp = to_timestamp(t, Time.now.utc)
+    @timestamp = self.class.to_timestamp(t, Time.now.utc)
   end
 
   # Find an event.
@@ -113,22 +113,30 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   #
   # @param [Hash] query a search query (not used if an ID is present)
   # @return [Hash] the event's formatted body
-  def find query={}
-    if id.blank?
-      return search(query)
+  # @raise [Error] if this event has no ID
+  def find
+    raise Error.new("Cannot find an event without an ID") unless id
+    result = mongo_query(collection, :find_one, {_id: id})
+    if result.present?
+      format_event_for_response(result)
     else
-      result = mongo_query(collection, :find_one, {_id: id})
-      if result.present?
-        format_event_for_response(result)
-      else
-        nil
-      end
+      nil
     end
   end
 
   # Search for events.
   #
-  # @param [Hash] query
+  # Some top-level key-value pairs in the `query` Hash have special
+  # interpretations, as detailed below.
+  #
+  # Each other top-level key-value pairs is interpreted as a slice
+  # into the MongoDB document (key) and a value that must be matched
+  # (value).
+  #
+  # @param [Logger] log log to write to 
+  # @param [Mongo::Database] database MongoDB database
+  # @param [Hash] params routing information like `organization`, `topic,`, or `id`
+  # @param [Hash] query the search query
   # @option query [Integer] "limit" (50) the number of events to return
   # @option query [Array] "sort" (['t', 'descending']) the sort order for returned events
   # @option query [Array] "fields" an array of fields to return for each event
@@ -137,31 +145,16 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # @option query [Time, String, Numeric] "upto" the end of the time window for returned events
   # @option query [Regexp, String] "id" will be matched as a regular expression against the ID of the event
   # @return [Array<Hash>] the matched events
-  def search query
-    opts = {}
-    opts[:limit]  = (query.delete(:limit)  || query.delete("limit")  || LIMIT).to_i
-
-    opts[:sort]   = (query.delete(:sort)   || query.delete("sort"))
-    if opts[:sort].nil?
-      opts[:sort] =  SORT
-      reverse = true
-    else
-      reverse = false
-    end
-
-    if fields_spec = (query.delete(:fields) || query.delete('fields'))
-      opts[:fields] = [fields_spec].flatten.map { |field_name| "d.#{field_name}" } + ["t", "_id"]
+  def self.search log, database, params={}, query={}
+    # Make sure to calculate the projector **before** the selector.
+    proj    = projector(query)
+    reverse = proj.delete(:_reverse)
+    sel     = selector(query)
+    coll    = new(log, database, params).collection
+    results = (mongo_query(log, coll, :find, sel, proj) || []).map do |result|
+      new(log, database, params).format_event_for_response(result)
     end
     
-    selector = {t: {}}
-    selector[:t][:$gte]   = to_timestamp(query.delete(:from) || query.delete('from'), (Time.now - WINDOW).utc)
-    selector[:t][:$lte]   = to_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
-    selector["_id"]       = Regexp.new(query.delete(:id) || query.delete("id")) if (query[:id] || query["id"]) # let 'id' map naturally
-    selector.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
-    
-    results = (mongo_query(collection, :find, selector, opts) || []).map do |result|
-      format_event_for_response(result)
-    end
     reverse ? results.reverse : results
   end
 
@@ -191,7 +184,7 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # @param [String, Numeric, Time, nil] obj
   # @param [Time] default the time value to return if none could be found in the `obj`
   # @return [Time]
-  def to_timestamp obj, default=nil
+  def self.to_timestamp obj, default=nil
     begin
       case obj
       when String
@@ -213,12 +206,12 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # Formats an event as stored in the MongoDB database for the
   # response.
   #
-  # @param [Hash] event the event as stored in MongoDB
+  # @param [Hash] record the event as stored in MongoDB
   # @return [Hash] the event as should be returned in the response
-  def format_event_for_response event
-    self.timestamp = event["t"]
-    self.body      = event["d"]
-    {id: self.class.format_mongo_id(event["_id"]).to_s, time: event["t"]}.merge(event["d"] || {})
+  def format_event_for_response record
+    self.timestamp = record["t"]
+    self.body      = record["d"]
+    {id: self.class.format_mongo_id(record["_id"]).to_s, time: record["t"]}.merge(record["d"] || {})
   end
 
   # Reshape an event for storage in MongoDB.
@@ -228,9 +221,61 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   def format_event_for_mongodb(document)
     {}.tap do |result|
       result[:_id] = id if id
-      result[:t]   = to_timestamp(document.delete(:time) || document.delete('time') || self.timestamp, Time.now.utc)
+      result[:t]   = self.class.to_timestamp(document.delete(:time) || document.delete('time') || self.timestamp, Time.now.utc)
       result[:d]   = document.dup
     end
   end
+
+  # Returns a Hash that can be used to project (limit, sort, pick
+  # fields, &c.) a result set from a query to MongoDB.
+  #
+  # For any given `query` object, this method should be run **before**
+  # Event.selector because it modifies the `query` by removing certain
+  # special options.
+  # 
+  # @param [Hash] query
+  # @option query [String, Numeric, Time, nil] from the earliest time for a matched event
+  # @option query [String, Numeric, Time, nil] upto the latest time for a matched event
+  # @option query [String, Regexp]] id a regular expression that matches the ID of the event
+  # @return [Hash] the projector Hash
+  # @see Event.selector
+  def self.projector query={}
+    {}.tap do |proj|
+      proj[:limit] = (query.delete(:limit) || query.delete('limit') || LIMIT).to_i
+      if (query[:sort] || query['sort'])
+        proj[:sort]     = (query.delete(:sort) || query.delete('sort'))
+        proj[:_reverse] = false
+      else
+        proj[:sort]     = SORT
+        proj[:_reverse] = true
+      end
+      if fields_spec = (query.delete(:fields) || query.delete('fields'))
+        proj[:fields] = [fields_spec].flatten.map { |field_name| "d.#{field_name}" } + ["t", "_id"]
+      end
+    end
+  end
   
+  # Returns a Hash that can be used for selection criteria in a query
+  # to a MongoDB collection.
+  #
+  # For any given `query` object, this method should be run **after**
+  # Event.projector because Event.projector modifies the `query` by
+  # removing certain special options which would otherwise be
+  # interpreted by this method..
+  #
+  # @param [Hash] query
+  # @option query [String, Numeric, Time, nil] from the earliest time for a matched event
+  # @option query [String, Numeric, Time, nil] upto the latest time for a matched event
+  # @option query [String, Regexp]] id a regular expression that matches the ID of the event
+  # @return [Hash] the selector Hash
+  # @see Event.projector
+  def self.selector query={}
+    {t: {}}.tap do |sel|
+      sel[:t][:$gte] = to_timestamp(query.delete(:from) || query.delete('from'), (Time.now - WINDOW).utc)
+      sel[:t][:$lte] = to_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
+      sel["_id"]     = Regexp.new(query.delete(:id) || query.delete('id')) if (query[:id] || query['id'])
+      sel.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
+    end
+  end
+
 end

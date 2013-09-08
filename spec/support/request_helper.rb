@@ -1,3 +1,21 @@
+# This is a helper method that encapsulates a simple functional test.
+# During each invocation of `vcd`
+#
+# 1. A new Vayacondios::HttpServer is booted up
+#   a. Using the `config/vcd-server.rb` file distributed with the Vayacondios source
+#   b. in the `test` environment
+# 2. You can specify the given HTTP verb, path, and body of a new HTTP request
+# 3. You can specify the expected status code along with somewhat complex properties of the body in the resulting HTTP response
+#
+# @param [Hash] options the options of the test
+# @option options [String] verb the given HTTP verb (GET, PUT, POST, DELETE) for the request
+# @option options [String] path the given path for the request
+# @option options [String] body the given body for the request
+# @option options [Integer] status the expected HTTP response code (200, 404, &c.) of the response
+# @option options [String, Regexp] matches a regular expression which should match the response body
+# @option options [Array<String>, String] includes argument to be passed to RSpec's `include` matcher
+# @option options [String, Numeric, Hash, Array] equals the parsed response body should equal this Ruby object
+# @option options [String] error a regular expression which matches the error message returned in the response body
 def vcd options={}, &block
   with_api(Vayacondios::HttpServer, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test') do |api|
     
@@ -5,7 +23,7 @@ def vcd options={}, &block
       req[:body] = MultiJson.dump(options[:body]) if options[:body]
     end
     
-    callback = Proc.new{ |client| fail "HTTP Options Failed #{client.response_header.status} -- }#{client.options}" }
+    callback = Proc.new{ |client| fail "HTTP Options Failed #{client.response_header.status}" }
     
     send("#{options[:verb].to_s.downcase}_request", request, callback) do |client|
       begin

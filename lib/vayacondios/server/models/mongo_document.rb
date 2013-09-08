@@ -69,15 +69,7 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   end
 
   # Find this document.
-  #
-  # @param [Hash] query additional data to use when finding the document
-  def find query={}
-  end
-
-  # Search for this document.
-  #
-  # @param [Hash] query the search query to perform
-  def search query={}
+  def find
   end
 
   # Create this document.
@@ -92,17 +84,24 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   def destroy
   end
 
-  # Find a document
+  # Find a document.
   #
   # @param [Logger] log
   # @param [Mongo::Database] database
   # @param [Hash] params
-  # @param [Hash] query
-  def self.find(log, database, params, query)
-    new(log, database, params).find(query)
+  def self.find(log, database, params)
+    new(log, database, params).find
   end
 
-  # Create a document
+  # Search for documents.
+  #
+  # @param [Logger] log
+  # @param [Mongo::Database] database
+  # @param [Hash] query a search query for the documents
+  def self.search(log, database, query)
+  end
+
+  # Create a document.
   # 
   # @param [Logger] log
   # @param [Mongo::Database] database
@@ -120,16 +119,6 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   # @param [Hash] document
   def self.update(log, database, params, document)
     new(log, database, params).update(document)
-  end
-
-  # Patch a document
-  # 
-  # @param [Logger] log
-  # @param [Mongo::Database] database
-  # @param [Hash] params
-  # @param [Hash] document
-  def self.patch(log, database, params, document)
-    new(log, database, params).patch(document)
   end
 
   # Destroy a document
@@ -176,6 +165,15 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   def sanitize_mongo_field_name name
     self.class.sanitize_mongo_field_name(name)
   end
+
+  # Run a MongoDB query on the given collection.
+  # 
+  # @param [Mongo::Collection] coll
+  # @param [Symbol] method the name of the MongoDB query method to call with the rest of the `args`
+  # @see MongoDocument.mongo_query
+  def mongo_query coll, method, *args
+    self.class.mongo_query(self.log, coll, method, *args)
+  end
   
   # Run a MongoDB query on the given collection.
   #
@@ -185,7 +183,7 @@ class Vayacondios::MongoDocument < Vayacondios::Document
   #
   # @param [Mongo::Collection] coll
   # @param [Symbol] method the name of the MongoDB query method to call with the rest of the `args`
-  def mongo_query coll, method, *args
+  def self.mongo_query log, coll, method, *args
     log.debug("  MongoDB: db.#{coll.name}.#{method}(#{MultiJson.dump(args.first)})")
     args[1..-1].each { |arg| log.debug("    Options: #{arg.inspect}") } if args.size > 1
     coll.send(method, *args)

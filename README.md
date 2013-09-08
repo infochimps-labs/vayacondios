@@ -647,15 +647,86 @@ periods are interpreted as nested fields.  The following parameters
 have special meaning and can be used to adjust the number of returned
 stashes and the the sort behavior.
 
-
-| Parameter | Description                                    | Default              | Example Values                     |
-| --------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
-| limit     | Return up to this many stashes                 | 50                   | 100, 200                           |
-| sort      | Sort returned stashes by this field            | ascending by topic   | `["ip_address", "ascending"]`      |
-| topic     | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
+| Parameter     | Description                                    | Default              | Example Values                     |
+| ------------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
+| limit         | Return up to this many stashes                 | 50                   | 100, 200                           |
+| sort          | Sort returned stashes by this field            | ascending by topic   | `["ip_address", "ascending"]`      |
+| topic         | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
+| topic_in      | List of explicit topics to match               | N/A                  | `["servers.bob", "servers.alan"]`  |
+| topic_not_in  | List of explicit topics to **not** match       | N/A                  | `["servers.bob", "servers.alan"]`  |
 
 The response will be an Array of the matching stashes, possibly an
 empty Array if no events were found.
+
+#### Update Multiple Stashes
+
+There are two related methods that let you update multiple stashes in
+place according to the same rule.
+
+| Method | Path                      | Request | Response | Action                                              |
+| ------ | ------------------------- | ------- | -------- | --------------------------------------------------- |
+| PUT    | /v2/:organization/stashes | Hash    | Hash     | Apply an update to all stashes matching a query     |
+| POST   | /v2/:organization/stashes | Hash    | Hash     | Apply a replacement to all stashes matching a query |
+
+Each of these methods accepts a Hash request body that is supposed to have the following parameters:
+
+| Parameter | Description                                        | Default | Example Values                                  |
+| --------- | -------------------------------------------------- | ------- | ----------------------------------------------- |
+| query     | A Hash of matching criteria the stash must satisfy | N/A     | `{"region": "dakota"}`                          |
+| update    | An update to apply to each matched stash           | N/A     | `{"status": "disabled", "service.ftp": "down"}` |
+
+The methods differ in the way they process the `update`.  The `POST`
+method will always replace the existing values of the named fields
+(top-level or nested) in the update Hash with their new, updated
+values.  This is useful when you want to explicitly set a property to
+some fixed value for all stashes which match some criteria.
+
+The `PUT` method (like the `PUT /v2/:organization/stash/:topic`
+method) tries to be more clever and attempts to *merge* the update
+into the record according to the following rules
+
+* if your value is Numeric-like, your new value will be added to the existing value
+* if your value is Array-like, your new value will be concatenated to the end of the existing value
+* if your value is Hash-like, it will replace the existing value (**Note::** this is different than the behavior of `PUT /v2:organization/stash/:stopic`.)
+* if your value is String-like, it will replace the existing value (**Note::** this is different than the behavior of `PUT /v2:organization/stash/:stopic`.)
+
+Notice that the behavior for Hashes and Strings isn't as nice as it is
+for `PUT /v2:organization/stash/:stopic`.  Still, this method is
+useful for when you want to increment some value across all stashes
+which match some criteria.
+
+For both of these methods, the query Hash also contains parameters
+that are very similar to when searching for a stash:
+
+| Parameter     | Description                                    | Default              | Example Values                     |
+| ------------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
+| topic         | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
+| topic_in      | List of explicit topics to match               | N/A                  | `["servers.bob", "servers.alan"]`  |
+| topic_not_in  | List of explicit topics to **not** match       | N/A                  | `["servers.bob", "servers.alan"]`  |
+
+Other fields in the query Hash are interpreted as requirements on the
+data in the stash itself.
+
+#### Deleting Multiple Stashes
+
+The following method can be used to delete multiple stashes which all
+match some criteria:
+
+| Method | Path                      | Request | Response | Action                              |
+| ------ | ------------------------- | ------- | -------- | ----------------------------------- |
+| DELETE | /v2/:organization/stashes | Hash    | Hash     | Delete all stashes matching a query |
+
+The following request parameters define the query which is used to
+match stashes to be deleted:
+
+| Parameter     | Description                                    | Default              | Example Values                     |
+| ------------- | ---------------------------------------------- | -------------------- | ---------------------------------- |
+| topic         | Regular expression search on the stash's topic | N/A                  | `servers-.*`, `firewall\..*\.rule` |
+| topic_in      | List of explicit topics to match               | N/A                  | `["servers.bob", "servers.alan"]`  |
+| topic_not_in  | List of explicit topics to **not** match       | N/A                  | `["servers.bob", "servers.alan"]`  |
+
+Other fields in the query Hash are interpreted as requirements on the
+data in the stash itself in order for it to match and be deleted.
 
 ### Copyright
 

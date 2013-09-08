@@ -237,6 +237,17 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
       end
     end
 
+    describe "set_many" do
+      it "should send a PUT request to /v2/organization/stashes with the query and update" do
+        connection.should_receive(:request) do |req|
+          req.class.should == Net::HTTP::Put
+          req.path.should  == '/v2/organization/stashes'
+          req.body.should  == MultiJson.dump(query: stash_query, update: stash_update)
+        end
+        subject.set_many(stash_query, stash_update)
+      end
+    end
+
     describe "#set!" do
       context "without an ID" do
         context "with a Hash stash" do
@@ -305,6 +316,17 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
       end
     end
 
+    describe "set_many!" do
+      it "should send a POST request to /v2/organization/stashes with the query and replacement" do
+        connection.should_receive(:request) do |req|
+          req.class.should == Net::HTTP::Post
+          req.path.should  == '/v2/organization/stashes'
+          req.body.should  == MultiJson.dump(query: stash_query, update: stash_replacement)
+        end
+        subject.set_many!(stash_query, stash_replacement)
+      end
+    end
+    
     describe "#delete" do
       context "without an ID" do
         it "should send a DELETE request to /v2/organization/stash/topic" do
@@ -325,6 +347,17 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
           end
           subject.delete(topic, id)
         end
+      end
+    end
+
+    describe "delete_many" do
+      it "should send a DELETE request to /v2/organization/stashes with the query" do
+        connection.should_receive(:request) do |req|
+          req.class.should == Net::HTTP::Delete
+          req.path.should  == '/v2/organization/stashes'
+          req.body.should  == json_stash_query
+        end
+        subject.delete_many(stash_query)
       end
     end
   end
