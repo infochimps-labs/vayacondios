@@ -636,7 +636,7 @@ You can search for stashes.
 
 | Method | Path                        | Request | Response    | Action                                                  |
 | ------ | --------------------------- | ------- | --------    | ------------------------------------------------------- |
-| GET    | /v2/:organization/stash     | Hash    | Array<Hash> | Search for stashes matching the given query.            |
+| GET    | /v2/:organization/stashes   | Hash    | Array<Hash> | Search for stashes matching the given query.            |
 
 The default behavior (which will occur with an empty request body) is
 to return 50 stashes in sorted in ascending order by their topic.
