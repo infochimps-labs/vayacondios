@@ -8,6 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = Vayacondios::VERSION
   gem.authors       = ['Philip (flip) Kromer', 'Travis Dempsey', 'Huston Hoburg', 'Logan Lowell', 'Dhruv Bansal']
   gem.homepage      = 'https://github.com/infochimps-labs/vayacondios'
+  gem.email         = 'coders@infochimps.com'
+  gem.licenses      = ['Apache 2.0']
   gem.summary       = 'Data goes in. The right thing happens'
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
