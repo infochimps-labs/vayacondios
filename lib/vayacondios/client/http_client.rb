@@ -27,6 +27,58 @@ class Vayacondios
     # The default timeout for HTTP requests.
     TIMEOUT = 30
 
+    # A module that is dynamically extended into each returned
+    # response.
+    module HttpResponse
+
+      # The HTTP response code of the raw response.
+      attr_accessor :response_code
+
+      # The HTTP body of the raw response.
+      attr_accessor :body
+
+      # Used to set an error during communication with the server, not
+      # an error returned by the server.
+      attr_accessor :http_error
+
+      # Was this response a success?
+      #
+      # Corresponds to HTTP response code 200.
+      def success?
+        response_code == 200
+      end
+      
+      # Does this response indicate an object that wasn't found?
+      #
+      # Corresponds to HTTP response code 404.
+      def not_found?
+        response_code == 404
+      end
+
+      # Is this response an error?
+      #
+      # @return [true, false]
+      def error?
+        http_error || response_code >= 400
+      end
+
+      # Is this response an error that is **not** due to an object
+      # that wasn't found?
+      #
+      # @return [true, false]
+      def bad?
+        not_found? ? false : error?
+      end
+      
+      # The error message contained in this response.
+      #
+      # @return [String, nil]
+      def error_message
+        return unless error?
+        (http_error || self['error']) rescue nil
+      end
+    end
+
     attr_accessor :host
     attr_accessor :port
     attr_accessor :headers
@@ -206,33 +258,36 @@ class Vayacondios
           handle_response(connection.request(req))
         end
       rescue Timeout::Error => e
-        log.error("Timed out connecting to http://#{host}:#{port}")
-        nil
+        handle_error("Timed out connecting to http://#{host}:#{port}")
       rescue Errno::ECONNREFUSED => e
-        log.error("Could not connect to http://#{host}:#{port}")
-        nil
+        handle_error("Could not connect to http://#{host}:#{port}")
       end
     end
 
     # :nodoc:
-    def handle_response response
-      case 
-      when response.code.to_i == 200
-        return MultiJson.load(response.body)
-      when response.code.to_i == 404
-        log.debug("#{response.code} -- #{response.class}")
-      when response.code.to_i >= 500
-        log.debug("#{response.code} -- #{response.class}")
-        begin
-          log.error MultiJson.load(response.body)["error"]
-        rescue MultiJson::LoadError => e
-          log.error(response.body)
-        end
-      else
-        log.debug("#{response.code} -- #{response.class}")
-        log.error MultiJson.load(response.body)["error"]
+    def handle_response raw_response
+      response = MultiJson.load(raw_response.body)
+      response.extend(HttpResponse)
+      
+      response.response_code = raw_response.code.to_i
+      response.body          = raw_response.body
+      
+      case
+      when response.not_found?
+        log.debug(response.error_message)
+      when response.error?
+        log.error(response.error_message)
       end
-      nil
+      
+      response
+    end
+
+    # :nodoc:
+    def handle_error message
+      response = { 'error' => message }
+      response.extend(HttpResponse)
+      log.error(response.error_message)
+      response
     end
     
   end

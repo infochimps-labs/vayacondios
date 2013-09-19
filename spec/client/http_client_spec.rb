@@ -10,12 +10,13 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
   
   let(:ok)           { double "Net::HTTPOK",                  code: '200', body: '{}'                       }
   let(:bad_request)  { double "Net::HTTPBadRequest",          code: '400', body: '{"error":"Your mistake"}' }
-  let(:not_found)    { double "Net::HTTPNotFound",            code: '404', body: '{}'                       }
+  let(:not_found)    { double "Net::HTTPNotFound",            code: '404', body: '{"error":"Not found"}'    }
   let(:server_error) { double "Net::HTTPInternalServerError", code: '500', body: '{"error":"Big Trouble"}'  }
   let(:empty)        { double "Net::HTTPInternalServerError", code: '500', body: 'worse trouble'            }
 
-  subject { Vayacondios::HttpClient.new(organization: organization) }
-  before  { subject.stub!(:connection).and_return(connection)       }
+  let(:client) { Vayacondios::HttpClient.new(organization: organization) }
+  before       { client.stub!(:connection).and_return(connection)        }
+  subject      { client                                                  }
 
   describe "defaults to using" do
     it "localhost" do
@@ -364,28 +365,52 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
 
   describe "handling a" do
     before do
-      subject.log.stub!(:debug)
-      subject.log.stub!(:error)
+      client.log.stub!(:debug)
+      client.log.stub!(:error)
     end
     context "200 OK" do
-      it "returns the parsed content of the response body" do
-        subject.send(:handle_response, ok).should == {}
-      end
+      subject { client.send(:handle_response, ok) }
+      it                  { should == {}       }
+      its(:response_code) { should == 200      }
+      its(:success?)      { should be_true     }
+      its(:error?)        { should be_false    }
+      its(:not_found?)    { should be_false    }
+      its(:bad?)          { should be_false    }
+      its(:error_message) { should be_nil      }
+      its(:body)          { should == ok.body  }
     end
     context "400 Bad Request" do
-      it "returns nil" do
-        subject.send(:handle_response, bad_request).should be_nil
-      end
+      subject { client.send(:handle_response, bad_request) }
+      it                  { should == {'error' => 'Your mistake'} }
+      its(:response_code) { should == 400                         }
+      its(:success?)      { should be_false                       }
+      its(:error?)        { should be_true                        }
+      its(:not_found?)    { should be_false                       }
+      its(:bad?)          { should be_true                        }
+      its(:error_message) { should == 'Your mistake'              }
+      its(:body)          { should == bad_request.body            }
     end
     context "404 Not Found" do
-      it "returns nil" do
-        subject.send(:handle_response, not_found).should be_nil
-      end
+      subject { client.send(:handle_response, not_found) }
+      it                  { should == {'error' => 'Not found'}    }
+      its(:response_code) { should == 404                         }
+      its(:success?)      { should be_false                       }
+      its(:error?)        { should be_true                        }
+      its(:not_found?)    { should be_true                        }
+      its(:bad?)          { should be_false                       }
+      its(:error_message) { should == 'Not found'                 }
+      its(:body)          { should == not_found.body              }
     end
     context "500 Internal Server Error" do
-      it "returns nil" do
-        subject.send(:handle_response, server_error).should be_nil
-      end
+      subject { client.send(:handle_response, server_error) }
+      it                  { should == {'error' => 'Big Trouble'}  }
+      its(:response_code) { should == 500                         }
+      its(:success?)      { should be_false                       }
+      its(:error?)        { should be_true                        }
+      its(:not_found?)    { should be_false                       }
+      its(:bad?)          { should be_true                        }
+      its(:error_message) { should == 'Big Trouble'               }
+      its(:body)          { should == server_error.body           }
     end
   end
   
