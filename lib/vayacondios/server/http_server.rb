@@ -39,35 +39,35 @@ class Vayacondios
 
     # Defines options and usage information.
     def options_parser opts, options
-      opts.banner = <<BANNER
-usage: vcd-server [--param=value|--param|-p value|-p]
+      opts.banner = <<-BANNER.gsub(/^ {8}/, '').strip
+        usage: vcd-server [--param=value|--param|-p value|-p]
 
-Vayacondios server lets any system that can speak JSON over HTTP read
-and write configuration and events.
+        Vayacondios server lets any system that can speak JSON over HTTP read
+        and write configuration and events.
 
-It provides the following HTTP endpoints, all of which assume a
-JSON-encoded request body.
+        It provides the following HTTP endpoints, all of which assume a
+        JSON-encoded request body.
 
-Events:
-  GET    /v2/ORG/event/TOPIC/ID
-  POST   /v2/ORG/event/TOPIC[/ID]      (announce)
-  GET    /v2/ORG/events/TOPIC          (events)
+        Events:
+          GET    /v2/ORG/event/TOPIC/ID
+          POST   /v2/ORG/event/TOPIC[/ID]      (announce)
+          GET    /v2/ORG/events/TOPIC          (events)
 
-Stashes:
-  GET    /v2/ORG/stash/TOPIC[/ID]      (get)
-  PUT    /v2/ORG/stash/TOPIC[/ID]      (set)
-  POST   /v2/ORG/stash/TOPIC[/ID]      (set!)
-  DELETE /v2/ORG/stash/TOPIC[/ID]      (delete)
-  GET    /v2/ORG/stashes               (stashes)
-  PUT    /v2/ORG/stashes               (set_many)
-  POST   /v2/ORG/stashes               (set_many!)
-  DELETE /v2/ORG/stashes               (delete_many)
+        Stashes:
+          GET    /v2/ORG/stash/TOPIC[/ID]      (get)
+          PUT    /v2/ORG/stash/TOPIC[/ID]      (set)
+          POST   /v2/ORG/stash/TOPIC[/ID]      (set!)
+          DELETE /v2/ORG/stash/TOPIC[/ID]      (delete)
+          GET    /v2/ORG/stashes               (stashes)
+          PUT    /v2/ORG/stashes               (set_many)
+          POST   /v2/ORG/stashes               (set_many!)
+          DELETE /v2/ORG/stashes               (delete_many)
 
-The server requires MongoDB as a data store.
-BANNER
+        The server requires MongoDB as a data store.
+      BANNER
 
-      opts.separator ""      
-      opts.separator "MongoDB options:"
+      opts.separator ''
+      opts.separator 'MongoDB options:'
 
       options[:mongo_host]        = 'localhost'
       options[:mongo_port]        = 27017
@@ -82,16 +82,16 @@ BANNER
       options[:config] ||= File.join(File.dirname(__FILE__), '..', '..', '..', 'config', 'vcd-server.rb')
     end
 
-    use Goliath::Rack::Heartbeat                                             # respond to /status with 200, OK (monitoring, etc)
-    use Vayacondios::Rack::JSONize                                           # JSON input & output
-    use Vayacondios::Rack::Params                                            # parse query string and message body into params hash
-    use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE]   # only allow these methods
+    use Goliath::Rack::Heartbeat                                                # respond to /status with 200, OK (monitoring, etc)
+    use Vayacondios::Rack::JSONize                                              # JSON input & output
+    use Vayacondios::Rack::Params                                               # parse query string and message body into params hash
+    use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE] # only allow these methods
     
-    use Vayacondios::Rack::Routing                                           # parse path into parameterized pieces
-    use Vayacondios::Rack::ExtractMethods                                    # interpolate GET, PUT into :create, :update, etc
-    use Vayacondios::Rack::Validation                                        # validation
+    use Vayacondios::Rack::Routing                                              # parse path into parameterized pieces
+    use Vayacondios::Rack::ExtractMethods                                       # interpolate GET, PUT into :create, :update, etc
+    use Vayacondios::Rack::Validation                                           # validation
 
-    use Goliath::Rack::Render                                                # auto-negotiate response format
+    use Goliath::Rack::Render                                                   # auto-negotiate response format
 
     # The document part of the request, e.g. - params that came
     # directly from its body.

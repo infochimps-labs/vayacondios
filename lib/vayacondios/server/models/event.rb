@@ -209,9 +209,9 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # @param [Hash] record the event as stored in MongoDB
   # @return [Hash] the event as should be returned in the response
   def format_event_for_response record
-    self.timestamp = record["t"]
-    self.body      = record["d"]
-    {id: self.class.format_mongo_id(record["_id"]).to_s, time: record["t"]}.merge(record["d"] || {})
+    self.timestamp = record['t']
+    self.body      = record['d']
+    {id: self.class.format_mongo_id(record['_id']).to_s, time: record['t'].utc.iso8601(3)}.merge(record['d'] || {})
   end
 
   # Reshape an event for storage in MongoDB.
@@ -264,18 +264,30 @@ class Vayacondios::Event < Vayacondios::MongoDocument
   # interpreted by this method..
   #
   # @param [Hash] query
-  # @option query [String, Numeric, Time, nil] from the earliest time for a matched event
-  # @option query [String, Numeric, Time, nil] upto the latest time for a matched event
+  # @option query [String, Numeric, Time, nil] from the earliest time for a matched event (>=)
+  # @option query [String, Numeric, Time, nil] upto the latest time for a matched event (<=)
+  # @option query [String, Numeric, Time, nil] after the earliest time for a matched event (>)
+  # @option query [String, Numeric, Time, nil] before the latest time for a matched event (<)
   # @option query [String, Regexp]] id a regular expression that matches the ID of the event
   # @return [Hash] the selector Hash
   # @see Event.projector
-  def self.selector query={}
-    {t: {}}.tap do |sel|
-      sel[:t][:$gte] = to_timestamp(query.delete(:from) || query.delete('from'), (Time.now - WINDOW).utc)
-      sel[:t][:$lte] = to_timestamp(query.delete(:upto) || query.delete('upto')) if (query.has_key?(:upto) || query.has_key?('upto'))
-      sel["_id"]     = Regexp.new(query.delete(:id) || query.delete('id')) if (query[:id] || query['id'])
+  def self.selector(query = {})
+    query.symbolize_keys!
+    { t: {} }.tap do |sel|
+      if query.has_key?(:after)
+        sel[:t][:$gt]  = to_timestamp query.delete(:after)
+        query.delete(:from)
+      else
+        sel[:t][:$gte] = to_timestamp(query.delete(:from), (Time.now - WINDOW).utc)
+      end
+      if query.has_key?(:before)
+        sel[:t][:$lt]  = to_timestamp query.delete(:before)
+        query.delete(:upto)
+      elsif query.has_key?(:upto)
+        sel[:t][:$lte] = to_timestamp(query.delete(:upto))
+      end
+      sel['_id'] = Regexp.new(query.delete(:id)) if query[:id]
       sel.merge!(Hash[query.map { |key, value| ["d.#{key}", value] }])
     end
   end
-
 end

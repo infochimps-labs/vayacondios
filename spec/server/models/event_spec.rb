@@ -130,25 +130,62 @@ describe Vayacondios::Event, events: true do
       Vayacondios::Event.search(log, database, params, event_query_with_id)
     end
     
-    
     describe "handling 'time' parameters" do
       it "parses them when they're strings" do
-        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         Vayacondios::Event.search(log, database, params, event_query_with_string_time)
       end
+
       it "parses them when they're numeric" do
-        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         Vayacondios::Event.search(log, database, params, event_query_with_int_time)
       end
+
       it "ignores them when they are something else" do
-        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         Vayacondios::Event.search(log, database, params, event_query.merge("from" => ['hello']))
       end
+
       it "ignores them when they are unparseable" do
-        collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
         Vayacondios::Event.search(log, database, params, event_query.merge("from" => "2013-06-73 Sat 100:35"))
       end
-      
+
+      context 'time options' do
+        it 'handles :from as greater than or equal to' do
+          collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(from: '2013-08-17 Sat 12:30'))
+        end
+
+        it 'handles :upto as less than or equal to' do
+          collection.should_receive(:find).with({t: {:$gte => kind_of(Time), :$lte => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(upto: '2013-08-17 Sat 12:30'))
+        end
+
+        it 'handles :after as greater than' do
+          collection.should_receive(:find).with({t: {:$gt => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(after: '2013-08-17 Sat 12:30'))
+        end
+
+        it 'handles :before as less than' do
+          collection.should_receive(:find).with({t: {:$gte => kind_of(Time), :$lt => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(before: '2013-08-17 Sat 12:30'))
+        end
+      end
+
+      context 'time options', 'when conflicting from/after' do
+        it 'defers to exclusivity' do
+          collection.should_receive(:find).with({t: {:$gt => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(from: '2013-08-17 Sat 12:30', after: '2013-08-17 Sat 12:30'))
+        end
+      end
+
+      context 'time options', 'when conflicting upto/before' do
+        it 'defers to exclusivity' do
+          collection.should_receive(:find).with({t: {:$lt => kind_of(Time), :$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Event::SORT, limit: Vayacondios::Event::LIMIT)
+          Vayacondios::Event.search(log, database, params, event_query.merge(upto: '2013-08-17 Sat 12:30', before: '2013-08-17 Sat 12:30'))
+        end
+      end
     end
   end
 
