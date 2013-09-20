@@ -59,7 +59,7 @@ class Vayacondios
       #
       # @return [true, false]
       def error?
-        http_error || response_code >= 400
+        http_error || (response_code >= 400)
       end
 
       # Is this response an error that is **not** due to an object
@@ -75,7 +75,7 @@ class Vayacondios
       # @return [String, nil]
       def error_message
         return unless error?
-        (http_error || self['error']) rescue nil
+        self['error'] rescue nil
       end
     end
 
@@ -286,6 +286,7 @@ class Vayacondios
     def handle_error message
       response = { 'error' => message }
       response.extend(HttpResponse)
+      response.http_error = true
       log.error(response.error_message)
       response
     end
