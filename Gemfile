@@ -1,5 +1,8 @@
 source 'http://rubygems.org'
 
+# em-mongo is too loose with its dependencies; 2.0.0 bson breaks vcd
+gem 'bson', '1.9.2'
+
 gemspec name: 'vayacondios-server'
 gemspec name: 'vayacondios-client'
 
