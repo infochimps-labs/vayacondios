@@ -3,6 +3,7 @@ require 'spec_helper'
 describe Vayacondios::HttpServer do
 
   include Goliath::TestHelper
+  include RequestHelper
 
   # let(:vayacondios) { nil }
 

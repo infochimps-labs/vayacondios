@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Vayacondios::HttpServer, stashes: true do
   include Goliath::TestHelper
+  include RequestHelper
 
   context "GET" do
     let(:verb) { 'GET' }
