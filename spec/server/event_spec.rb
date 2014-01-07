@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::HttpServer, events: true do
+describe Vayacondios::Server::Api, events: true do
   include Goliath::TestHelper
   include RequestHelper
   

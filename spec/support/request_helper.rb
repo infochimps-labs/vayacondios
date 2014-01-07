@@ -1,7 +1,7 @@
 # This is a helper method that encapsulates a simple functional test.
 # During each invocation of `vcd`
 #
-# 1. A new Vayacondios::HttpServer is booted up
+# 1. A new Vayacondios::Server::Api is booted up
 #   a. Using the `config/vcd-server.rb` file distributed with the Vayacondios source
 #   b. in the `test` environment
 # 2. You can specify the given HTTP verb, path, and body of a new HTTP request
@@ -18,7 +18,7 @@
 # @option options [String] error a regular expression which matches the error message returned in the response body
 module RequestHelper
   def vcd(options = {}, &blk)
-    with_api(Vayacondios::HttpServer, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test') do |api|
+    with_api(Vayacondios::Server::Api, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test') do |api|
       
       request = {path: options[:path]}.tap do |req|
         req[:body] = MultiJson.dump(options[:body]) if options[:body]

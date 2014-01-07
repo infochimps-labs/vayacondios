@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::HttpServer do
+describe Vayacondios::Server::Api do
 
   include Goliath::TestHelper
   include RequestHelper
@@ -8,7 +8,7 @@ describe Vayacondios::HttpServer do
   # let(:vayacondios) { nil }
 
   # before(:all) do
-  #   vayacondios = server(Vayacondios::HttpServer, 9900, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test')
+  #   vayacondios = server(Vayacondios::Server::Api, 9900, config: File.join(VCD_ROOT, 'config/vcd-server.rb'), environment: 'test')
   # end
 
   # after(:all) do

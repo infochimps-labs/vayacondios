@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::HttpServer, stashes: true do
+describe Vayacondios::Server::Api, stashes: true do
   include Goliath::TestHelper
   include RequestHelper
 

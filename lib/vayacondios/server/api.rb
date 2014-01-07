@@ -1,6 +1,6 @@
 require 'vayacondios-server'
 
-class Vayacondios
+module Vayacondios::Server
 
   # Implements the Vayacondios server API.
   #
@@ -35,7 +35,7 @@ class Vayacondios
   # production mode.  The default file is located in the Vayacondios
   # source distribution at `config/vcd-server.rb`.
   # 
-  class HttpServer < Goliath::API
+  class Api < Goliath::API
 
     # Defines options and usage information.
     def options_parser opts, options

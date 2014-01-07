@@ -26,7 +26,7 @@ Dir['spec/support/**/*.rb'].each{ |f| require File.join(File.dirname(__FILE__), 
 
 Goliath.env = :test
 
-require 'vayacondios/server/http_server'
+require 'vayacondios/server/api'
 
 RSpec.configure do |c|
   c.include MongoHelper
