@@ -6,7 +6,7 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
   let(:topic)        { 'topic'        }
   let(:id)           { 'id'           }
 
-  let(:connection)   { mock("Net::HTTP") }
+  let(:connection)   { double("Net::HTTP") }
   
   let(:ok)           { double "Net::HTTPOK",                  code: '200', body: '{}'                       }
   let(:bad_request)  { double "Net::HTTPBadRequest",          code: '400', body: '{"error":"Your mistake"}' }
@@ -15,7 +15,7 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
   let(:empty)        { double "Net::HTTPInternalServerError", code: '500', body: 'worse trouble'            }
 
   let(:client) { Vayacondios::HttpClient.new(organization: organization) }
-  before       { client.stub!(:connection).and_return(connection)        }
+  before       { client.stub(:connection).and_return(connection)        }
   subject      { client                                                  }
 
   describe "defaults to using" do
@@ -32,7 +32,7 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
   end
 
   describe "making requests" do
-    before { subject.stub!(:handle_response) }
+    before { subject.stub(:handle_response) }
     
     describe "#announce" do
       context "without an ID" do
@@ -365,8 +365,8 @@ describe Vayacondios::HttpClient, events: true, stashes: true do
 
   describe "handling a" do
     before do
-      client.log.stub!(:debug)
-      client.log.stub!(:error)
+      client.log.stub(:debug)
+      client.log.stub(:error)
     end
     context "200 OK" do
       subject { client.send(:handle_response, ok) }

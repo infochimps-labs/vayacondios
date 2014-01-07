@@ -3,7 +3,7 @@ require 'vayacondios/server/rack/extract_methods'
 
 describe Vayacondios::Rack::ExtractMethods do
   let(:env){ { 'CONTENT_TYPE' => 'application/x-www-form-urlencoded; charset=utf-8' } }
-  let(:app){ mock('app').as_null_object }
+  let(:app){ double('app').as_null_object }
   subject  { described_class.new(app)   }
     
   it 'adds a key in env for :vayacondios_method' do

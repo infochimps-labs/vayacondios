@@ -10,14 +10,14 @@ describe Vayacondios::CLI, events: true, stashes: true do
   let(:cli)    { Vayacondios::CLI.new }
 
   before do
-    cli.stub!(:client).and_return(client)
+    cli.stub(:client).and_return(client)
   end
 
   describe "#boot" do
     
     before do
-      File.stub!(:exist?).and_return(false)
-      File.stub!(:expand_path).and_return('/home/vayacondios/.vayacondios.yml')
+      File.stub(:exist?).and_return(false)
+      File.stub(:expand_path).and_return('/home/vayacondios/.vayacondios.yml')
     end
 
     after { cli.boot }

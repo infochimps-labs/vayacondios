@@ -13,7 +13,7 @@ describe Vayacondios::Event, events: true do
   let(:database)     { double("Mongo::DB") }
   let(:timestamp)    { Time.now            }
   let(:collection)   { double("Mongo::Collection", name: "organization.topic.events") }
-  before             { database.stub!(:collection).and_return(collection)             }
+  before             { database.stub(:collection).and_return(collection)             }
 
   subject { Vayacondios::Event.new(log, database, organization: organization, topic: topic) }
 

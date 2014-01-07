@@ -1,7 +1,7 @@
 shared_context 'rack', rack: true do
   
   before(:each) do
-    env.stub!(:logger).and_return(logger)
+    env.stub(:logger).and_return(logger)
   end
 
   let(:upstream) do

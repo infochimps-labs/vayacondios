@@ -10,7 +10,7 @@ describe Vayacondios::Stash, stashes: true do
   let(:database)     { double("Mongo::DB") }
   let(:timestamp)    { Time.now            }
   let(:collection)   { double("Mongo::Collection", name: "organization.stash") }
-  before             { database.stub!(:collection).and_return(collection)       }
+  before             { database.stub(:collection).and_return(collection)       }
 
   subject { Vayacondios::Stash.new(log, database, organization: organization, topic: topic) }
 
