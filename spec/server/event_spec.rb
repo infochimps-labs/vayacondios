@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Vayacondios::HttpServer, events: true do
   include Goliath::TestHelper
+  include RequestHelper
   
   let(:timestamp) { Time.now }
 
@@ -59,7 +60,7 @@ describe Vayacondios::HttpServer, events: true do
           vcd(verb: verb, path: path, status: 200)
         end
         it "with a response body that includes each matching event " do
-          vcd(verb: verb, path: path, includes: 3.times.map { |i| {"id" => "id-#{i}", "time" => (timestamp.utc - i).to_s}.merge(hash_event) }.reverse)
+          vcd(verb: verb, path: path, includes: 3.times.map{ |i| {"id" => "id-#{i}", "time" => (timestamp - i).utc.iso8601(3) }.merge(hash_event) }.reverse)
         end
       end
     end

@@ -5,37 +5,37 @@ describe Vayacondios::Cleaner do
   
   let(:now) { Time.now }
 
-  let(:database)   { mock("Mongo::Database")   }
+  let(:database)   { double("Mongo::Database")   }
 
   let(:query)      { {t: { :$gte => now } }    }
 
-  let(:events)     { mock("Mongo::Collection events") }
-  let(:org1topic1) { mock("Mongo::Collection org1topic1") }
-  let(:org1topic2) { mock("Mongo::Collection org1topic2") }
-  let(:org2topic1) { mock("Mongo::Collection org2topic1") }
-  let(:org1)       { mock("Mongo::Collection org1") }
-  let(:org2)       { mock("Mongo::Collection org2") }
-  let(:system)     { mock("Mongo::Collection system") }
-  let(:other)      { mock("Mongo::Collection other") }
+  let(:events)     { double("Mongo::Collection events") }
+  let(:org1topic1) { double("Mongo::Collection org1topic1") }
+  let(:org1topic2) { double("Mongo::Collection org1topic2") }
+  let(:org2topic1) { double("Mongo::Collection org2topic1") }
+  let(:org1)       { double("Mongo::Collection org1") }
+  let(:org2)       { double("Mongo::Collection org2") }
+  let(:system)     { double("Mongo::Collection system") }
+  let(:other)      { double("Mongo::Collection other") }
   
   before do
 
     Timecop.freeze(now)
     
-    subject.stub!(:database).and_return(database)
+    subject.stub(:database).and_return(database)
     
-    database.stub!(:collection_names).and_return(%w[ org1.topic1.events org1.topic2.events org2.topic1.events org1.stash org2.stash vayacondios.vayacondios_cleaner.events system.indexes other ])
-    database.stub!(:collection).with('org1.topic1.events').and_return(org1topic1)
-    database.stub!(:collection).with('org1.topic2.events').and_return(org1topic2)
-    database.stub!(:collection).with('org2.topic1.events').and_return(org2topic1)
-    database.stub!(:collection).with('org1.stash').and_return(org1)
-    database.stub!(:collection).with('org2.stash').and_return(org2)
-    database.stub!(:collection).with('vayacondios.vayacondios_cleaner.events').and_return(events)
-    database.stub!(:collection).with('system.indexes').and_return(system)
-    database.stub!(:collection).with('other').and_return(other)
+    database.stub(:collection_names).and_return(%w[ org1.topic1.events org1.topic2.events org2.topic1.events org1.stash org2.stash vayacondios.vayacondios_cleaner.events system.indexes other ])
+    database.stub(:collection).with('org1.topic1.events').and_return(org1topic1)
+    database.stub(:collection).with('org1.topic2.events').and_return(org1topic2)
+    database.stub(:collection).with('org2.topic1.events').and_return(org2topic1)
+    database.stub(:collection).with('org1.stash').and_return(org1)
+    database.stub(:collection).with('org2.stash').and_return(org2)
+    database.stub(:collection).with('vayacondios.vayacondios_cleaner.events').and_return(events)
+    database.stub(:collection).with('system.indexes').and_return(system)
+    database.stub(:collection).with('other').and_return(other)
     
-    $stdout.stub!(:puts)
-    $stderr.stub!(:puts)
+    $stdout.stub(:puts)
+    $stderr.stub(:puts)
   end
   
   after     { Timecop.return      }
@@ -78,7 +78,7 @@ describe Vayacondios::Cleaner do
 
   describe "#clean" do
 
-    before { subject.stub!(:from).and_return(now) }
+    before { subject.stub(:from).and_return(now) }
 
     after  { subject.clean }
 
@@ -95,10 +95,10 @@ describe Vayacondios::Cleaner do
       context "in --dry_run mode" do
         before { subject.settings[:dry_run] = true }
         it "counts evenets from the timeframe across all events collections" do
-          org1topic1.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
-          org1topic2.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
-          org2topic1.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
-          events.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
+          org1topic1.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
+          org1topic2.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
+          org2topic1.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
+          events.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
         end
       end
     end
@@ -116,8 +116,8 @@ describe Vayacondios::Cleaner do
       context "in --dry_run mode" do
         before { subject.settings[:dry_run] = true }
         it "counts evenets from the timeframe across all matching collections" do
-          org1topic1.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
-          org1topic2.should_receive(:find).with(query).and_return(mock("Mongo::Cursor", count: 1))
+          org1topic1.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
+          org1topic2.should_receive(:find).with(query).and_return(double("Mongo::Cursor", count: 1))
         end
       end
     end
@@ -133,9 +133,9 @@ describe Vayacondios::Cleaner do
     }
     
     before do
-      subject.stub!(:from).and_return(now)
-      subject.stub!(:counts).and_return(counts)
-      events.stub!(:insert)
+      subject.stub(:from).and_return(now)
+      subject.stub(:counts).and_return(counts)
+      events.stub(:insert)
     end
     
     after  { subject.finish }
