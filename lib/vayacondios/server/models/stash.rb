@@ -116,7 +116,7 @@ class Vayacondios::Stash < Vayacondios::MongoDocument
     proj = projector(query)
     sel  = selector(query)
     coll = new(log, database, params).collection
-    (mongo_query(*p([log, coll, :find, sel, proj])) || []).map do |result|
+    (mongo_query(*([log, coll, :find, sel, proj])) || []).map do |result|
       format_stash_from_mongo(result)
     end
   end
