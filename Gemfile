@@ -1,4 +1,4 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 
 # em-mongo is too loose with its dependencies; 2.0.0 bson breaks vcd
 gem 'bson', '1.9.2'
@@ -15,7 +15,7 @@ end
 
 group :test do
   gem 'rspec'
-  gem 'rack-test'
+  gem 'simplecov'
   gem 'mongo'
   gem 'timecop'
 end
