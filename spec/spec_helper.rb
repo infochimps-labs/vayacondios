@@ -4,8 +4,6 @@ VCD_ROOT = File.join(File.dirname(__FILE__), '..')
 
 require 'bundler/setup' ; Bundler.require(:test)
 
-require 'vayacondios-server'
-require 'vayacondios-client'
 
 require 'configliere'
 
@@ -16,9 +14,18 @@ Settings.define 'mongo.database', :default => 'vayacondios_test', :description =
 Settings.read(File.join File.dirname(__FILE__), '..', 'config', 'spec.yml')
 Settings.resolve!
 
-require 'rack/test'
+# require 'rack/test'
 
 require 'goliath/test_helper'
+
+if ENV['VAYACONDIOS_COV']
+  require 'simplecov'
+  SimpleCov.start
+end
+
+require 'vayacondios-server'
+require 'vayacondios-client'
+
 Dir["spec/support/**/*.rb"].each {|f| require File.join(File.dirname(__FILE__), '..', f) }
 
 Goliath.env = :test
