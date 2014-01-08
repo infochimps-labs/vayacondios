@@ -25,7 +25,7 @@ module Vayacondios::Server
   # Goliath is kind of weirdly hard to configure nicely.  This class
   # is also required to define an #options_parser method which is
   # momentarily handed control at bootup time to interpret options
-  # pased to the `vcd-server` program.
+  # passed to the `vcd-server` program.
   #
   # It **simultaneously** is required to read a configuration file
   # from disk.  This configuration file is aware of the Rack
@@ -62,24 +62,26 @@ module Vayacondios::Server
           PUT    /v2/ORG/stashes               (set_many)
           POST   /v2/ORG/stashes               (set_many!)
           DELETE /v2/ORG/stashes               (delete_many)
-
-        The server requires MongoDB as a data store.
       BANNER
 
       opts.separator ''
-      opts.separator 'MongoDB options:'
+      opts.separator 'Database options:'
 
-      options[:mongo_host]        = 'localhost'
-      options[:mongo_port]        = 27017
-      options[:mongo_database]    = 'vayacondios_development'
-      options[:mongo_connections] = 20
+      options[:database] ||= {}
+      db_options = options[:database]
+      db_options[:driver]      ||= 'mongo'
+      db_options[:host]        ||= 'localhost'
+      db_options[:port]        ||= 27017
+      db_options[:name]        ||= 'vayacondios_development'
+      db_options[:connections] ||= 20
 
-      opts.on('-h', '--host HOST',                "MongoDB host (default: #{options[:mongo_host]})")         { |val| options[:mongo_host]     = val }
-      opts.on('-o', '--mongo_port PORT', Integer, "MongoDB port (default: #{options[:mongo_port]})")         { |val| options[:mongo_port]     = val }
-      opts.on('-D', '--database NAME',            "MongoDB database (default: #{options[:mongo_database]})") { |val| options[:mongo_database] = val }
-      opts.on('-n', '--connections NUM', Integer, "Number of MongoDB connections to make (default: #{options[:mongo_connections]}).  Only used in 'production' environment") { |val| options[:mongo_connections] = val }
+      opts.on('-d', '--database.driver NAME', "Database driver (default: #{db_options[:driver]})"){ |val| db_options[:driver] = val }
+      opts.on('-h', '--database.host HOST', "Database host (default: #{db_options[:host]})"){ |val| db_options[:host] = val }
+      opts.on('-o', '--database.port PORT', Integer, "Database port (default: #{db_options[:port]})"){ |val| db_options[:port] = val }
+      opts.on('-D', '--database.name NAME', "Database name (default: #{db_options[:name]})"){ |val| db_options[:name] = val }
+      opts.on('-n', '--database.connections NUM', Integer, "Number of database connections to make (default: #{db_options[:connections]}).  Only used in 'production' environment"){ |val| db_options[:connections] = val }
 
-      options[:config] ||= File.join(File.dirname(__FILE__), '..', '..', '..', 'config', 'vcd-server.rb')
+      options[:config] ||= File.expand_path('../../../../config/vcd-server.rb', __FILE__)
     end
 
     use Goliath::Rack::Heartbeat
@@ -113,14 +115,9 @@ module Vayacondios::Server
     # The document part of the request, e.g. - params that came
     # directly from its body.
     #
-    # Something somewhere in Rack is unhappy when receiving
-    # non-Hash-like records via a JSON-formatted request body. So that
-    # Vayacondios::Rack::Params takes a non-Hash-like request body and
-    # turns it into a Hash with a single key: _document.
-    #
-    # This hack does **not** affect the client-side: clients can still
-    # send non-Hash-like JSON documents and they will be interpreted
-    # as intended.
+    # Goliath::Rack::Params dumps all non-Hash types that were JSON
+    # parsed under this header. By accessing the #document this way
+    # we allow for non-Hash bodies to be sent as requests.
     #
     # @return [Hash,Array,String,Fixnum,nil] any native JSON datatype
     def document
@@ -129,8 +126,9 @@ module Vayacondios::Server
 
     # Deliver a response for the request.
     #
-    # Uses the method set by Vayacondios::Rack::ExtractMethods to
-    # determine which action to call on the #handler.
+    # Uses the method set by Infochimps::Rack::ControlMethods to
+    # determine which action to call on the handler determined by
+    # Infochimps::Rack::Validation::RouteHandler
     #
     # Traps Goliath::Validation::Errors by returning the appropriate
     # response.
@@ -139,7 +137,7 @@ module Vayacondios::Server
     #
     # @param [Hash] env the current request environment
     def response env
-      body = handler.new(logger, mongo).call(control_method, routes, document)
+      body = handler.new(logger, db).call(control_method, routes, document)
       [200, {}, body]
     rescue Goliath::Validation::Error => e
       return [e.status_code, {}, { error: e.message }]
