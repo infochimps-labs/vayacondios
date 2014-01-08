@@ -82,16 +82,33 @@ module Vayacondios::Server
       options[:config] ||= File.join(File.dirname(__FILE__), '..', '..', '..', 'config', 'vcd-server.rb')
     end
 
-    use Goliath::Rack::Heartbeat                                                # respond to /status with 200, OK (monitoring, etc)
-    use Vayacondios::Rack::JSONize                                              # JSON input & output
-    use Vayacondios::Rack::Params                                               # parse query string and message body into params hash
-    use Goliath::Rack::Validation::RequestMethod, %w[GET POST PUT PATCH DELETE] # only allow these methods
-    
-    use Vayacondios::Rack::Routing                                              # parse path into parameterized pieces
-    use Vayacondios::Rack::ExtractMethods                                       # interpolate GET, PUT into :create, :update, etc
-    use Vayacondios::Rack::Validation                                           # validation
-
-    use Goliath::Rack::Render                                                   # auto-negotiate response format
+    use Goliath::Rack::Heartbeat
+    use Infochimps::Rack::ApiVersion,                 Vayacondios::VERSION, api: 'Vayacondios'
+    use Infochimps::Rack::ForceContentType,           'application/json'
+    use Goliath::Rack::Formatters::JSON
+    use Goliath::Rack::Render
+    use Goliath::Rack::Params
+    use Goliath::Rack::Validation::RequestMethod,     %w[ GET POST PUT PATCH DELETE ]
+    use Infochimps::Rack::ControlMethods,             'POST'   => :create,
+                                                      'GET'    => :retrieve,
+                                                      'PATCH'  => :update,
+                                                      'PUT'    => :update,
+                                                      'DELETE' => :delete
+    use Infochimps::Rack::Validation::Routes,         /^
+                                                      \/v2
+                                                      \/(?<organization>[a-z][-_\w]+)
+                                                      \/(?<type>[-\.\w]+)
+                                                      (\/(?<topic>[-\.\w]+)
+                                                      (\/(?<id>([-\.\w+]\/?)+))?)?
+                                                      (\/|\.(?<format>json))?
+                                                      $/ix,
+                                                      '/v2/<organization>/<type>/<topic>/<id>.<format>'
+    use Infochimps::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler, 
+                                                             'stashes' => StashesHandler,
+                                                             'event'   => EventHandler,
+                                                             'events'  => EventsHandler
+    use Infochimps::Rack::Validation::RequiredRoutes, :type, 'stash'     => :topic,
+                                                             /^events?$/ => :topic
 
     # The document part of the request, e.g. - params that came
     # directly from its body.
@@ -107,26 +124,7 @@ module Vayacondios::Server
     #
     # @return [Hash,Array,String,Fixnum,nil] any native JSON datatype
     def document
-      params['_document'] || params
-    end
-
-    # The handler to use for the request.
-    #
-    # Introspects on the route set by Vayacondios::Rack::Routing and
-    # determines whether to use the Vayacondios::StashHandler or the
-    # Vayacondios::EventHandler.
-    #
-    # @return [StashHandler, EventHandler]
-    # @raise [Goliath::Validation::Error] if no handler can be found
-    def handler
-      case env[:vayacondios_route][:type]
-      when /^stash/i
-        Vayacondios::StashHandler.new(env.logger, mongo)
-      when /^event/i
-        Vayacondios::EventHandler.new(env.logger, mongo)
-      else
-        raise Goliath::Validation::Error.new(400, "Invalid type: <#{env[:vayacondios_route][:type]}>")
-      end
+      params['_json'] || params
     end
 
     # Deliver a response for the request.
@@ -140,17 +138,17 @@ module Vayacondios::Server
     # Traps all other errors by responding with a 500.
     #
     # @param [Hash] env the current request environment
-    def response(env)
-      body = handler.send(env[:vayacondios_method], env[:vayacondios_route], document)
+    def response env
+      body = handler.new(logger, mongo).call(control_method, routes, document)
       [200, {}, body]
     rescue Goliath::Validation::Error => e
-      return [e.status_code, {}, {error: e.message}]
-    rescue Vayacondios::Document::Error => e
-      return [400, {}, {error: e.message}]
+      return [e.status_code, {}, { error: e.message }]
+    rescue Document::Error => e
+      return [400, {}, { error: e.message }]
     rescue => e
       env.logger.error "#{e.class} -- #{e.message}"
-      e.backtrace.each{ |line| env.logger.error(line) }
-      return [500, {}, {error: "#{e.class} -- #{e.message}"}]
+      e.backtrace.each{ |line| env.logger.error line }
+      return [500, {}, { error: "#{e.class} -- #{e.message}" }]
     end
   end
   
