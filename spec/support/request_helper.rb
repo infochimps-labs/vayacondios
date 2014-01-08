@@ -18,7 +18,7 @@
 # @option options [String] error a regular expression which matches the error message returned in the response body
 module RequestHelper
   def vcd(options = {}, &blk)
-    with_api(Vayacondios::HttpServer, Settings.to_hash.merge(config: File.join(VCD_ROOT, 'config/vcd-server.rb'))) do |api|
+    with_api(Vayacondios::Server::Api, Settings.to_hash.merge(config: File.join(VCD_ROOT, 'config/vcd-server.rb'))) do |api|
       
       request = {path: options[:path]}.tap do |req|
         req[:body] = MultiJson.dump(options[:body]) if options[:body]
