@@ -18,7 +18,6 @@ require 'vayacondios/server/driver'
 require 'vayacondios/server/drivers/mongo'
 
 require 'vayacondios/server/models/document'
-require 'vayacondios/server/models/mongo_document'
 require 'vayacondios/server/models/stash'
 require 'vayacondios/server/models/event'
 

@@ -18,7 +18,7 @@
 # }
 # ```
 #
-class Vayacondios::Server::Stash < Vayacondios::Server::MongoDocument
+class Vayacondios::Server::Stash < Vayacondios::Server::Document
 
   # The default number of stashes returned when searching.
   LIMIT = 50
