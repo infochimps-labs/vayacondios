@@ -19,7 +19,7 @@ describe Vayacondios::Server::Api, events: true do
       end
       context "if the event is found" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.topic.events").insert({_id: 'id', t: timestamp, d: hash_event.merge(time: timestamp)})
           end
         end
@@ -50,7 +50,7 @@ describe Vayacondios::Server::Api, events: true do
       end
       context "when some events match" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.topic.events").insert({_id: "id-#{i}", t: (timestamp.utc - i), d: hash_event})
             end
@@ -80,7 +80,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
             event.should_not be_nil
             event['_id'].should_not be_nil
@@ -104,7 +104,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path, body: hash_event)
-          mongo_query do |db|
+          db_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
             event.should_not be_nil
             event['_id'].should_not be_nil
@@ -122,7 +122,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "does not store any events in the organization.topic.events collection" do
           vcd(verb: verb, path: path, body: array_event)
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.topic.events").count.should == 0
           end
         end
@@ -143,7 +143,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "stores the event in the organization.topic.events collection with an auto-generated _id field" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             event = db.collection("organization.topic.events").find_one({}, sort: {t: -1})
             event.should_not be_nil
             event['_id'].should_not be_nil
@@ -167,7 +167,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "stores the event in the organization.topic.events collection with an _id field given by the ID" do
           vcd(verb: verb, path: path, body: hash_event)
-          mongo_query do |db|
+          db_query do |db|
             event = db.collection("organization.topic.events").find_one({_id: 'id'}, sort: {t: -1})
             event.should_not be_nil
             event['_id'].should == 'id'
@@ -185,7 +185,7 @@ describe Vayacondios::Server::Api, events: true do
         end
         it "does not store any events in the organization.topic.events collection" do
           vcd(verb: verb, path: path, body: array_event)
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.topic.events").count.should == 0
           end
         end

@@ -15,7 +15,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "if the stash is found" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert({_id: "topic"}.merge(hash_stash))
           end
         end
@@ -36,7 +36,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "if the stash is found" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert({_id: "topic", "id" => hash_stash})
           end
         end
@@ -60,7 +60,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when some stashes match" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -75,7 +75,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when projecting down into nested stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert({_id: "topic"}.merge(nested_stash))
           end
         end
@@ -105,7 +105,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection with _id field given by the topic" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash.should == { '_id' => 'topic' }
           end
@@ -120,7 +120,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection with the _id field given by the topic" do
           vcd(verb: verb, body: hash_stash, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash.should == hash_stash.merge('_id' => 'topic')
           end
@@ -135,7 +135,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "does not store any stashes in the organization.stash collection" do
           vcd(verb: verb, path: path, body: array_stash)
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").count.should == 0
           end
         end
@@ -153,7 +153,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == {}
           end
@@ -168,7 +168,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: hash_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == hash_stash
           end
@@ -183,7 +183,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: array_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == array_stash
           end
@@ -198,7 +198,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: string_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == string_stash
           end
@@ -213,7 +213,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: nil_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == {}
           end
@@ -249,7 +249,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query doesn't match any stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -261,7 +261,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "no stashes should be modified" do
           vcd(verb: verb, path: path, body: body)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should_not be_nil
             stashes.size.should == 3
@@ -271,7 +271,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query does match some stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -283,7 +283,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "each stash should be modified in place" do
           vcd(verb: verb, path: path, body: body)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should_not be_nil
             stashes.size.should == 3
@@ -307,7 +307,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection with _id field given by the topic" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash.should == { '_id' => 'topic' }
           end
@@ -322,7 +322,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection with the _id field given by the topic" do
           vcd(verb: verb, body: hash_stash, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash.should == hash_stash.merge('_id' => 'topic')
           end
@@ -337,7 +337,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "does not store any stashes in the organization.stash collection" do
           vcd(verb: verb, path: path, body: array_stash)
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").count.should == 0
           end
         end
@@ -355,7 +355,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == nil
           end
@@ -370,7 +370,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: hash_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == hash_stash
           end
@@ -385,7 +385,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: array_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == array_stash
           end
@@ -400,7 +400,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: string_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == string_stash
           end
@@ -415,7 +415,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "stores the stash in the organization.stash collection as the ID field of the record with the topic as _id" do
           vcd(verb: verb, path: path, body: nil_stash)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == nil
           end
@@ -451,7 +451,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query doesn't match any stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -463,7 +463,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "no stashes should be modified" do
           vcd(verb: verb, path: path, body: body)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should_not be_nil
             stashes.size.should == 3
@@ -473,7 +473,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query does match some stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -485,7 +485,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "each stash should be modified in place" do
           vcd(verb: verb, path: path, body: body)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should_not be_nil
             stashes.size.should == 3
@@ -507,7 +507,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the stash exists" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert(_id: "topic", "foo" => "bar")
           end
         end
@@ -516,7 +516,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "destroys the corresponding stash record" do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").find_one(_id: "topic").should be_nil
           end
         end
@@ -532,7 +532,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the stash with the topic exists but the ID doesn't exist" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert(_id: "topic")
           end
         end
@@ -540,7 +540,7 @@ describe Vayacondios::Server::Api, stashes: true do
           vcd(verb: verb, path: path, status: 200)
         end
         it "does not destroy any records in the database" do
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one(_id: "topic")
             stash.should_not be_nil
           end
@@ -548,7 +548,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the stash with the topic exists and the ID also exists" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             db.collection("organization.stash").insert(_id: "topic", id: "hello")
           end
         end
@@ -557,7 +557,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "deletes the corresponding ID field in the stash " do
           vcd(verb: verb, path: path)
-          mongo_query do |db|
+          db_query do |db|
             stash = db.collection("organization.stash").find_one({_id: 'topic'})
             stash['id'].should == nil
           end
@@ -576,7 +576,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query doesn't match any stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -588,7 +588,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "no stashes should be modified" do
           vcd(verb: verb, path: path, body: body)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should_not be_nil
             stashes.size.should == 3
@@ -598,7 +598,7 @@ describe Vayacondios::Server::Api, stashes: true do
       end
       context "when the query does match some stashes" do
         before do
-          mongo_query do |db|
+          db_query do |db|
             3.times do |i|
               db.collection("organization.stash").insert({_id: "topic-#{i}"}.merge(hash_stash))
             end
@@ -609,7 +609,7 @@ describe Vayacondios::Server::Api, stashes: true do
         end
         it "each matching stash should be deleted" do
           vcd(verb: verb, path: path, body: stash_query)
-          mongo_query do |db|
+          db_query do |db|
             stashes = db.collection("organization.stash").find().to_a
             stashes.should be_empty
           end
