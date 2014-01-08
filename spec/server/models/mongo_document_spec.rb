@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::MongoDocument do
+describe Vayacondios::Server::MongoDocument do
 
   let(:organization) { 'organization'      }
   let(:topic)        { 'topic'             }
@@ -8,11 +8,11 @@ describe Vayacondios::MongoDocument do
   let(:database)     { double("Mongo::DB") }
   let(:id)           { 'id'                }
 
-  subject { Vayacondios::MongoDocument }
+  subject { described_class }
   
   describe "#initialize" do
     let(:params)   { { organization: organization, topic: topic }          }
-    subject        { Vayacondios::MongoDocument.new(log, database, params) }
+    subject        { Vayacondios::Server::MongoDocument.new(log, database, params) }
     
     its(:log)      { should == log      }
     its(:database) { should == database }
@@ -27,10 +27,10 @@ describe Vayacondios::MongoDocument do
 
     let(:string)   { 'aaaaaaaaaaaaaaaaaaaaaaaa' }
     let(:bson)     { BSON::ObjectId(string)     }
-    let(:document) { Vayacondios::MongoDocument.new(log, database, organization: organization, topic: topic) }
+    let(:document) { Vayacondios::Server::MongoDocument.new(log, database, organization: organization, topic: topic) }
 
     it "given a nil value raises an error" do
-      expect { document.id = nil }.to raise_error(Vayacondios::Document::Error, /ID/)
+      expect { document.id = nil }.to raise_error(Vayacondios::Server::Document::Error, /ID/)
     end
     
     it "given a BSON::ObjectId uses it" do
@@ -40,7 +40,7 @@ describe Vayacondios::MongoDocument do
 
     context "given a Hash" do
       it "raises an error unless the Hash contains an '$oid' value" do
-        expect { document.id = {'foo' => 'bar'} }.to raise_error(Vayacondios::Document::Error, /ID/)
+        expect { document.id = {'foo' => 'bar'} }.to raise_error(Vayacondios::Server::Document::Error, /ID/)
       end
       
       it "uses the '$oid' value when present" do
@@ -62,13 +62,13 @@ describe Vayacondios::MongoDocument do
 
   describe "#organization=" do
     it "replaces non-word characters and non-(period|hyphen|underscore)s from a topic with underscores" do
-      Vayacondios::MongoDocument.new(log, database, topic: topic, organization: 'hello-.there buddy').organization.should == 'hello-.there_buddy'
+      Vayacondios::Server::MongoDocument.new(log, database, topic: topic, organization: 'hello-.there buddy').organization.should == 'hello-.there_buddy'
     end
     it "replaces periods from the beginning and end of a topic with underscores" do
-      Vayacondios::MongoDocument.new(log, database, topic: topic, organization: '.hello.there.').organization.should == '_hello.there_'
+      Vayacondios::Server::MongoDocument.new(log, database, topic: topic, organization: '.hello.there.').organization.should == '_hello.there_'
     end
     it "prepends an underscore to the reserved prefix 'system.'" do
-      Vayacondios::MongoDocument.new(log, database, topic: topic, organization: 'system.foobar').organization.should == '_system.foobar'
+      Vayacondios::Server::MongoDocument.new(log, database, topic: topic, organization: 'system.foobar').organization.should == '_system.foobar'
     end
     
   end

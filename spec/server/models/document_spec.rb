@@ -1,18 +1,18 @@
 require 'spec_helper'
 
-describe Vayacondios::Document do
+describe Vayacondios::Server::Document do
   
   let(:organization) { 'organization' }
   let(:topic)        { 'topic'        }
   
-  subject { Vayacondios::Document }
+  subject { described_class }
   
   describe "#initialize" do
     
     context "without an 'organization' option" do
       let(:params) { {topic: topic} }
       it "raises an error" do
-        expect { subject.new(params) }.to raise_error(Vayacondios::Document::Error, /organization/)
+        expect { subject.new(params) }.to raise_error(Vayacondios::Server::Document::Error, /organization/)
       end
     end
 

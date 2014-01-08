@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::Stash, stashes: true do
+describe Vayacondios::Server::Stash, stashes: true do
 
   let(:organization) { 'organization'      }
   let(:topic)        { 'topic'             }
@@ -12,7 +12,7 @@ describe Vayacondios::Stash, stashes: true do
   let(:collection)   { double("Mongo::Collection", name: "organization.stash") }
   before             { database.stub(:collection).and_return(collection)       }
 
-  subject { Vayacondios::Stash.new(log, database, organization: organization, topic: topic) }
+  subject { described_class.new(log, database, organization: organization, topic: topic) }
 
   describe "#collection_name" do
     its(:collection_name) { should == "organization.stash" }
@@ -115,27 +115,27 @@ describe Vayacondios::Stash, stashes: true do
     context "without a topic" do
       before { subject.topic = nil }
       it "raises an error" do
-        expect { subject.find }.to raise_error(Vayacondios::Document::Error, /topic/)
+        expect { subject.find }.to raise_error(Vayacondios::Server::Document::Error, /topic/)
       end
     end
   end
 
   describe ".search" do
     it "has default sorting and limiting behavior" do
-      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
-      Vayacondios::Stash.search(log, database, params, stash_query)
+      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Server::Stash::SORT, limit: Vayacondios::Server::Stash::LIMIT})
+      Vayacondios::Server::Stash.search(log, database, params, stash_query)
     end
     it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with(stash_query, {sort: ['bar', 'ascending'], limit: Vayacondios::Stash::LIMIT})
-      Vayacondios::Stash.search(log, database, params, stash_query_with_sort)
+      collection.should_receive(:find).with(stash_query, {sort: ['bar', 'ascending'], limit: Vayacondios::Server::Stash::LIMIT})
+      Vayacondios::Server::Stash.search(log, database, params, stash_query_with_sort)
     end
     it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Stash::SORT, limit: 10})
-      Vayacondios::Stash.search(log, database, params, stash_query_with_limit)
+      collection.should_receive(:find).with(stash_query, {sort: Vayacondios::Server::Stash::SORT, limit: 10})
+      Vayacondios::Server::Stash.search(log, database, params, stash_query_with_limit)
     end
     it "interprets the 'topic' parameter as regular expression search on the _id" do
-      collection.should_receive(:find).with({:$and => [{"_id" => Regexp.new(stash_query_with_topic['topic'])}, stash_query]}, {sort: Vayacondios::Stash::SORT, limit: Vayacondios::Stash::LIMIT})
-      Vayacondios::Stash.search(log, database, params, stash_query_with_topic)
+      collection.should_receive(:find).with({:$and => [{"_id" => Regexp.new(stash_query_with_topic['topic'])}, stash_query]}, {sort: Vayacondios::Server::Stash::SORT, limit: Vayacondios::Server::Stash::LIMIT})
+      Vayacondios::Server::Stash.search(log, database, params, stash_query_with_topic)
     end
   end
 
@@ -165,7 +165,7 @@ describe Vayacondios::Stash, stashes: true do
     end
     context "without an ID" do
       it "raises an error on a non-Hash" do
-        expect { subject.create([1,2,3]) }.to raise_error(Vayacondios::Document::Error, /Hash/)
+        expect { subject.create([1,2,3]) }.to raise_error(Vayacondios::Server::Document::Error, /Hash/)
       end
       it "accepts and returns a Hash" do
         collection.should_receive(:update)

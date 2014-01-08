@@ -197,20 +197,20 @@ describe Vayacondios::Server::Api, events: true do
     let(:verb) { 'PUT' }
     context "/v2/organization/event/topic" do
       let(:path) { "/v2/organization/event/topic" }
-      it "returns a 404" do
-        vcd(verb: verb, path: path, status: 404)
+      it "returns a 405" do
+        vcd(verb: verb, path: path, status: 405)
       end
       it "with an error message explaining the route doesn't exist" do
-        vcd(verb: verb, path: path, error: /PUT/)
+        vcd(verb: verb, path: path, error: /create/)
       end
     end
     context "/v2/organization/event/topic/id" do
       let(:path) { "/v2/organization/event/topic/id" }
-      it "returns a 404" do
-        vcd(verb: verb, path: path, status: 404)
+      it "returns a 405" do
+        vcd(verb: verb, path: path, status: 405)
       end
       it "with an error message explaining the route doesn't exist" do
-        vcd(verb: verb, path: path, error: /PUT/)
+        vcd(verb: verb, path: path, error: /create/)
       end
     end
   end
@@ -219,20 +219,20 @@ describe Vayacondios::Server::Api, events: true do
     let(:verb) { 'DELETE' }
     context "/v2/organization/event/topic" do
       let(:path) { "/v2/organization/event/topic" }
-      it "returns a 404" do
-        vcd(verb: verb, path: path, status: 404)
+      it "returns a 405" do
+        vcd(verb: verb, path: path, status: 405)
       end
       it "with an error message explaining the route doesn't exist" do
-        vcd(verb: verb, path: path, error: /DELETE/)
+        vcd(verb: verb, path: path, error: /delete/)
       end
     end
     context "/v2/organization/event/topic/id" do
       let(:path) { "/v2/organization/event/topic/id" }
-      it "returns a 404" do
-        vcd(verb: verb, path: path, status: 404)
+      it "returns a 405" do
+        vcd(verb: verb, path: path, status: 405)
       end
       it "with an error message explaining the route doesn't exist" do
-        vcd(verb: verb, path: path, error: /DELETE/)
+        vcd(verb: verb, path: path, error: /delete/)
       end
     end
   end

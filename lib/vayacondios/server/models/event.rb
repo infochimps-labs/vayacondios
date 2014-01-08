@@ -48,7 +48,7 @@
 #
 # @attr [Time] timestamp the timestamp for which this event records data
 #   
-class Vayacondios::Event < Vayacondios::MongoDocument
+class Vayacondios::Server::Event < Vayacondios::Server::MongoDocument
 
   # The default number of events returned when searching.
   LIMIT  = 50
