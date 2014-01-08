@@ -32,7 +32,7 @@ end
 #
 # @see spec/spec_helper.rb which defines and initializes the Settings object
 environment(:test) do
-  logger.info("Connecting to #{db_options[:host]}:#{db_options[:port]} using #{db_options[:driver]} driver.")
-  driver = Vayacondios::Server::Driver.retrieve db_options[:driver]
-  config['db'] = driver.connect db_options
+  logger.info("Connecting to #{Settings[:database][:host]}:#{Settings[:database][:port]} using #{Settings[:database][:driver]} driver.")
+  driver = Vayacondios::Server::Driver.retrieve Settings[:database][:driver]
+  config['db'] = driver.connect Settings[:database]
 end
