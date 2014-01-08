@@ -6,9 +6,9 @@ require 'bundler/setup' ; Bundler.require(:test)
 
 require 'configliere'
 
-Settings.define 'mongo.host',     default: 'localhost',        description: 'Hostname for MongoDB server'
-Settings.define 'mongo.port',     default: '27017',            description: 'Port for MongoDB server'
-Settings.define 'mongo.database', default: 'vayacondios_test', description: 'Name of database to use'
+Settings.define 'database.host', default: 'localhost',        description: 'Hostname for MongoDB server'
+Settings.define 'database.port', default: '27017',            description: 'Port for MongoDB server'
+Settings.define 'database.name', default: 'vayacondios_test', description: 'Name of database to use'
 Settings.read File.expand_path('../config/spec.yml', __FILE__)
 Settings.resolve!
 
@@ -24,9 +24,7 @@ require 'vayacondios-client'
 
 Dir['spec/support/**/*.rb'].each{ |f| require File.join(File.dirname(__FILE__), '..', f) }
 
-Goliath.env = :test
-
-require 'vayacondios/server/api'
+require 'vayacondios/server/http_server'
 
 RSpec.configure do |c|
   c.include MongoHelper

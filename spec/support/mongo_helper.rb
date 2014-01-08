@@ -1,10 +1,10 @@
 module MongoHelper
   def mongo_connection
-    @mongo_connection ||= Mongo::Connection.new(Settings[:mongo][:host], Settings[:mongo][:port])
+    @mongo_connection ||= Mongo::Connection.new(Settings[:database][:host], Settings[:database][:port])
   end
 
   def mongo_query(&blk)
-    yield mongo_connection.db(Settings[:mongo][:database])
+    yield mongo_connection.db(Settings[:database][:name])
   end
 
   def clean_mongo!

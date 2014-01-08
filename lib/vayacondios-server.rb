@@ -13,6 +13,10 @@ require 'infochimps/rack'
 require 'multi_json'
 
 require 'vayacondios/version'
+
+require 'vayacondios/server/driver'
+require 'vayacondios/server/drivers/mongo'
+
 require 'vayacondios/server/models/document'
 require 'vayacondios/server/models/mongo_document'
 require 'vayacondios/server/models/stash'
