@@ -1,15 +1,17 @@
 require 'goliath'
+require 'goliath/chimp'
 require 'em-mongo'
 require 'em-synchrony/em-http'
 require 'em-synchrony/em-mongo'
 
 require 'gorillib/object/blank'
 require 'gorillib/enumerable/sum'
+require 'gorillib/hash/compact'
 require 'gorillib/hash/deep_merge'
 require 'gorillib/hash/keys'
+require 'gorillib/model'
 require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
-require 'infochimps/rack'
 require 'multi_json'
 
 require 'vayacondios/version'
