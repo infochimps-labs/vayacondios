@@ -85,32 +85,32 @@ module Vayacondios::Server
     end
 
     use Goliath::Rack::Heartbeat
-    use Infochimps::Rack::ApiVersion,                 Vayacondios::VERSION, api: 'Vayacondios'
-    use Infochimps::Rack::ForceContentType,           'application/json'
+    use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::VERSION, api: 'Vayacondios'
+    use Goliath::Chimp::Rack::ForceContentType,           'application/json'
     use Goliath::Rack::Formatters::JSON
     use Goliath::Rack::Render
     use Goliath::Rack::Params
-    use Goliath::Rack::Validation::RequestMethod,     %w[ GET POST PUT PATCH DELETE ]
-    use Infochimps::Rack::ControlMethods,             'POST'   => :create,
-                                                      'GET'    => :retrieve,
-                                                      'PATCH'  => :update,
-                                                      'PUT'    => :update,
-                                                      'DELETE' => :delete
-    use Infochimps::Rack::Validation::Routes,         /^
-                                                      \/v2
-                                                      \/(?<organization>[a-z][-_\w]+)
-                                                      \/(?<type>[-\.\w]+)
-                                                      (\/(?<topic>[-\.\w]+)
-                                                      (\/(?<id>([-\.\w+]\/?)+))?)?
-                                                      (\/|\.(?<format>json))?
-                                                      $/ix,
-                                                      '/v2/<organization>/<type>/<topic>/<id>.<format>'
-    use Infochimps::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler, 
-                                                             'stashes' => StashesHandler,
-                                                             'event'   => EventHandler,
-                                                             'events'  => EventsHandler
-    use Infochimps::Rack::Validation::RequiredRoutes, :type, 'stash'     => :topic,
-                                                             /^events?$/ => :topic
+    use Goliath::Rack::Validation::RequestMethod,         %w[ GET POST PUT PATCH DELETE ]
+    use Goliath::Chimp::Rack::ControlMethods,             'POST'   => :create,
+                                                          'GET'    => :retrieve,
+                                                          'PATCH'  => :update,
+                                                          'PUT'    => :update,
+                                                          'DELETE' => :delete
+    use Goliath::Chimp::Rack::Validation::Routes,         /^
+                                                            \/v2
+                                                            \/(?<organization>[a-z][-_\w]+)
+                                                            \/(?<type>[-\.\w]+)
+                                                            (\/(?<topic>[-\.\w]+)
+                                                            (\/(?<id>([-\.\w+]\/?)+))?)?
+                                                            (\/|\.(?<format>json))?
+                                                          $/ix,
+                                                          '/v2/<organization>/<type>/<topic>/<id>.<format>'
+    use Goliath::Chimp::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler,
+                                                                 'stashes' => StashesHandler,
+                                                                 'event'   => EventHandler,
+                                                                 'events'  => EventsHandler
+    use Goliath::Chimp::Rack::Validation::RequiredRoutes, :type, 'stash'     => :topic,
+                                                                 /^events?$/ => :topic
 
     # The document part of the request, e.g. - params that came
     # directly from its body.
@@ -121,7 +121,7 @@ module Vayacondios::Server
     #
     # @return [Hash,Array,String,Fixnum,nil] any native JSON datatype
     def document
-      params['_json'] || params
+      params.has_key?('_json') ? params['_json'] : params
     end
 
     # Deliver a response for the request.
