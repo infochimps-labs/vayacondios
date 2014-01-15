@@ -21,7 +21,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('configliere',     '>= 0.4.16')
   gem.add_dependency('gorillib',        '>= 0.4.2')
   gem.add_dependency('multi_json',      '>= 1.3.6')
-  gem.add_dependency('infochimps-rack', '>= 0.0.1')
+  gem.add_dependency('goliath-chimp',   '>= 0.0.1')
 
   gem.add_dependency('eventmachine',    '~> 1.0.0.beta.4')
   gem.add_dependency('goliath',         '~> 1.0')
