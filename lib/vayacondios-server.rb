@@ -3,6 +3,7 @@ require 'goliath/chimp'
 require 'em-mongo'
 require 'em-synchrony/em-http'
 require 'em-synchrony/em-mongo'
+require 'configliere'
 
 require 'gorillib/object/blank'
 require 'gorillib/enumerable/sum'
@@ -17,6 +18,7 @@ require 'multi_json'
 require 'vayacondios/version'
 
 require 'vayacondios/server/driver'
+require 'vayacondios/server/configuration'
 require 'vayacondios/server/drivers/mongo'
 
 require 'vayacondios/server/models/document'
