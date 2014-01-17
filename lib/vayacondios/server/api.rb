@@ -69,17 +69,12 @@ module Vayacondios::Server
 
       options[:database] ||= {}
       db_options = options[:database]
-      db_options[:driver]      ||= 'mongo'
-      db_options[:host]        ||= 'localhost'
-      db_options[:port]        ||= 27017
-      db_options[:name]        ||= 'vayacondios_development'
-      db_options[:connections] ||= 20
-
-      opts.on('-d', '--database.driver NAME', "Database driver (default: #{db_options[:driver]})"){ |val| db_options[:driver] = val }
-      opts.on('-h', '--database.host HOST', "Database host (default: #{db_options[:host]})"){ |val| db_options[:host] = val }
-      opts.on('-o', '--database.port PORT', Integer, "Database port (default: #{db_options[:port]})"){ |val| db_options[:port] = val }
-      opts.on('-D', '--database.name NAME', "Database name (default: #{db_options[:name]})"){ |val| db_options[:name] = val }
-      opts.on('-n', '--database.connections NUM', Integer, "Number of database connections to make (default: #{db_options[:connections]}).  Only used in 'production' environment"){ |val| db_options[:connections] = val }
+      defaults = DbConfig.defaults[:development]
+      opts.on('-d', '--database.driver NAME', "Database driver (default: #{defaults[:driver]})")   { |val| db_options[:driver] = val }
+      opts.on('-h', '--database.host HOST', "Database host (default: #{defaults[:host]})")         { |val| db_options[:host] = val }
+      opts.on('-o', '--database.port PORT', Integer, "Database port (default: #{defaults[:port]})"){ |val| db_options[:port] = val }
+      opts.on('-D', '--database.name NAME', "Database name (default: #{defaults[:name]})")         { |val| db_options[:name] = val }
+      opts.on('-n', '--database.connections NUM', Integer, "Number of database connections to make (default: #{defaults[:connections]}).  Only used in 'production' environment"){ |val| db_options[:connections] = val }
 
       options[:config] ||= File.expand_path('../../../../config/vcd-server.rb', __FILE__)
     end
@@ -102,9 +97,8 @@ module Vayacondios::Server
                                                             \/(?<type>[-\.\w]+)
                                                             (\/(?<topic>[-\.\w]+)
                                                             (\/(?<id>([-\.\w+]\/?)+))?)?
-                                                            (\/|\.(?<format>json))?
                                                           $/ix,
-                                                          '/v2/<organization>/<type>/<topic>/<id>.<format>'
+                                                          '/v2/<organization>/<type>/<topic>/<id>'
     use Goliath::Chimp::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler,
                                                                  'stashes' => StashesHandler,
                                                                  'event'   => EventHandler,
