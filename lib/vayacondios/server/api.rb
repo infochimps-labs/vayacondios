@@ -102,9 +102,11 @@ module Vayacondios::Server
     use Goliath::Chimp::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler,
                                                                  'stashes' => StashesHandler,
                                                                  'event'   => EventHandler,
-                                                                 'events'  => EventsHandler
+                                                                 'events'  => EventsHandler,
+                                                                 'stream'  => StreamHandler
     use Goliath::Chimp::Rack::Validation::RequiredRoutes, :type, 'stash'     => :topic,
-                                                                 /^events?$/ => :topic
+                                                                 /^events?$/ => :topic,
+                                                                 'stream'    => :topic
 
     # The document part of the request, e.g. - params that came
     # directly from its body.
@@ -118,6 +120,18 @@ module Vayacondios::Server
       params.has_key?('_json') ? params['_json'] : params
     end
 
+    # Assign a callback to the stream endpoint. Some of the Rack
+    # logic is recreated because of the way streaming data works.
+    def open_stream(env, hndlr)
+      env[:subscription] = hndlr.stream_data{ |data| env.stream_send MultiJson.dump(data).concat("\n") }
+    end
+
+    # Make sure to remove any outstanding streaming connections
+    # when the client disconnects
+    def on_close env
+      return unless env[:subscription]
+      env.delete(:subscription).close_stream!
+    end
     # Deliver a response for the request.
     #
     # Uses the method set by Infochimps::Rack::ControlMethods to
@@ -131,7 +145,9 @@ module Vayacondios::Server
     #
     # @param [Hash] env the current request environment
     def response env
-      body = handler.new(logger, db).call(control_method, routes, document)
+      h = handler.new(logger, db)
+      open_stream(env, h) if routes[:type] == 'stream'
+      body = h.call(control_method, routes, document)
       [200, {}, body]
     rescue Goliath::Validation::Error => e
       return [e.status_code, {}, { error: e.message }]
