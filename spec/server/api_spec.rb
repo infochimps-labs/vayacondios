@@ -9,14 +9,12 @@ describe Vayacondios::Server::Api do
     end
   end
 
-  def build_request(verb, path, params = {})
-    options = { path: path }
-    options[:headers] = params[:headers] if params[:headers]
-    options[:body]    = params[:body]    if params[:body]
+  def build_request(verb, path, options = {})
+    options[:path] = path
     proc{ |&callback| send("#{verb}_request", options, &callback) }
   end
 
-  let(:captured_assertions){ [] }
+  let(:captured_assertions){ Array.new }
 
   def perform(request, &blk)
     response = nil
@@ -185,6 +183,7 @@ describe Vayacondios::Server::Api do
       events:  Vayacondios::Server::EventsHandler,
       stash:   Vayacondios::Server::StashHandler,
       stashes: Vayacondios::Server::StashesHandler,
+      stream:  Vayacondios::Server::StreamHandler,
     }.each_pair do |type, handler|
       it "maps type #{type} to handler #{handler}" do
         request = build_request(:get, "/v2/infochimps/#{type}/topic")
@@ -218,6 +217,12 @@ describe Vayacondios::Server::Api do
 
     it 'returns a validation error when events do not have a topic' do
       response = perform build_request(:get, '/v2/infochimps/events')
+      response.status.should eq(400)
+      response.parsed_body['error'].should match('A topic route is required')
+    end
+
+    it 'returns a validation error when stream do not have a topic' do
+      response = perform build_request(:get, '/v2/infochimps/stream')
       response.status.should eq(400)
       response.parsed_body['error'].should match('A topic route is required')
     end
@@ -262,6 +267,13 @@ describe Vayacondios::Server::Api do
       end
       response.status.should eq(200)
       response.parsed_body.should eq('foo' => 'bar')
+    end
+
+    it 'returns a streaming response when requested', focus: true do
+      request = build_request(:get, '/v2/infochimps/stream/topic', connection_options: { inactivity_timeout: 0.5 })
+      response = perform(request)
+      response.status.should eq(200)
+      response.body.should eq('')
     end
   end
 end
