@@ -18,4 +18,5 @@ group :test do
   gem 'simplecov'
   gem 'mongo'
   gem 'timecop'
+  gem 'cucumber'
 end

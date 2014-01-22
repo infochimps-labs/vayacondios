@@ -1,6 +1,9 @@
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new
 
+require 'cucumber/rake/task'
+Cucumber::Rake::Task.new(:features)
+
 require 'yard'
 YARD::Rake::YardocTask.new do |t|
   t.files   = ['lib/**/*.rb', '-', 'CHANGELOG.md', 'LICENSE.md']
@@ -45,5 +48,5 @@ task build:   ['build:vayacondios-client', 'build:vayacondios-server']
 desc 'Release both gems'
 task release: ['release:vayacondios-client', 'release:vayacondios-server']
 
-task default: [:spec]
+task default: [:spec, :features]
 
