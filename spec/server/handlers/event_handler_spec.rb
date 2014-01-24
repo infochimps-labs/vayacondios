@@ -1,45 +1,62 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::EventHandler, events: true do
-  
-  let(:log)          { double("Logger", debug: true)                    }
-  let(:database)     { double("Mongo::DB")                              }
-  let(:params)       { { organization: 'organization', topic: 'topic' } }
+describe Vayacondios::Server::EventHandler, behaves_like: 'handler' do
 
-  subject { described_class.new(log, database) }
+  let(:params)     { { organization: 'organization', topic: 'topic' } }
+  let(:document)   { { foo: 'bar', time: '2013-01-01T10:23:10.432Z' } }
+  let(:model_class){ Vayacondios::Server::Event }
 
-  describe "#retrieve" do
-    it "returns the record found by the Server::Event model it delegates to" do
-      Vayacondios::Server::Event.should_receive(:find)
-        .with(log, database, params).and_return(hash_event)
-      subject.retrieve(params).should == hash_event
-    end
-
-    it "raises a 404-error if no record is found" do
-      Vayacondios::Server::Event.should_receive(:find)
-        .with(log, database, params).and_return(nil)
-      expect { subject.retrieve(params) }.to raise_error(Goliath::Validation::NotFoundError, /not found/)
+  context '#create' do
+    it 'returns the created event' do
+      model_class.should_receive(:create).with(params, document).and_call_original      
+      driver.should_receive(:insert).and_return(_id: 'abc123')
+      handler.create(params, document).should eq(id: 'abc123',
+                                                   foo: 'bar',
+                                                   time: '2013-01-01T10:23:10.432Z')
     end
   end
 
-  describe "#create" do
-    it "returns the record created by the Server::Event model it delegates to" do
-      Vayacondios::Server::Event.should_receive(:create)
-        .with(log, database, params, hash_event).and_return(hash_event)
-      subject.create(params, hash_event).should == hash_event
-    end
-  end
+  context '#retrieve', 'when an event is found' do
+    let(:params){ { organization: 'organization', topic: 'topic', id: 'abc123' } }
 
-  describe "#update" do
-    it "returns a 400" do
-      expect { subject.update(params, hash_event) }.to raise_error(Goliath::Validation::Error, /update/)
-    end
-  end
-
-  describe "#delete" do
-    it "returns a 400" do
-      expect { subject.delete(params) }.to raise_error(Goliath::Validation::Error, /delete/)
+    it 'returns the selected event' do
+      model_class.should_receive(:find).with(params).and_call_original
+      driver.should_receive(:retrieve).and_return(_id: 'abc123', _t: '2013-01-01T10:23:10.432Z', _d: { foo: 'bar' })
+      handler.retrieve(params, {}).should eq(id:   'abc123',
+                                             foo:  'bar',
+                                             time: '2013-01-01T10:23:10.432Z')
     end
   end
   
+  context '#retrieve', 'when an event is not found', focus: true do
+    let(:params){ { organization: 'organization', topic: 'topic', id: 'abc123' } }
+
+    it 'raises a validation error' do
+      model_class.should_receive(:find).with(params).and_call_original
+      driver.should_receive(:retrieve).and_return(nil)
+      expect{ handler.retrieve(params, {}) }.to raise_error(validation_error, /not found/)
+    end
+  end
+
+  context '#update' do
+    it 'raises a validation error' do
+      expect{ handler.update(params, document) }.to raise_error(validation_error, /update/)
+    end
+  end
+
+  context '#delete', 'when params have no id' do
+    it 'raises a validation error' do
+      expect{ handler.delete(params, {}) }.to raise_error(validation_error, /id/i)
+    end
+  end
+
+  context '#delete', 'when successful' do
+    let(:params){ { organization: 'organization', topic: 'topic', id: 'abc123' } }
+
+    it 'returns success response' do
+      model_class.should_receive(:destroy).with(params, {}).and_call_original      
+      driver.should_receive(:remove).and_return(true)
+      handler.delete(params, {}).should eq(success_response)
+    end
+  end  
 end

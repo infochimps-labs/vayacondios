@@ -1,53 +1,68 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::StashHandler, stashes: true do
-  
-  let(:log)          { double("Logger", debug: true)                    }
-  let(:database)     { double("Mongo::DB")                              }
-  let(:params)       { { organization: 'organization', topic: 'topic' } }
+describe Vayacondios::Server::StashHandler, behaves_like: 'handler' do
 
-  subject { described_class.new(log, database) }
+  let(:params)     { { organization: 'organization', topic: 'topic' } }
+  let(:document)   { { foo: 'bar' } }
+  let(:model_class){ Vayacondios::Server::Stash }
 
-  describe "#create" do
-    it "returns the record created by the Stash model it delegates to" do
-      Vayacondios::Server::Stash.should_receive(:create)
-        .with(log, database, params, hash_stash)
-        .and_return(hash_stash)
-      subject.create(params, hash_stash).should == hash_stash
+  context '#create' do
+    it 'returns the created stash' do
+      model_class.should_receive(:create).with(params, document).and_call_original
+      driver.should_receive(:insert).and_return(_id: 'topic', foo: 'bar')
+      handler.create(params, document).should eq(foo: 'bar')
     end
   end
 
-  describe "#retrieve" do
-    it "returns the record found by the Stash model it delegates to" do
-      Vayacondios::Server::Stash.should_receive(:find)
-        .with(log, database, params)
-        .and_return(hash_stash)
-      subject.retrieve(params).should == hash_stash
+  context '#retrieve', 'when not found' do
+    it 'raises a validation error' do
+      driver.should_receive(:retrieve).and_return(nil)
+      expect{ handler.retrieve(params, {}) }.to raise_error(validation_error, /not found/)
+    end
+  end
+
+  context '#retrieve', 'when params have no id' do
+    it 'returns the selected record' do
+      model_class.should_receive(:find).with(params).and_call_original
+      driver.should_receive(:retrieve).and_return(_id: 'topic', id: { foo: 'bar' })
+      handler.retrieve(params, {}).should eq(id: { foo: 'bar' })
+    end
+  end
+  
+  context '#retrieve', 'when params have an id' do
+    let(:params){ { organization: 'organization', topic: 'topic', id: 'id' } }
+    
+    it 'returns the selected record sliced by id' do
+      model_class.should_receive(:find).with(params).and_call_original
+      driver.should_receive(:retrieve).and_return(_id: 'topic', id: { foo: 'bar' })
+      handler.retrieve(params, {}).should eq(foo: 'bar')
     end
 
-    it "raises a 404-error if no record is found" do
-      Vayacondios::Server::Stash.should_receive(:find)
-        .with(log, database, params)
-        .and_return(nil)
-      expect { subject.retrieve(params) }.to raise_error(Goliath::Validation::Error, /not found/)
+    it 'raises a validation error when retrieved record does not have id as a key' do
+      driver.should_receive(:retrieve).and_return(_id: 'topic', id2: { foo: 'bar' })
+      expect{ handler.retrieve(params, {}) }.to raise_error(validation_error, /contain id/i)
     end
   end
   
-  describe "#update" do
-    it "returns the record updated by the Stash model it delegates to" do
-      Vayacondios::Server::Stash.should_receive(:update)
-        .with(log, database, params, hash_stash)
-        .and_return(hash_stash)
-      subject.update(params, hash_stash).should == hash_stash
+  context '#update' do
+    it 'raises a validation error' do
+      expect{ handler.update(params, document) }.to raise_error(validation_error, /update/)
     end
   end
   
-  describe "#delete" do
-    it "returns the record destroyed by the Stash model it delegates to" do
-      Vayacondios::Server::Stash.should_receive(:destroy)
-        .with(log, database, params)
-        .and_return(Vayacondios::Server::Stash::OK)
-      subject.delete(params).should == Vayacondios::Server::Stash::OK
+  context '#delete', 'when params have an id' do
+    let(:params){ { organization: 'organization', topic: 'topic', id: 'id' } }
+
+    it 'raises a validation error' do
+      expect{ handler.delete(params, {}) }.to raise_error(validation_error, /not supported/)
+    end
+  end
+    
+  context '#delete', 'when params do not have an id' do
+    it 'returns a success response' do
+      model_class.should_receive(:destroy).with(params, {}).and_call_original
+      driver.should_receive(:remove).and_return(true)
+      handler.delete(params, {}).should eq(success_response)
     end
   end
 end

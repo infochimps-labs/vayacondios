@@ -5,6 +5,7 @@ module Vayacondios::Server
   # Handlers link HTTP applications to document classes.
   #
   # @attr [Logger] log the log to use
+  # @attr [Driver] database the database driver
   class DocumentHandler
     include Goliath::Chimp::Handler
 
@@ -16,7 +17,6 @@ module Vayacondios::Server
     def initialize(log, db)
       @log = log
       @database = db
-      database.log_with log
     end
 
     # Search for matching documents.
@@ -72,6 +72,10 @@ module Vayacondios::Server
     def call(name, params, document)
       send("base_#{name}", params, document)
       send(name, params, document)
+    end
+
+    def action_successful
+      { ok: true }
     end
   end
 end

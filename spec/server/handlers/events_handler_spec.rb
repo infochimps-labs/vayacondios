@@ -1,36 +1,50 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::EventsHandler, events: true do
+describe Vayacondios::Server::EventsHandler, behaves_like: 'handler' do
   
-  let(:log)          { double("Logger", debug: true)                    }
-  let(:database)     { double("Mongo::DB")                              }
-  let(:params)       { { organization: 'organization', topic: 'topic' } }
+  let(:params)     { { organization: 'organization', topic: 'topic' } }
+  let(:query)      { { foo: 'bar' } }
+  let(:model_class){ Vayacondios::Server::Event }
 
-  subject { described_class.new(log, database) }
-
-  describe "#retrieve" do
-    it "returns the record created by the Server::Event model it delegates to" do
-      Vayacondios::Server::Event.should_receive(:search)
-        .with(log, database, params, hash_event).and_return(hash_event)
-      subject.retrieve(params, hash_event).should == hash_event
+  context '#create' do
+    it 'raises a validation error' do
+      expect{ handler.create(params, query) }.to raise_error(validation_error, /create/)
     end
   end
 
-  describe "#create" do
-    it "returns a 405" do
-      expect { subject.update(params, hash_event) }.to raise_error(Goliath::Validation::Error, /update/)
+  context '#search', 'when events are found' do
+    it 'returns an array of events' do
+      model_class.should_receive(:search).with(params, query).and_call_original
+      driver.should_receive(:search).and_return([{ _id: 'abc123', _t: '2013-01-01T08:12:23.328Z', _d: { foo: 'bar' } }])
+      handler.search(params, query).should eq([
+                                               {
+                                                 id:   'abc123',
+                                                 time: '2013-01-01T08:12:23.328Z',
+                                                 foo:  'bar'
+                                               }
+                                              ])
     end
   end
 
-  describe "#update" do
-    it "returns a 405" do
-      expect { subject.update(params, hash_event) }.to raise_error(Goliath::Validation::Error, /update/)
+  context '#search', 'when no events are found' do
+    it 'returns an empty array' do
+      model_class.should_receive(:search).with(params, query).and_call_original
+      driver.should_receive(:search).and_return([])
+      handler.search(params, query).should eq([])
     end
   end
 
-  describe "#delete" do
-    it "returns a 405" do
-      expect { subject.delete(params) }.to raise_error(Goliath::Validation::Error, /delete/)
+  context '#update' do
+    it 'raises a validation error' do
+      expect{ handler.update(params, query) }.to raise_error(validation_error, /update/)
+    end
+  end
+
+  context '#delete' do
+    it 'returns a success response' do
+      model_class.should_receive(:destroy).with(params, query).and_call_original
+      driver.should_receive(:remove).and_return(true)
+      handler.delete(params, query).should eq(success_response)
     end
   end
   

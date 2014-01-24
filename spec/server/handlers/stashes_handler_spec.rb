@@ -1,47 +1,50 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::StashesHandler, stashes: true do
-  
-  let(:log)          { double("Logger", debug: true)                    }
-  let(:database)     { double("Mongo::DB")                              }
-  let(:params)       { { organization: 'organization', topic: 'topic' } }
+describe Vayacondios::Server::StashesHandler, behaves_like: 'handler' do
 
-  subject { described_class.new(log, database) }
+  let(:params)     { { organization: 'organization', topic: 'topic' } }
+  let(:query)      { { foo: 'bar' } }
+  let(:model_class){ Vayacondios::Server::Stash }
 
-  describe "#create" do
-    it "delegates to the Stash model" do
-      Vayacondios::Server::Stash.should_receive(:replace_many)
-        .with(log, database, params, stash_query, stash_replacement)
-        .and_return(Vayacondios::Server::Stash::OK)
-      subject.create(params, {query: stash_query, update: stash_replacement}).should == Vayacondios::Server::Stash::OK
+  context '#create' do
+    it 'raises a validation error' do
+      expect{ handler.create(params, query) }.to raise_error(validation_error, /create not allowed/)
     end
   end
 
-  describe "#retrieve" do
+  context '#retrieve', 'when no stashes are found' do
+    it 'returns an empty array' do
+      model_class.should_receive(:search).with(params, query).and_call_original
+      driver.should_receive(:search).and_return([])
+      handler.retrieve(params, query).should eq([])
+    end
+  end
+
+  context '#retrieve', 'when stashes are found' do
     it "returns the record found by the Stash model it delegates to" do
-      Vayacondios::Server::Stash.should_receive(:search)
-        .with(log, database, params, query: stash_query)
-        .and_return(hash_stash)
-      subject.retrieve(params, query: stash_query).should == hash_stash
+      model_class.should_receive(:search).with(params, query).and_call_original
+      driver.should_receive(:search).and_return([{ _id: 'topic', foo: 'bar' }])
+      handler.retrieve(params, query).should eq([{ topic: 'topic', foo: 'bar' }])
     end
   end
 
-  describe "#update" do
-    it "delegates to the Stash model" do
-      Vayacondios::Server::Stash.should_receive(:update_many)
-        .with(log, database, params, stash_query, stash_update)
-        .and_return(Vayacondios::Server::Stash::OK)
-      subject.update(params, {query: stash_query, update: stash_update}).should == Vayacondios::Server::Stash::OK
+  context '#update' do
+    it 'raises a validation error' do
+      expect{ handler.update(params, query) }.to raise_error(validation_error, /update not allowed/)
     end
   end
 
-  describe "#delete" do
-    it "delegates to the Stash model" do
-      Vayacondios::Server::Stash.should_receive(:destroy_many)
-        .with(log, database, params, stash_query)
-        .and_return(Vayacondios::Server::Stash::OK)
-      subject.delete(params, stash_query).should == Vayacondios::Server::Stash::OK
+  context '#delete', 'with an empty query', focus: true do
+    it 'raises a validation error' do
+      expect{ handler.delete(params, {}) }.to  raise_error(validation_error, /empty/)
     end
   end
-  
+
+  context '#delete', 'with a query', focus: true do
+    it 'returns a success response' do
+      model_class.should_receive(:destroy).with(params, query).and_call_original
+      driver.should_receive(:remove).and_return(true)
+      handler.delete(params, query).should eq(success_response)
+    end
+  end
 end
