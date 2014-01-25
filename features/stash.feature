@@ -38,7 +38,7 @@ Feature: Stash
     And   the response body should be:
     """
     {
-      "error": "Stash with topic <topic> and ID <id> not found"
+      "error": "Stash with topic <topic> not found"
     }
     """
 
@@ -113,7 +113,7 @@ Feature: Stash
     And   the response body should be:
     """
     {
-      "error": "If not including an id the document must be a Hash"
+      "error": "If not including an Id, the document must be a Hash"
     }
     """
 
