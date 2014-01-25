@@ -77,6 +77,16 @@ module Vayacondios::Server
       query
     end
 
+    def search(request, filter, opts)
+      select = selector(filter)
+      log.debug "    Selector doc: #{select}"
+      project = projector(opts)
+      log.debug "    Projector doc: #{project}"
+      res = connection.find(select, project) || []
+      log.debug "      Result: #{res}"
+      res.map{ |res| mongo_unprepare res }
+    end
+
     def insert request
       mongo_doc = mongo_prepare request
       log.debug "    Mongo doc: #{mongo_doc}"
@@ -93,24 +103,6 @@ module Vayacondios::Server
       log.debug "      Result: #{res}"
       return nil if res.nil?
       mongo_unprepare res
-    end
-
-    def update request
-      mongo_doc = mongo_prepare request
-      log.debug "    Mongo doc: #{mongo_doc}"
-      res = connection.update({ _id: mongo_doc[:_id] }, mongo_doc, { upsert: true })
-      log.debug "      Result: #{res}"
-      res
-    end
-
-    def search(request, filter, opts)
-      select = selector(filter)
-      log.debug "    Selector doc: #{select}"
-      project = projector(opts)
-      log.debug "    Projector doc: #{project}"
-      res = connection.find(select, project) || []
-      log.debug "      Result: #{res}"
-      res.map{ |res| mongo_unprepare res }
     end
 
     def remove(request, filter)
