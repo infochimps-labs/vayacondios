@@ -5,7 +5,7 @@ module Vayacondios::Server
 
     def retrieve(params, query)
       @timer = EM::Synchrony.add_periodic_timer(1){ stream_events }
-      @cursor = Event.receive(params).search(query)
+      @cursor = Event.receive(params).prepare_search(query)
       Goliath::Response::STREAMING
     end
 
