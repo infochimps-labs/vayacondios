@@ -1,0 +1,6 @@
+---
+test:
+  name:   vayacondios_test
+  driver: mongo
+  host:   localhost
+  port:   27017
