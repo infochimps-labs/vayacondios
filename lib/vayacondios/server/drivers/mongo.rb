@@ -51,8 +51,21 @@ class Vayacondios
         sel = { }.tap do |sel|
           time = query.delete(:_t)
           sel[:_t] = time.inject({}){ |t, (k,v)| t[('$' + k.to_s).to_sym] = v ; t } if time
+          data = query.delete(:_d)
+          sel.merge! to_dotted_hash(_d: data)
         end
         query.merge(sel).compact_blank
+      end
+
+      def to_dotted_hash(hsh, key_string = '')
+        hsh.each_with_object({}) do |(k, v), ret|
+          key = key_string + k.to_s
+          if v.is_a? Hash
+            ret.merge! to_dotted_hash(v, key + '.')
+          else
+            ret[key] = v
+          end
+        end
       end
       
       def projector query
@@ -66,15 +79,16 @@ class Vayacondios
       end
 
       def insert request
-        mongo_doc = mongo_prepare request.document
+        mongo_doc = mongo_prepare request
         log.debug "    Mongo doc: #{mongo_doc}"
-        res = connection.insert mongo_doc
+        res = connection.save mongo_doc
         log.debug "      Result: #{res}"
+        res = mongo_doc[:_id] if res == true
         { _id: format_id(res).to_s }
       end
 
       def retrieve request
-        mongo_doc = mongo_prepare request.document
+        mongo_doc = mongo_prepare request
         log.debug "    Mongo doc: #{mongo_doc}"
         res = connection.find_one mongo_doc
         log.debug "      Result: #{res}"
@@ -83,15 +97,15 @@ class Vayacondios
       end
 
       def update request
-        mongo_doc = mongo_prepare request.document
+        mongo_doc = mongo_prepare request
         log.debug "    Mongo doc: #{mongo_doc}"
         res = connection.update({ _id: mongo_doc[:_id] }, mongo_doc, { upsert: true })
         log.debug "      Result: #{res}"
         res
       end
 
-      def search(request, opts)
-        select = selector(request.filter)
+      def search(request, filter, opts)
+        select = selector(filter)
         log.debug "    Selector doc: #{select}"
         project = projector(opts)
         log.debug "    Projector doc: #{project}"
@@ -100,8 +114,9 @@ class Vayacondios
         res.map{ |res| mongo_unprepare res }
       end
 
-      def remove request
-        mongo_doc = mongo_prepare request.document
+      def remove(request, filter)
+        mongo_doc = mongo_prepare(request)
+        mongo_doc.merge! selector(filter)
         log.debug "    Mongo doc: #{mongo_doc}"
         res = connection.remove mongo_doc
         log.debug "      Result: #{res}"

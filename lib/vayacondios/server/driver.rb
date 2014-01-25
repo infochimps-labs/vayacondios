@@ -36,7 +36,7 @@ class Vayacondios
       def call(name, request, *options)
         send("base_#{name}", request)
         set_location request.location
-        send(name, request, *options)
+        send(name, request.document, *options)
       end
 
       def base_insert request
@@ -62,6 +62,10 @@ class Vayacondios
       def set_location loc
         log.debug "    Location: #{loc}"
         @location = loc
+      end
+
+      def set_log device
+        @log = device
       end
 
       # for testing only
