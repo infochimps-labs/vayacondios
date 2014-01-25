@@ -15,141 +15,28 @@
 # @attr [String] topic the unit which identifies documents of a given "kind"
 module Vayacondios::Server
   class Document
+    include Gorillib::Model
 
+    field :organization, String
+    field :topic,        String
+    field :id,           String
+    field :body,         Hash
+    field :filter,       Hash
+
+    def receive_organization name
+      @organization = sanitize_location_name(name).gsub(/^system\./, '_system.')
+    end
+
+    def format_response result
+      from_document(result.symbolize_keys.compact).external_document
+    end
+  
     # A class for errors that arise within documents due to internal or
     # IO errors.
     Error = Class.new(StandardError)
-    
-    attr_accessor :organization, :topic, :log, :database, :collection, :id, :body
 
-    # Create a new document.
-    #
-    # @param [Hash] params
-    # @option params [String] organization the name of this document's organization
-    # @option params [String] topic the name of this document's topic
-    # Create a new document.
-    #
-    # @param [Logger] log 
-    # @param [Mongo::Database] database within which this document will find its collection and store/query itself
-    # @param [Hash] params additional params
-    # @option params [String] organization the name of this document's organization
-    # @option params [String] topic the name of this document's topic
-    # @option params [String, BSON::ObjectId] :id the ID to use for this document
-    def initialize(log, database, params={})
-      @params           = sanitize_params(params)
-      self.organization = (@params[:organization] or raise Error.new("Must provide an :organization when instantiating a #{self.class}"))
-      self.topic        = @params[:topic]
-      self.log       = log
-      self.database  = database
-      self.id        = @params[:id] if @params[:id]
-      self.body      = nil
-    end
-
-    # From MongoDocument
-
-    # Coerce objects into a BSON::ObjectId representation if possible.
-    #
-    # @param [BSON::ObjectId,Hash,#to_s] id the object to be coerced
-    # @return [BSON::ObjectId] the canonical representation of the ID
-    # @raise [Error] if `id` is a Hash and is missing the `$oid` parameter which is expected in this case
-    # @raise [Error] if the String representatino of `id` is blank or empty
-    def self.format_mongo_id(id)
-      case
-      when id.is_a?(BSON::ObjectId)
-        id
-      when id.is_a?(Hash)
-        raise Error.new("When settings the ID of a #{self.class} with a Hash, an '$oid' key is required") if id['$oid'].nil?
-        format_mongo_id(id['$oid'])
-      when !id.to_s.empty?
-        id.to_s.match(/^[a-f0-9]{24}$/) ? BSON::ObjectId(id.to_s) : id.to_s
-      else
-        raise Error.new("A #{self} cannot have a blank or empty ID")
-      end
-    end
-
-    # Set the ID of this document, coercing it into a BSON::ObjectId if
-    # possible.
-    #
-    # @param [BSON::ObjectId,Hash,#to_s] i
-    # @return [BSON::ObjectId]
-    def id= i
-      @id = self.class.format_mongo_id i
-    end
-
-    # Set the organization of this document, santizing it for MongoDB.
-    #
-    # @param [String] name
-    # @return [String] the sanitized `name`
-    def organization= name
-      @organization = sanitize_mongo_collection_name(name).gsub(/^system\./, "_system.")
-    end
-
-    # Find this document.
-    def find
-    end
-
-    # Create this document.
-    #
-    # @param [Hash] document the body of the document
-    def create document={}
-    end
-    alias_method :update, :create
-    alias_method :patch,  :update
-
-    # Destroy this document
-    def destroy
-    end
-
-    # Find a document.
-    #
-    # @param [Logger] log
-    # @param [Mongo::Database] database
-    # @param [Hash] params
-    def self.find(log, database, params)
-      new(log, database, params).find
-    end
-
-    # Search for documents.
-    #
-    # @param [Logger] log
-    # @param [Mongo::Database] database
-    # @param [Hash] query a search query for the documents
-    def self.search(log, database, query)
-    end
-
-    # Create a document.
-    # 
-    # @param [Logger] log
-    # @param [Mongo::Database] database
-    # @param [Hash] params
-    # @param [Hash] document
-    def self.create(log, database, params, document)
-      new(log, database, params).create(document)
-    end
-
-    # Update a document
-    # 
-    # @param [Logger] log
-    # @param [Mongo::Database] database
-    # @param [Hash] params
-    # @param [Hash] document
-    def self.update(log, database, params, document)
-      new(log, database, params).update(document)
-    end
-
-    # Destroy a document
-    # 
-    # @param [Logger] log
-    # @param [Mongo::Database] database
-    # @param [Hash] params
-    def self.destroy(log, database, params)
-      new(log, database, params).destroy
-    end
-
-    private
-
-    # Sanitize a string to make a suitable component of a MongoDB
-    # collection name.
+    # Sanitize a string to make a suitable component of a database
+    # location name.
     #
     # Replaces all characters that aren't letters, digits, underscores,
     # periods, or hyphens with underscores.  Also replaces periods at
@@ -158,57 +45,43 @@ module Vayacondios::Server
     #
     # @param [String] name
     # @return [String] the sanitized `name`
-    def sanitize_mongo_collection_name name
-      name.to_s.gsub(/[^-\w\.]+/, '_').gsub(/^\./,'_').gsub(/\.$/,'_')
+    def sanitize_location_name name
+      name.to_s.gsub(/^\.|[^-\w\.]+|\.$/, '_')
     end
 
-    # Sanitize a string to make it a suitable MongoDB field name.
-    #
-    # Replaces periods and dollar signs with an underscore.
-    #
-    # @param [String] name
-    # @return [String] the sanitized `name`
-    def self.sanitize_mongo_field_name name
-      name.to_s.tr('.', '_').tr('$','_')
-    end
+    class << self
+      def extract_query_options! params
+        params.symbolize_keys!
+        opts = {}
+        [:limit, :order, :sort, :fields].each{ |opt| opts[opt] = params.delete opt }
+        opts.merge default_query_options
+      end
 
-    # Sanitize a string to make it a suitable MongoDB field name.
-    #
-    # Replaces periods and dollar signs with an underscore.
-    #
-    # @param [String] name
-    # @return [String] the sanitized `name`
-    def sanitize_mongo_field_name name
-      self.class.sanitize_mongo_field_name(name)
-    end
+      def search(params, query, &driver)
+        options = extract_query_options! query
+        action  = receive(params).prepare_search(query)
+        result  = driver.call(action, action.filter, options)
+        result.map{ |res| new.format_response res }
+      end
+      
+      def create(params, document, &driver)
+        action = receive(params).prepare_create(document)
+        result = driver.call(action)
+        action.format_response result
+      end
 
-    # Run a MongoDB query on the given collection.
-    # 
-    # @param [Mongo::Collection] coll
-    # @param [Symbol] method the name of the MongoDB query method to call with the rest of the `args`
-    # @see MongoDocument.mongo_query
-    def mongo_query coll, method, *args
-      self.class.mongo_query(self.log, coll, method, *args)
+      def find(params, &driver)
+        action = receive(params).prepare_find
+        result = driver.call(action, {})
+        return nil if result.nil?
+        action.format_response result
+      end
+      
+      def destroy(params, document, &driver)
+        action = receive(params).prepare_destroy(document.symbolize_keys)
+        result = driver.call(action, action.filter)
+        return result
+      end
     end
-    
-    # Run a MongoDB query on the given collection.
-    #
-    # Wraps the basic MongoDB collection query mechanism with debugging
-    # statements to the log that provide transparency into the
-    # request/response loop.
-    #
-    # @param [Mongo::Collection] coll
-    # @param [Symbol] method the name of the MongoDB query method to call with the rest of the `args`
-    def self.mongo_query log, coll, method, *args
-      log.debug("  MongoDB: db.#{coll.name}.#{method}(#{MultiJson.dump(args.first)})")
-      args[1..-1].each { |arg| log.debug("    Options: #{arg.inspect}") } if args.size > 1
-      coll.send(method, *args)
-    end
-    
-    # :nodoc:
-    def sanitize_params params
-      params.symbolize_keys
-    end
-    
   end
 end

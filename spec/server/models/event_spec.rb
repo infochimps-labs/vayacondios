@@ -1,256 +1,185 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::Event, events: true do
+describe Vayacondios::Server::Event do
 
-  before { Timecop.freeze(timestamp) }
-  after  { Timecop.return            }
+  let(:params)        { { topic: 'topic', organization: 'organization', id: 'id' } }
+  let(:now)           { event.format_time Time.now }
+  let(:document_error){ Vayacondios::Server::Document::Error }
+
+  subject(:event){ described_class.receive params }
   
-  let(:organization) { 'organization'      }
-  let(:topic)        { 'topic'             }
-  let(:id)           { 'id'                }
-  let(:params)       { {topic: topic, organization: organization, id: id} }
-  let(:log)          { double("Logger", debug: true)    }
-  let(:database)     { double("Mongo::DB") }
-  let(:timestamp)    { Time.now            }
-  let(:collection)   { double("Mongo::Collection", name: "organization.topic.events") }
-  before             { database.stub(:collection).and_return(collection)             }
+  its(:location){ should eq('organization.topic.events') }
 
-  subject { described_class.new(log, database, organization: organization, topic: topic) }
-
-  describe "#collection_name" do
-    its(:collection_name) { should == "organization.topic.events" }
-  end
-
-  describe "#topic=" do
-    it "replaces non-word characters, non-(period|hyphen|underscore)s from a topic with underscores" do
-      described_class.new(log, database, organization: organization, topic: 'hello-.there buddy').topic.should == 'hello-.there_buddy'
-    end
-    it "replaces periods from the beginning and end of a topic with underscores" do
-      described_class.new(log, database, organization: organization, topic: '.hello.there.').topic.should == '_hello.there_'
-    end
-  end
-  
-  describe ".to_timestamp" do
-
-    it "returns nil when the timestamp can't be parsed" do
-      described_class.to_timestamp(nil).should be_nil
-    end
-    
-    it "given a default value returns the default value when the timestamp can't be parsed" do
-      described_class.to_timestamp(nil, 'hello').should == 'hello'
-    end
-
-    it "given a Time instance returns that instance" do
-      described_class.to_timestamp(timestamp).should == timestamp
-    end
-
-    it "given a Date instance converts it into a Time" do
-      # loses time information...so set to beginning of day
-      described_class.to_timestamp(timestamp.to_date).should == timestamp.to_date.to_time
-    end
-    
-    it "given a String parses it into a Time" do
-      # loses millisecond resolution...so round to the second
-      described_class.to_timestamp(timestamp.to_s).should == Time.at(timestamp.to_i) 
-    end
-
-    it "given a Numeric parses it into a Time" do
-      described_class.to_timestamp(timestamp.to_i).should == Time.at(timestamp.to_i) 
-    end
-    
-    it "converts all times to UTC" do
-      tokyo_time = timestamp.getlocal("+09:00")
-      described_class.to_timestamp(tokyo_time).zone.should == "UTC"
-    end
-    
-  end
-
-  describe "#find" do
-    context "without an ID" do
-      it "raises an error" do
-        expect { subject.find }.to raise_error(Vayacondios::Server::Document::Error, /ID/)
-      end
-    end
-    context "with an ID" do
-      before { subject.id = id }
-
-      it "sends a :find_one request to the database" do
-        collection.should_receive(:find_one).with(_id: id)
-        subject.find
-      end
-
-      context "when an event with the given organization, topic, and ID exists" do
-        before do
-          collection.should_receive(:find_one)
-            .with(_id: id)
-            .and_return({'_id' => id, 't' => timestamp, 'd' => hash_event.merge('time' => timestamp)})
-          subject.find
-        end
-
-        it "sets its timestamp from the returned event" do
-          subject.timestamp.should == timestamp
-        end
-
-        it "sets its body from the returned event" do
-          subject.body.should == hash_event.merge('time' => timestamp)
-        end
-      end
-
-      context "when an event with the given organization, topic, and ID doesn't exist" do
-        before do
-          collection.should_receive(:find_one).with(_id: id).and_return(nil)
-          subject.find
-        end
-        its(:timestamp) { should be_nil }
-        its(:body)      { should be_nil }
-      end
-      
+  context '#receive_topic' do
+    it 'sanitizes the topic' do
+      event.receive_topic '.foo$bar'
+      event.topic.should eq('_foo_bar')
     end
   end
 
-  describe ".search" do
-    it "has default sorting, limiting, and windowing behavior" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-      described_class.search(log, database, params, event_query)
-    end
-    it "accepts the 'sort' parameter" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: ['bing', 'descending'], limit: Vayacondios::Server::Event::LIMIT)
-      described_class.search(log, database, params, event_query_with_sort)
-    end
-    it "accepts the 'limit' parameter" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: 10)
-      described_class.search(log, database, params, event_query_with_limit)
-    end
-    it "accepts the 'fields' parameter" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT, fields: %w[d.bing d.bam t _id])
-      described_class.search(log, database, params, event_query_with_fields)
-    end
-    it "interprets the 'id' field as a regular expression search on _id" do
-      collection.should_receive(:find).with({t:  {:$gte => kind_of(Time)}, "_id" => Regexp.new(/baz/), "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-      described_class.search(log, database, params, event_query_with_id)
-    end
-    
-    describe "handling 'time' parameters" do
-      it "parses them when they're strings" do
-        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-        described_class.search(log, database, params, event_query_with_string_time)
-      end
-
-      it "parses them when they're numeric" do
-        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-        described_class.search(log, database, params, event_query_with_int_time)
-      end
-
-      it "ignores them when they are something else" do
-        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-        described_class.search(log, database, params, event_query.merge("from" => ['hello']))
-      end
-
-      it "ignores them when they are unparseable" do
-        collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-        described_class.search(log, database, params, event_query.merge("from" => "2013-06-73 Sat 100:35"))
-      end
-
-      context 'time options' do
-        it 'handles :from as greater than or equal to' do
-          collection.should_receive(:find).with({t: {:$gte => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(from: '2013-08-17 Sat 12:30'))
-        end
-
-        it 'handles :upto as less than or equal to' do
-          collection.should_receive(:find).with({t: {:$gte => kind_of(Time), :$lte => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(upto: '2013-08-17 Sat 12:30'))
-        end
-
-        it 'handles :after as greater than' do
-          collection.should_receive(:find).with({t: {:$gt => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(after: '2013-08-17 Sat 12:30'))
-        end
-
-        it 'handles :before as less than' do
-          collection.should_receive(:find).with({t: {:$gte => kind_of(Time), :$lt => kind_of(Time)}, 'd.foo' => 'bar'}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(before: '2013-08-17 Sat 12:30'))
-        end
-      end
-
-      context 'time options', 'when conflicting from/after' do
-        it 'defers to exclusivity' do
-          collection.should_receive(:find).with({t: {:$gt => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(from: '2013-08-17 Sat 12:30', after: '2013-08-17 Sat 12:30'))
-        end
-      end
-
-      context 'time options', 'when conflicting upto/before' do
-        it 'defers to exclusivity' do
-          collection.should_receive(:find).with({t: {:$lt => kind_of(Time), :$gte => kind_of(Time)}, "d.foo" => "bar"}, sort: Vayacondios::Server::Event::SORT, limit: Vayacondios::Server::Event::LIMIT)
-          described_class.search(log, database, params, event_query.merge(upto: '2013-08-17 Sat 12:30', before: '2013-08-17 Sat 12:30'))
-        end
-      end
+  context '#receive_time' do
+    it 'formats the time' do
+      event.receive_time '2014-01-23T15:29:19.412412-06:00'
+      event.time.should be_a(Time)
+      event.time.should be_utc
     end
   end
 
-  describe "#create" do
-    it "raises an error when given a non-Hash" do
-      expect { subject.create([]) }.to raise_error(Vayacondios::Server::Document::Error, /Hash/)
+  context '#to_timestamp', 'when argument is a string' do
+    it 'returns a time' do
+      event.to_timestamp('Aug 31').should be_a(Time)
     end
 
-    context "with an ID" do
-      before { subject.id = id }
-      it "sends an upsert request for the record with the given ID" do
-        collection.should_receive(:update).with({:_id => id}, kind_of(Hash), {upsert: true})
-        subject.create(hash_event)
-      end
-    end
-
-    context "without an ID" do
-      it "sends an insert request" do
-        collection.should_receive(:insert).with(kind_of(Hash)).and_return(id)
-        subject.create(hash_event)
-      end
+    it 'returns the default when there is parse error' do
+      default = now
+      event.to_timestamp('foobar', default).should be(default)
     end
   end
 
-  describe '#format_event_for_mongodb' do
-    describe "the _id field" do
-      context "for an event with an ID" do
-        before  { subject.id = id }
-        it "is set to the ID" do
-          subject.format_event_for_mongodb({})[:_id].should == id
-        end
-      end
-      context "for an  event lacks an ID" do
-        it "is not present" do
-          subject.format_event_for_mongodb({})[:_id].should be_nil
-        end
-      end
+  context '#to_timestamp', 'when argument is a date' do
+    it 'returns a time' do
+      event.to_timestamp(Date.today).should be_a(Time)
+    end
+  end
+
+  context '#to_timestamp', 'when argument is a time' do
+    it 'returns the time argument' do
+      t = now
+      event.to_timestamp(t).should be(t)
+    end
+  end
+
+  context '#to_timestamp', 'when argument is numeric' do
+    it 'returns a time' do
+      event.to_timestamp(1390513812).should be_a(Time)
+    end
+  end
+
+  context '#to_timestamp', 'when argument is anything else' do
+    it 'returns the default' do
+      default = now
+      event.to_timestamp(Object.new, default).should be(default)
+    end
+  end
+
+  context '#format_time' do
+    it 'converts all time to UTC' do
+      tokyo_time = now.getlocal('+09:00')
+      event.format_time(tokyo_time).should be_utc
     end
 
-    describe "the t field" do
-      context "for an event with no timestamp and" do
-        context "a document without a timestamp" do
-          it "sets it to the current time" do
-            subject.format_event_for_mongodb({})[:t].should == timestamp
-          end
-        end
-        context "a document with a timestamp" do
-          it "sets it to the timestamp of the document" do
-            subject.format_event_for_mongodb('time' => timestamp)[:t].should == timestamp
-          end
-        end
-      end
-      context "for an event with a timestamp and" do
-        before { subject.timestamp = timestamp }
-        context "a document without a timestamp" do
-          it "sets it to the event's time" do
-            subject.format_event_for_mongodb({})[:t].should == timestamp
-          end
-        end
-        context "a document with a timestamp" do
-          it "sets it to the timestamp of the document" do
-            subject.format_event_for_mongodb('time' => timestamp + 1)[:t].should == timestamp + 1
-          end
-        end
-      end
+    it 'rounds all time to milliseconds' do
+      precise_time = Time.at(1390514371.671_238_912)
+      event.format_time(precise_time).nsec.should eq(671_000_000)
+    end
+  end
+
+  context '#document' do
+    it 'returns the internal representation of this Event' do
+      event.receive!(time: now, body: { foo: 'bar' })
+      event.document.should eq(_id: 'id',
+                               _t:  now,
+                               _d:  { foo: 'bar' })
+    end
+  end
+
+  context '#from_document' do
+    it 'updates the Event with the document' do
+      updated = event.from_document(_t: now, _d: { foo: 'bar' })
+      updated.id.should   eq('id')
+      updated.time.should eq(now)
+      updated.body.should eq(foo: 'bar')
+    end
+  end
+
+  context '#external_document' do
+    it 'returns the external representation of this Event' do
+      event.receive!(time: now, body: { foo: 'bar' })
+      event.external_document.should eq(id:   'id', 
+                                        time: now.iso8601(3),
+                                        foo:  'bar')
+    end
+  end
+
+  context '#event_filter' do
+    it 'handles :after as greater than' do
+      event.event_filter(after: now).should eq(_t: { gt: now })
+    end
+
+    it 'handles :from as greater than or equal to' do
+      event.event_filter(from: now).should eq(_t: { gte: now })
+    end
+
+    it 'prioritizes :after over :from' do
+      event.event_filter(after: now, from: now).should eq(_t: { gt: now })
+    end
+
+    it 'handles :before as less than' do
+      event.event_filter(before: now).should eq(_t: { lt: now })
+    end
+
+    it 'handles :upto as less than or equal to' do
+      event.event_filter(upto: now).should eq(_t: { lte: now })
+    end
+
+    it 'prioritizes :before over :upto' do
+      event.event_filter(before: now, upto: now).should eq(_t: { lt: now })
+    end
+
+    it 'merges extra keys as data matchers' do
+      event.event_filter(foo: 'bar', before: now).should eq(_t: { lt: now }, _d: { foo: 'bar' })
+    end
+  end
+
+  context '#prepare_search', focus: true do
+    it 'returns self for chaining' do
+      event.prepare_search({}).should be(event)
+    end
+
+    it 'creates a filter based on the query' do
+      prepared = event.prepare_search(foo: 'bar', before: now)
+      prepared.filter.should eq(_t: { lt: now }, _d: { foo: 'bar' })
+    end
+  end
+
+  context '#prepare_find', focus: true do
+    it 'returns self for chaining' do
+      event.prepare_find.should be(event)
+    end
+
+    it 'raises an error if it was not created with an id' do
+      event.write_attribute(:id, nil)
+      expect{ event.prepare_find }.to raise_error(document_error, /id/i)
+    end
+
+    it 'returns itself' do
+      event.prepare_find.document.should eq(_id: 'id')
+    end
+  end
+
+  context '#prepare_create', focus: true do
+    it 'returns self for chaining' do
+      event.prepare_create({}).should be(event)
+    end
+
+    it 'raises an error when given a non-Hash' do
+      expect{ subject.prepare_create([]) }.to raise_error(document_error, /Hash/)
+    end
+
+    it 'sets the time and body of the event' do
+      prepared = event.prepare_create(time: now, foo: 'bar')
+      prepared.document.should eq(_id: 'id', _t: now, _d: { foo: 'bar' })
+    end
+  end
+
+  context '#prepare_destroy', focus: true do
+    it 'returns self for chaining' do
+      event.prepare_destroy({}).should be(event)
+    end
+
+    it 'creates a filter based on the query' do
+      prepared = event.prepare_destroy(foo: 'bar', before: now)
+      prepared.filter.should eq(_t: { lt: now }, _d: { foo: 'bar' })
     end
   end
 end
