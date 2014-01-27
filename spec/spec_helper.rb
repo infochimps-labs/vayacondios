@@ -13,7 +13,6 @@ require 'vayacondios-client'
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each{ |f| require f }
 
 Goliath.env = :test
-Vayacondios::Server::DbConfig.overlay(test: { name: 'peepee' })
 
 require 'vayacondios/server/api'
 
