@@ -11,9 +11,6 @@ group :development do
   gem 'foreman'
   gem 'yard'
   gem 'redcarpet'
-end
-
-group :test do
   gem 'rspec'
   gem 'simplecov'
   gem 'mongo'
