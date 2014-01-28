@@ -80,7 +80,7 @@ module Vayacondios::Server
     end
 
     use Goliath::Rack::Heartbeat
-    use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::VERSION, api: 'Vayacondios'
+    use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::GEM_VERSION, api: 'Vayacondios'
     use Goliath::Chimp::Rack::ForceContentType,           'application/json'
     use Goliath::Rack::Formatters::JSON
     use Goliath::Rack::Render

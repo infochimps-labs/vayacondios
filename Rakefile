@@ -16,7 +16,7 @@ task :coverage do
   Rake::Task[:spec].invoke
 end
 
-require 'vayacondios/version'
+require 'vayacondios'
 Dir['*.gemspec'].each do |gemspec|
   gem_name = gemspec.gsub(/\.gemspec/, '')
 
@@ -33,10 +33,10 @@ Dir['*.gemspec'].each do |gemspec|
   namespace :release do
     desc "Tags version, pushes to remote, and pushes #{gem_name} gem"
     task gem_name => "build:#{gem_name}" do
-      sh 'git', 'tag', '-m', "releasing #{gem_name}", "#{gem_name}-v#{Vayacondios::VERSION}"
+      sh 'git', 'tag', '-m', "releasing #{gem_name}", "#{gem_name}-v#{Vayacondios::GEM_VERSION}"
       branch = `git branch | awk -F '/* ' '{print $2}'`.strip
       sh "git push origin #{branch}"
-      sh "git push origin #{gem_name}-v#{Vayacondios::VERSION}"
+      sh "git push origin #{gem_name}-v#{Vayacondios::GEM_VERSION}"
       sh "ls pkg/#{gem_name}*.gem | xargs -n 1 gem push"
     end
   end

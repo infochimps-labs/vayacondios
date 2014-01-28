@@ -71,12 +71,12 @@ describe Vayacondios::Server::Api do
     subject(:response){ perform build_request(:get, '/version') }
 
     it 'returns the server api version' do
-      response.body.should eq(Vayacondios::VERSION)
+      response.body.should eq(Vayacondios::GEM_VERSION)
     end
 
     it 'attaches a version header to every response' do
       response = perform build_request(:get, '/v2/org/event/topic')
-      response.headers['X_VAYACONDIOS_VERSION'].should eq(Vayacondios::VERSION)
+      response.headers['X_VAYACONDIOS_VERSION'].should eq(Vayacondios::GEM_VERSION)
     end
   end
 

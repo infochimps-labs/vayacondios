@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 
 $:.push File.expand_path('../lib', __FILE__)
-require 'vayacondios/version'
+require 'vayacondios'
 
 Gem::Specification.new do |gem|
   gem.name          = 'vayacondios-client'
-  gem.version       = Vayacondios::VERSION
+  gem.version       = Vayacondios::GEM_VERSION
   gem.authors       = ['Philip (flip) Kromer', 'Travis Dempsey', 'Huston Hoburg', 'Logan Lowell', 'Dhruv Bansal']
   gem.homepage      = 'https://github.com/infochimps-labs/vayacondios'
   gem.email         = 'coders@infochimps.com'

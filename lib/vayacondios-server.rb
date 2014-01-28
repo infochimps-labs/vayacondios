@@ -15,7 +15,7 @@ require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
 require 'multi_json'
 
-require 'vayacondios/version'
+require 'vayacondios'
 
 require 'vayacondios/server/driver'
 require 'vayacondios/server/configuration'
