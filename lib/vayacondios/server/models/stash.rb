@@ -44,7 +44,7 @@ module Vayacondios::Server
     end
 
     def document
-      { _id: topic }.merge(body || {})
+      { _id: topic }.compact.merge(body || {})
     end
 
     def from_document doc

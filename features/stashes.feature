@@ -110,7 +110,7 @@ Feature: Stashes
 
   Scenario: Creating Stashes without a Query
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stashes/topic/id" with no body
+    When  the client sends a POST request to "/v2/organization/stashes" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -130,7 +130,7 @@ Feature: Stashes
 
   Scenario: Creating Stashes with a Malformed Query
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a POST request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": "busted"
@@ -155,7 +155,7 @@ Feature: Stashes
 
   Scenario: Creating Stashes with an Empty Query
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a POST request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": { }
@@ -186,7 +186,7 @@ Feature: Stashes
       "foo": "bar"
     }
     """
-    When  the client sends a POST request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a POST request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": {
@@ -226,7 +226,7 @@ Feature: Stashes
       "foo": "bar"
     }
     """
-    When  the client sends a POST request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a POST request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": {
@@ -260,7 +260,7 @@ Feature: Stashes
 
   Scenario: Updating a non-Existent Stash with an Empty Hash
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stashes/topic" with no body
+    When  the client sends a PUT request to "/v2/organization/stashes" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -283,7 +283,7 @@ Feature: Stashes
 
   Scenario: Updating non-Existent Stashes without a Query
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stashes/topic/id" with no body
+    When  the client sends a PUT request to "/v2/organization/stashes" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -302,7 +302,7 @@ Feature: Stashes
 
   Scenario: Updating non-Existent Stashes with a Malformed Query
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a PUT request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": "busted"
@@ -326,7 +326,7 @@ Feature: Stashes
 
   Scenario: Updating non-Existent Stashes with an Empty Query
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a PUT request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": { }
@@ -356,7 +356,7 @@ Feature: Stashes
       "foo": "bar"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a PUT request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": {
@@ -396,7 +396,7 @@ Feature: Stashes
       "foo": "bar"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stashes/topic/id" with the following body:
+    When  the client sends a PUT request to "/v2/organization/stashes" with the following body:
     """
     {
       "query": {
@@ -468,6 +468,7 @@ Feature: Stashes
     }
     """
 
+  @focus
   Scenario: Deleting Stashes when the Query Does Match
     Given the following Stash exists in the database:
     """
@@ -476,7 +477,7 @@ Feature: Stashes
       "foo": "bar"
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/stashes/topic" with the following body:
+    When  the client sends a DELETE request to "/v2/organization/stashes" with the following body:
     """
     {
       "foo": "bar"
