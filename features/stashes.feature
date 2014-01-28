@@ -468,7 +468,6 @@ Feature: Stashes
     }
     """
 
-  @focus
   Scenario: Deleting Stashes when the Query Does Match
     Given the following Stash exists in the database:
     """
