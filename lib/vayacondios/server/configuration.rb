@@ -38,11 +38,11 @@ module Vayacondios::Server
     end
     
     def resolved_settings
+      resolve! unless resolved?
       @resolved_settings
     end
     
     def env(handle = nil)
-      resolve! unless resolved?
       handle ||= :development
       resolved_settings[handle.to_sym] || {}
     end
@@ -57,7 +57,7 @@ module Vayacondios::Server
         if conf.is_a? String
           @settings.read_yaml File.read(conf) if File.readable?(conf)
         elsif conf.is_a? Hash
-          @settings.deep_merge conf
+          @settings.deep_merge! conf
         end
       end
     end
