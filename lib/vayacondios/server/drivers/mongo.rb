@@ -43,7 +43,7 @@ module Vayacondios::Server
 
     def mongo_unprepare doc
       doc['_id'] = doc['_id'].to_s
-      doc
+      doc.symbolize_keys
     end
 
     def selector query

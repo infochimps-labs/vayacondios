@@ -1,6 +1,7 @@
 require 'bundler/setup' ; Bundler.require(:test)
 
 require 'goliath/test_helper'
+require 'mongo'
 
 if ENV['VAYACONDIOS_COV']
   require 'simplecov'
