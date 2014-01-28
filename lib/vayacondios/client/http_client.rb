@@ -1,6 +1,6 @@
 require 'net/http'
 
-class Vayacondios
+module Vayacondios
 
   # A concrete implementation of a Vayacondios client which
   # communicates with the Vayacondios server over HTTP.

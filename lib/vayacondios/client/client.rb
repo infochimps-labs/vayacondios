@@ -1,4 +1,4 @@
-class Vayacondios
+module Vayacondios
 
   # An abstract implementation of a Vayacondios client.
   #
