@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
   gem.files         = `git ls-files`.split("\n")
-  gem.executables   = ['vcd-server', 'vcd-clean']
+  gem.executables   = ['vcd-server'] #gem.files.grep(/^bin/).map{ |binfile| File.basename(binfile) }
   gem.test_files    = gem.files.grep(/^spec/)
   gem.require_paths = ['lib']
 
