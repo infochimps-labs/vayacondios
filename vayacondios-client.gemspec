@@ -20,4 +20,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency('configliere')
   gem.add_dependency('multi_json')
+  gem.add_dependency('faraday', '= 0.8.9')
+  gem.add_dependency('faraday_middleware')
+
 end
