@@ -5,11 +5,6 @@ module Vayacondios
       base.class_eval{ class_attribute :organization }
     end
 
-    # This only actually applies when using this mixin with a model
-    # def type
-    #   self.class.to_s.demodulize.underscore
-    # end
-
     def base_uri
       "http://#{Vayacondios::ConnectionOpts[:host]}:#{Vayacondios::ConnectionOpts[:port]}/v2"
     end
