@@ -13,7 +13,7 @@ module Vayacondios
       @http_connection ||= Faraday.new(base_uri) do |setup|
         setup.request  :json
         setup.response :json, content_type: /\bjson$/
-        setup.response :logger, Vayacondios::ConnectionOpts[:log]
+        setup.response :logger, Vayacondios::ConnectionOpts[:log] if Vayacondios::ConnectionOpts[:log]
         setup.adapter  Vayacondios::ConnectionOpts[:adapter]
       end
     end
