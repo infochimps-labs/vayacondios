@@ -13,7 +13,6 @@ module Vayacondios
         host:    'localhost',
         port:    9000,
         adapter: :net_http,
-        log:     Logger.new($stderr)
       }
     end
 
