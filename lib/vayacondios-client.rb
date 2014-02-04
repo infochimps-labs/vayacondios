@@ -7,6 +7,7 @@ require 'logger'
 require 'multi_json'
 
 require 'vayacondios'
+require 'configliere'
 require 'vayacondios/configuration'
 require 'vayacondios/client/configuration'
 require 'vayacondios/client/http_methods'
