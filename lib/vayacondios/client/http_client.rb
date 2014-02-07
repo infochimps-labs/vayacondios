@@ -1,9 +1,13 @@
 module Vayacondios
   class HttpClient
-    include HttpMethods
+    include HttpReadMethods
+    include HttpWriteMethods
+    include HttpAdminMethods
+
+    attr_reader :organization
 
     def initialize(options = {})
-      self.organization = options[:organization]
+      @organization = options[:organization]
     end
 
   end

@@ -1,37 +1,44 @@
 module Vayacondios
-  module HttpMethods
+  module BaseHttp
 
-    def self.included base
-      base.class_eval{ class_attribute :organization }
-    end
-
-    def base_uri
-      "http://#{Vayacondios::ConnectionOpts[:host]}:#{Vayacondios::ConnectionOpts[:port]}/v2"
+    def url(handler, topic = nil, id = nil)
+      # Must respond to organization for this to work
+      File.join(*[organization.to_s, handler, topic, id].compact)
     end
     
     def http_connection
-      @http_connection ||= Faraday.new(base_uri) do |setup|
-        setup.request  :json
-        setup.response :json, content_type: /\bjson$/
-        setup.response :logger, Vayacondios::ConnectionOpts[:log] if Vayacondios::ConnectionOpts[:log]
-        setup.adapter  Vayacondios::ConnectionOpts[:adapter]
-      end
+      @connection ||= Vayacondios::Client.new_connection
     end
 
-    def url(handler, topic = nil, id = nil)
-      File.join(*[organization.to_s, handler, topic, id].compact)
-    end
+  end
 
+  module HttpReadMethods
+    include BaseHttp
+
+    # Retrieve one stash
     def get(topic, id = nil)
       http_connection.get url('stash', topic, id)
     end
 
+    # Search stashes
     def get_many(query = {})
       http_connection.get url('stashes') do |req|
         req.body = query
       end
     end
 
+    # Search events
+    def events(topic, query = {})
+      http_connection.get url('events', topic) do |req|
+        req.body = query
+      end
+    end
+  end
+
+  module HttpWriteMethods
+    include BaseHttp
+
+    # Create a stash
     def set(topic, id = nil, stash = {})
       http_connection.post url('stash', topic, id) do |req|
         req.body = stash
@@ -39,24 +46,25 @@ module Vayacondios
     end
     alias :set! :set
 
-    def unset topic
-      http_connection.delete url('stash', topic)
-    end
-
-    def unset_many(query = {})
-      http_connection.delete url('stashes') do |req|
-        req.body = query
-      end
-    end
-
+    # Create an event
     def announce(topic, event = {}, id = nil)
       http_connection.post url('event', topic, id) do |req|
         req.body = event
       end
     end
+  end
 
-    def events(topic, query = {})
-      http_connection.get url('events', topic) do |req|
+  module HttpAdminMethods
+    include BaseHttp
+
+    # Delete one stash
+    def unset topic
+      http_connection.delete url('stash', topic)
+    end
+
+    # Delete stashes by search
+    def unset_many(query = {})
+      http_connection.delete url('stashes') do |req|
         req.body = query
       end
     end
