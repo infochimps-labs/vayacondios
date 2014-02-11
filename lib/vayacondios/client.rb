@@ -18,16 +18,18 @@ module Vayacondios
 
     module_function
 
-    def base_uri
-      "http://#{Vayacondios::ConnectionOpts[:host]}:#{Vayacondios::ConnectionOpts[:port]}/v2"
+    def base_uri options
+      "http://#{options[:host] || ConnectionOpts[:host]}:#{options[:port] || ConnectionOpts[:port]}/#{Vayacondios::API_VERSION}"
     end
     
-    def new_connection
-      Faraday.new(base_uri) do |setup|
+    def new_connection(options = {})
+      Faraday.new(base_uri options) do |setup|
+        setup.adapter  options[:adapter] || ConnectionOpts[:adapter]
         setup.request  :json
         setup.response :json, content_type: /\bjson$/
-        setup.response :logger, Vayacondios::ConnectionOpts[:log] if Vayacondios::ConnectionOpts[:log]
-        setup.adapter  Vayacondios::ConnectionOpts[:adapter]
+        if logger = options[:log] || ConnectionOpts[:log]
+          setup.response :logger, logger
+        end
       end
     end
 
