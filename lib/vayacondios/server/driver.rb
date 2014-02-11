@@ -62,5 +62,10 @@ module Vayacondios::Server
     def set_log device
       @log = device
     end
+
+    # for testing only
+    def unset_location
+      @location = nil
+    end
   end
 end
