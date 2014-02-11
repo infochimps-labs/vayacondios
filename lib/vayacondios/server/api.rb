@@ -52,13 +52,13 @@ module Vayacondios::Server
                                                           'PUT'    => :update,
                                                           'DELETE' => :delete
     use Goliath::Chimp::Rack::Validation::Routes,         /^
-                                                            \/v2
+                                                            \/#{Vayacondios::API_VERSION}
                                                             \/(?<organization>[a-z][-_\w]+)
                                                             \/(?<type>[-\.\w]+)
                                                             (\/(?<topic>[-\.\w]+)
                                                             (\/(?<id>([-\.\w+]\/?)+))?)?
                                                           $/ix,
-                                                          '/v2/<organization>/<type>/<topic>/<id>'
+                                                          "/#{Vayacondios::API_VERSION}/<organization>/<type>/<topic>/<id>"
     use Goliath::Chimp::Rack::Validation::RouteHandler,   :type, 'stash'   => StashHandler,
                                                                  'stashes' => StashesHandler,
                                                                  'event'   => EventHandler,
