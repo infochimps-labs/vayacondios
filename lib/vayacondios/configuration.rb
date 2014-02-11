@@ -40,7 +40,7 @@ module Vayacondios
     end
     
     def to_s
-      resolved_settings
+      resolved_settings.to_s
     end
  
     def apply_all
