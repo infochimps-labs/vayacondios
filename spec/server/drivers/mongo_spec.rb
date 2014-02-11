@@ -32,6 +32,16 @@ describe Vayacondios::Server::MongoDriver do
     collection(name).drop
   end
 
+  context '#to_dotted_hash' do
+    let(:nested){ { foo: { bar: { baz: 'qix' } }, hey: { you: 'there' } } }
+    it 'flattens a nested hash into dotted keys' do
+      EM.synchrony do
+        subject.to_dotted_hash(nested).should eq('foo.bar.baz' => 'qix', 'hey.you' => 'there')
+        EM.stop
+      end
+    end
+  end
+
   context '#insert' do
     after do
       clean 'organization.foo.events'
