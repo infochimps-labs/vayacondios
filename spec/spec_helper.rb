@@ -8,6 +8,8 @@ if ENV['VAYACONDIOS_COV']
   SimpleCov.start
 end
 
+WITH_MONGO = ENV['WITH_MONGO']
+
 require 'vayacondios-server'
 require 'vayacondios-client'
 

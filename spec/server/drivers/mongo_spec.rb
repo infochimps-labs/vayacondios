@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::Server::MongoDriver do
+describe Vayacondios::Server::MongoDriver, if: WITH_MONGO do
   include LogHelper
 
   let!(:settings){ Vayacondios::Server::DbConfig.env :test }
