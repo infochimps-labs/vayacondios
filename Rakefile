@@ -14,7 +14,7 @@ namespace :spec do
 end
 
 desc 'Run both client and server Rspec code examples'
-task spec: ['spec:client', 'spec:server']
+RSpec::Core::RakeTask.new
 
 desc 'Run spec tests with simplecov'
 task :coverage do
