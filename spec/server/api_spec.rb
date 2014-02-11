@@ -75,13 +75,13 @@ describe Vayacondios::Server::Api do
     end
 
     it 'attaches a version header to every response' do
-      response = perform build_request(:get, '/v2/org/event/topic')
+      response = perform build_request(:get, '/v3/org/event/topic')
       response.headers['X_VAYACONDIOS_VERSION'].should eq(Vayacondios::GEM_VERSION)
     end
   end
 
   context 'Rack', 'ForceContentType' do
-    let(:request) { build_request(:post, '/v2/org/event/topic', body: '{"foo":"bar"}') }
+    let(:request) { build_request(:post, '/v3/org/event/topic', body: '{"foo":"bar"}') }
     let(:response){ perform request }
 
     it 'accepts a JSON body with no header' do
@@ -99,7 +99,7 @@ describe Vayacondios::Server::Api do
 
   context 'Rack', 'Formatters::JSON' do
     subject(:response) do
-      perform build_request(:get, '/v2/org/event/topic') do |server|
+      perform build_request(:get, '/v3/org/event/topic') do |server|
         stub_handler(server, { foo: 'bar' })
       end
     end
@@ -111,7 +111,7 @@ describe Vayacondios::Server::Api do
 
   context 'Rack', 'Params' do
     it 'provides parsed params to the response method' do
-      request = build_request(:post, '/v2/org/event/topic', body: '{"foo":"bar"}')
+      request = build_request(:post, '/v3/org/event/topic', body: '{"foo":"bar"}')
       perform(request) do |server|
         stub_response(server, success_response) do |api|
           api.should respond_to(:document)
@@ -121,7 +121,7 @@ describe Vayacondios::Server::Api do
     end
 
     it 'handles non-Hash JSON values' do
-      request = build_request(:post, '/v2/org/event/topic', body: '["foo","bar"]')
+      request = build_request(:post, '/v3/org/event/topic', body: '["foo","bar"]')
       perform(request) do |server|
         stub_response(server, success_response) do |api|
           api.document.should eq(%w[ foo bar ])
@@ -133,7 +133,7 @@ describe Vayacondios::Server::Api do
   context 'Rack', 'Validation::RequestMethod' do
     %w[ HEAD OPTIONS ].each do |method|
       it "returns a validation error on #{method} requests" do
-        response = perform build_request(method.downcase.to_sym, '/v2/org/event/topic')
+        response = perform build_request(method.downcase.to_sym, '/v3/org/event/topic')
         response.status.should eq(405)
       end
     end
@@ -148,7 +148,7 @@ describe Vayacondios::Server::Api do
       delete: :delete,
     }.each_pair do |http_verb, handler_action|
       it "maps #{http_verb.to_s.upcase} verbs to handler method #{handler_action}" do
-        perform build_request(http_verb, '/v2/org/event/topic') do |server|
+        perform build_request(http_verb, '/v3/org/event/topic') do |server|
           stub_handler(server) do |action, routes, document|
             action.should eq(handler_action)
           end
@@ -161,11 +161,11 @@ describe Vayacondios::Server::Api do
     it 'returns a validation error when the route is not valid' do
       response = perform build_request(:get, '/invalid/route/fool')
       response.status.should eq(400)
-      response.parsed_body['error'].should match('/v2/<organization>/<type>/<topic>/<id>')
+      response.parsed_body['error'].should match('/v3/<organization>/<type>/<topic>/<id>')
     end
 
     it 'parses the route pieces' do
-      perform build_request(:get, '/v2/twitter/event/hashtag/emoji') do |server|
+      perform build_request(:get, '/v3/twitter/event/hashtag/emoji') do |server|
         stub_response(server) do |api|
           api.should respond_to(:routes)
           api.routes.should eq(organization: 'twitter', 
@@ -186,7 +186,7 @@ describe Vayacondios::Server::Api do
       stream:  Vayacondios::Server::StreamHandler,
     }.each_pair do |type, handler|
       it "maps type #{type} to handler #{handler}" do
-        request = build_request(:get, "/v2/infochimps/#{type}/topic")
+        request = build_request(:get, "/v3/infochimps/#{type}/topic")
         perform(request) do |server|
           stub_response(server, success_response) do |api|
             api.handler.should be(handler)
@@ -196,7 +196,7 @@ describe Vayacondios::Server::Api do
     end
 
     it 'returns a validation error when a handler cannot be found' do
-      response = perform build_request(:get, '/v2/infochimps/invalid/topic')
+      response = perform build_request(:get, '/v3/infochimps/invalid/topic')
       response.status.should eq(400)
       response.parsed_body['error'].should match('No handler found')
     end
@@ -204,32 +204,32 @@ describe Vayacondios::Server::Api do
 
   context 'Rack', 'Validation::RequiredRoutes' do
     it 'returns a validation error when a stash does not have a topic' do
-      response = perform build_request(:get, '/v2/infochimps/stash')
+      response = perform build_request(:get, '/v3/infochimps/stash')
       response.status.should eq(400)
       response.parsed_body['error'].should match('A topic route is required')
     end
 
     it 'returns a validation error when an event does not have a topic' do
-      response = perform build_request(:get, '/v2/infochimps/event')
+      response = perform build_request(:get, '/v3/infochimps/event')
       response.status.should eq(400)
       response.parsed_body['error'].should match('A topic route is required')
     end
 
     it 'returns a validation error when events do not have a topic' do
-      response = perform build_request(:get, '/v2/infochimps/events')
+      response = perform build_request(:get, '/v3/infochimps/events')
       response.status.should eq(400)
       response.parsed_body['error'].should match('A topic route is required')
     end
 
     it 'returns a validation error when stream do not have a topic' do
-      response = perform build_request(:get, '/v2/infochimps/stream')
+      response = perform build_request(:get, '/v3/infochimps/stream')
       response.status.should eq(400)
       response.parsed_body['error'].should match('A topic route is required')
     end
   end
 
   context 'Rack', '#response' do
-    let(:request){ build_request(:get, '/v2/infochimps/event/topic') }
+    let(:request){ build_request(:get, '/v3/infochimps/event/topic') }
 
     it 'returns a validation error when a handler raises one' do
       response = perform(request) do |server|
@@ -270,7 +270,7 @@ describe Vayacondios::Server::Api do
     end
 
     it 'returns a streaming response when requested', focus: true do
-      request = build_request(:get, '/v2/infochimps/stream/topic', connection_options: { inactivity_timeout: 0.5 })
+      request = build_request(:get, '/v3/infochimps/stream/topic', connection_options: { inactivity_timeout: 0.5 })
       response = perform(request)
       response.status.should eq(200)
       response.body.should eq('')
