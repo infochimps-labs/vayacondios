@@ -38,7 +38,6 @@ Dir['*.gemspec'].each do |gemspec|
   namespace :build do
     desc "Build #{gem_name} gem into the pkg directory"
     task gem_name do
-      # FileUtils.rm_rf('pkg')
       system "gem build #{gemspec}"
       FileUtils.mkdir_p('pkg')
       FileUtils.mv(Dir['*.gem'], 'pkg')
