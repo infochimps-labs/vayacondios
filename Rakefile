@@ -89,5 +89,5 @@ task build:   ['build:vayacondios-client', 'build:vayacondios-server']
 desc 'Release both gems'
 task release: ['release:vayacondios-client', 'release:vayacondios-server']
 
-task default: [:spec, :features]
+task default: [:mongo, :integration]
 
