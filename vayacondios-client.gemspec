@@ -13,14 +13,13 @@ Gem::Specification.new do |gem|
   gem.summary       = 'Data goes in. The right thing happens'
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
-  gem.files         = `git ls-files`.split("\n") # `git ls-files -- lib  | grep client`.split("\n")
+  gem.files         = `git ls-files`.split("\n").reject{ |f| f =~ /server/ }
   gem.executables   = ['vcd']
-  gem.test_files    = `git ls-files -- spec | grep client`.split("\n")
+  gem.test_files    = gem.files.grep(/^spec/)
   gem.require_paths = ['lib']
 
   gem.add_dependency('configliere')
   gem.add_dependency('multi_json')
   gem.add_dependency('faraday', '= 0.8.9')
   gem.add_dependency('faraday_middleware')
-
 end

@@ -13,8 +13,8 @@ Gem::Specification.new do |gem|
   gem.summary       = 'Data goes in. The right thing happens'
   gem.description   = "Simple enough to use in a shell script, performant enough to use everywhere. Dios mío! Record that metric, ese!"
 
-  gem.files         = `git ls-files`.split("\n")
-  gem.executables   = ['vcd-server'] #gem.files.grep(/^bin/).map{ |binfile| File.basename(binfile) }
+  gem.files         = `git ls-files`.split("\n").reject{ |f| f =~ /client/ }
+  gem.executables   = ['vcd-server']
   gem.test_files    = gem.files.grep(/^spec/)
   gem.require_paths = ['lib']
 

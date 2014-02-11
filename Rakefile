@@ -1,5 +1,26 @@
 require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new
+
+namespace :spec do
+
+  desc 'Run client RSpec code examples'
+  RSpec::Core::RakeTask.new(:client) do |t|
+    t.pattern = 'spec/client/**/*_spec.rb'
+  end
+  
+  desc 'Run server RSpec code examples'
+  RSpec::Core::RakeTask.new(:server) do |t|
+    t.pattern = 'spec/server/**/*_spec.rb'
+  end
+end
+
+desc 'Run both client and server Rspec code examples'
+task spec: ['spec:client', 'spec:server']
+
+desc 'Run spec tests with simplecov'
+task :coverage do
+  ENV['VAYACONDIOS_COV'] = 'true'
+  Rake::Task[:spec].invoke
+end
 
 require 'cucumber/rake/task'
 Cucumber::Rake::Task.new(:features)
@@ -8,12 +29,6 @@ require 'yard'
 YARD::Rake::YardocTask.new do |t|
   t.files   = ['lib/**/*.rb', '-', 'CHANGELOG.md', 'LICENSE.md']
   t.options = ['--readme=README.md', '--markup=markdown', '--verbose']
-end
-
-desc 'Run spec tests with simplecov'
-task :coverage do
-  ENV['VAYACONDIOS_COV'] = 'true'
-  Rake::Task[:spec].invoke
 end
 
 require 'vayacondios'
