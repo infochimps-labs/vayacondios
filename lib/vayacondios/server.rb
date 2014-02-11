@@ -16,6 +16,7 @@ require 'gorillib/string/inflections'
 require 'multi_json'
 
 require 'vayacondios'
+require 'vayacondios/configuration'
 
 require 'vayacondios/server/api_options'
 require 'vayacondios/server/configuration'
