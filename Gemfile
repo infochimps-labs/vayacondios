@@ -7,7 +7,7 @@ gemspec name: 'vayacondios-server'
 gemspec name: 'vayacondios-client'
 
 group :development do
-  gem 'faraday', '= 0.8.9'
+  gem 'faraday', '0.8.9'
   gem 'faraday_middleware'
   gem 'rake'
   gem 'foreman'
