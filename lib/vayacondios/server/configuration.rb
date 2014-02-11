@@ -1,12 +1,5 @@
 module Vayacondios::Server
-  class Configuration
-    attr_accessor :base_filename, :load_order
-
-    def initialize
-      @base_filename = 'database.yml'
-      @load_order    = %w[ defaults global project ]
-      @settings      = Configliere::Param.new
-    end
+  class Configuration < Vayacondios::Configuration
 
     def defaults
       { 
@@ -20,54 +13,11 @@ module Vayacondios::Server
       }      
     end
 
-    def global
-      File.join('/etc/vayacondios', base_filename)
-    end
-    
-    def project
-      File.join(ENV['PWD'], 'config', base_filename)
-    end
-    
-    def overlay(conf = nil)
-      @overlay = conf unless conf.nil?
-      @overlay
-    end
-    
-    def resolved?
-      @resolved
-    end
-    
-    def resolved_settings
-      resolve! unless resolved?
-      @resolved_settings
-    end
-    
     def env(handle = nil)
       handle ||= :development
       resolved_settings[handle.to_sym] || {}
-    end
-    
-    def to_s
-      resolved_settings
-    end
-
-    def apply_all
-      load_order.dup.push(:overlay).each do |scope|
-        conf = send scope
-        if conf.is_a? String
-          @settings.read_yaml File.read(conf) if File.readable?(conf)
-        elsif conf.is_a? Hash
-          @settings.deep_merge! conf
-        end
-      end
-    end
-    
-    def resolve!
-      apply_all
-      @resolved_settings = @settings.to_hash.symbolize_keys
-      @resolved = true
-    end
+    end    
   end
   
-  DbConfig = Configuration.new unless defined? DbConfig
+  DbConfig = Configuration.new('database.yml') unless defined? DbConfig
 end
