@@ -23,11 +23,9 @@ Gem::Specification.new do |gem|
   gem.add_dependency('multi_json',      '>= 1.3.6')
   gem.add_dependency('goliath-chimp',   '>= 0.0.1')
 
-  gem.add_dependency('eventmachine',    '~> 1.0.0.beta.4')
+  gem.add_dependency('eventmachine',    '~> 1.0')
   gem.add_dependency('goliath',         '~> 1.0')
   gem.add_dependency('em-http-request', '~> 1.0')
-  gem.add_dependency('mongo')
   gem.add_dependency('em-mongo',        '~> 0.4.3')
   gem.add_dependency('bson_ext')
-  gem.add_dependency('chronic_duration') # for vcd-clean
 end
