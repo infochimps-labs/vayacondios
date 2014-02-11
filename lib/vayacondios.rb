@@ -9,5 +9,11 @@ module Vayacondios
   DEFAULT_SERVER_PORT    = 9000
 
   # Default address to bind/connect to for the server
-  DEFAULT_SERVER_ADDRESS = 'localhost'  
+  DEFAULT_SERVER_ADDRESS = 'localhost'
+
+  module_function
+
+  def library_dir
+    File.expand_path('../..', __FILE__)
+  end
 end
