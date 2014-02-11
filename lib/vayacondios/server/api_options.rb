@@ -29,7 +29,7 @@ module Vayacondios::Server
       opts.separator ''
       opts.separator 'Database options:'
 
-      options[:database] ||= {}
+      options[:database] = {}
       db_options = options[:database]
       defaults = DbConfig.defaults[:development]
       opts.on('-d', '--database.driver NAME', "Database driver (default: #{defaults[:driver]})") do |name|
@@ -49,6 +49,7 @@ module Vayacondios::Server
       end
 
       options[:config] = File.join(Vayacondios.library_dir, 'config/vcd-server.rb')
+      options[:port]   = Vayacondios::DEFAULT_SERVER_PORT
     end
 
   end
