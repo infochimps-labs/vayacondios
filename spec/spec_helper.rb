@@ -19,5 +19,4 @@ require 'vayacondios/server/api'
 
 RSpec.configure do |c|
   c.include Goliath::TestHelper
-  c.include DatabaseHelper
 end
