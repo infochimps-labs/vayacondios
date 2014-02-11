@@ -5,7 +5,7 @@ Feature: Events
 
   Scenario: Retrieving non-Existent Events
     Given there are no Events under topic "topic" in the database
-    When  the client sends a GET request to "/v2/organization/events/topic" with no body
+    When  the client sends a GET request to "/v3/organization/events/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -30,7 +30,7 @@ Feature: Events
       "_d": { }
     }
     """
-    When  the client sends a GET request to "/v2/organization/events/topic" with the following body:
+    When  the client sends a GET request to "/v3/organization/events/topic" with the following body:
     """
     {
       "after": "2012-01-01T00:00:00.000Z"
@@ -68,7 +68,7 @@ Feature: Events
       }
     }
     """
-    When  the client sends a GET request to "/v2/organization/events/topic" with the following body:
+    When  the client sends a GET request to "/v3/organization/events/topic" with the following body:
     """
     {
       "alignment": "good"
@@ -88,7 +88,7 @@ Feature: Events
 
   Scenario: Creating Events
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/events/topic" with no body
+    When  the client sends a POST request to "/v3/organization/events/topic" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -100,7 +100,7 @@ Feature: Events
 
   Scenario: Updating Events
     Given there are no Events under topic "topic" in the database
-    When  the client sends a PUT request to "/v2/organization/events/topic" with no body
+    When  the client sends a PUT request to "/v3/organization/events/topic" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -127,7 +127,7 @@ Feature: Events
       "_d": { }
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/events/topic" with no body
+    When  the client sends a DELETE request to "/v3/organization/events/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -154,7 +154,7 @@ Feature: Events
       "_d": { }
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/events/topic" with the following body:
+    When  the client sends a DELETE request to "/v3/organization/events/topic" with the following body:
     """
     {
       "after": "2012-01-01T00:00:00.000Z"     
@@ -191,7 +191,7 @@ Feature: Events
       }
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/events/topic" with the following body:
+    When  the client sends a DELETE request to "/v3/organization/events/topic" with the following body:
     """
     {
       "alignment":"good"

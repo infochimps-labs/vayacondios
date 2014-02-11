@@ -9,7 +9,7 @@ def make_request(verb, path, body = nil)
   EM::Synchrony.sleep(0.1) # Make sure the db call is complete
   params = { path: path }
   params[:body] = MultiJson.dump(body) if body
-  EM::HttpRequest.new('http://localhost:9000').send(verb.to_s.downcase, params)
+  EM::HttpRequest.new('http://localhost:3467').send(verb.to_s.downcase, params)
 end
 
 def stash_location()      'organization.stash'           ; end

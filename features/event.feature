@@ -5,7 +5,7 @@ Feature: Event
 
   Scenario: Retrieving an Event without an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a GET request to "/v2/organization/event/topic" with no body
+    When  the client sends a GET request to "/v3/organization/event/topic" with no body
     Then  the response status should be 400
     And   the response body should be:
     """
@@ -16,7 +16,7 @@ Feature: Event
 
   Scenario: Retrieving a non-Existent Event with an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a GET request to "/v2/organization/event/topic/id" with no body
+    When  the client sends a GET request to "/v3/organization/event/topic/id" with no body
     Then  the response status should be 404
     And   the response body should be:
     """
@@ -36,7 +36,7 @@ Feature: Event
       }
     }
     """
-    When  the client sends a GET request to "/v2/organization/event/topic/id" with no body
+    When  the client sends a GET request to "/v3/organization/event/topic/id" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -48,7 +48,7 @@ Feature: Event
 
   Scenario: Creating an Empty Event without an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic" with no body
+    When  the client sends a POST request to "/v3/organization/event/topic" with no body
     Then  the response status should be 200
     And   the response body should contain a generated timestamp
     And   the response body should contain a randomly assigned Id
@@ -56,7 +56,7 @@ Feature: Event
 
   Scenario: Creating a Hash Event without an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic" with the following body:
     """
     {
       "foo": "bar"
@@ -75,7 +75,7 @@ Feature: Event
 
   Scenario: Creating a Hash Event without an Id, specifying a time
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic" with the following body:
     """
     {
       "foo": "bar",
@@ -95,7 +95,7 @@ Feature: Event
 
   Scenario: Creating a non-Hash Event without an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic" with the following body:
     """
     [
       "foo", 
@@ -113,7 +113,7 @@ Feature: Event
 
   Scenario: Creating an Empty Event with an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic/id" with no body
+    When  the client sends a POST request to "/v3/organization/event/topic/id" with no body
     Then  the response status should be 200
     And   the response body should contain:
     """
@@ -126,7 +126,7 @@ Feature: Event
 
   Scenario: Creating a Hash Event with an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic/id" with the following body:
     """
     {
       "foo": "bar"
@@ -145,7 +145,7 @@ Feature: Event
 
   Scenario: Creating a Hash Event with an Id, specifying a time
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic/id" with the following body:
     """
     {
       "foo": "bar",
@@ -174,7 +174,7 @@ Feature: Event
 
   Scenario: Creating a non-Hash Event with an Id
     Given there are no Events under topic "topic" in the database
-    When  the client sends a POST request to "/v2/organization/event/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic/id" with the following body:
     """
     [
       "foo", 
@@ -201,7 +201,7 @@ Feature: Event
       }
     }
     """
-    When  the client sends a POST request to "/v2/organization/event/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/event/topic/id" with the following body:
     """
     {
       "time": "2013-01-01T00:00:00.000Z",
@@ -237,7 +237,7 @@ Feature: Event
       "_d": { }
     }
     """
-    When  the client sends a PUT request to "/v2/organization/event/topic" with the following body:
+    When  the client sends a PUT request to "/v3/organization/event/topic" with the following body:
     """
     {
       "foo": "bar"
@@ -262,7 +262,7 @@ Feature: Event
       }
     }
     """
-    When  the client sends a PUT request to "/v2/organization/event/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/event/topic/id" with the following body:
     """
     {
       "foo": "bar"
@@ -287,7 +287,7 @@ Feature: Event
       }
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/event/topic" with no body
+    When  the client sends a DELETE request to "/v3/organization/event/topic" with no body
     Then  the response status should be 400
     And   the response body should be:
     """
@@ -308,7 +308,7 @@ Feature: Event
       }
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/event/topic/id" with no body
+    When  the client sends a DELETE request to "/v3/organization/event/topic/id" with no body
     Then  the response status should be 200
     And   the response body should be:
     """

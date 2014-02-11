@@ -5,7 +5,7 @@ Feature: Stash
 
   Scenario: Retrieving a non-Existent Stash
     Given there are no matching Stashes in the database
-    When  the client sends a GET request to "/v2/organization/stash/topic" with no body
+    When  the client sends a GET request to "/v3/organization/stash/topic" with no body
     Then  the response status should be 404
     And   the response body should be:
     """
@@ -22,7 +22,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a GET request to "/v2/organization/stash/topic" with no body
+    When  the client sends a GET request to "/v3/organization/stash/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -33,7 +33,7 @@ Feature: Stash
 
   Scenario: Retrieving a non-Existent Stash with an Id
     Given there are no matching Stashes in the database
-    When  the client sends a GET request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a GET request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 404
     And   the response body should be:
     """
@@ -52,7 +52,7 @@ Feature: Stash
       }
     }
     """
-    When  the client sends a GET request to "/v2/organization/stash/topic/sub" with no body
+    When  the client sends a GET request to "/v3/organization/stash/topic/sub" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -63,7 +63,7 @@ Feature: Stash
 
   Scenario: Creating an Empty Stash without an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic" with no body
+    When  the client sends a POST request to "/v3/organization/stash/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -79,7 +79,7 @@ Feature: Stash
 
   Scenario: Creating a Stash without an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic" with the following body:
     """
     {
       "foo": "bar"
@@ -102,7 +102,7 @@ Feature: Stash
 
   Scenario: Creating a non-Hash Stash without an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic" with the following body:
     """
     [
       "foo",
@@ -125,7 +125,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a POST request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic" with the following body:
     """
     {
       "new": "body"
@@ -148,7 +148,7 @@ Feature: Stash
 
   Scenario: Creating an Empty Stash With an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -166,7 +166,7 @@ Feature: Stash
 
   Scenario: Creating a Stash With an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with the following body:
     """
     {
       "foo": "bar"
@@ -193,7 +193,7 @@ Feature: Stash
 
   Scenario: Creating an Array Stash With an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with the following body:
     """
     [
       "foo",
@@ -223,7 +223,7 @@ Feature: Stash
 
   Scenario: Creating an String Stash With an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with the following body:
     """
     "HELLO"
     """
@@ -244,7 +244,7 @@ Feature: Stash
 
   Scenario: Creating an nil Stash With an Id
     Given there are no matching Stashes in the database
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with the following body:
     """
     "null"
     """
@@ -273,7 +273,7 @@ Feature: Stash
       }
     }
     """
-    When  the client sends a POST request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a POST request to "/v3/organization/stash/topic/id" with the following body:
     """
     {
       "new": "body"
@@ -300,7 +300,7 @@ Feature: Stash
 
   Scenario: Updating a non-Existent Stash with a Hash
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic" with the following body:
     """
     {
       "foo": "bar"
@@ -336,7 +336,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic" with the following body:
     """
     {
       "baz": "qix"
@@ -368,7 +368,7 @@ Feature: Stash
 
   Scenario: Updating an Stash with a non-Hash
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic" with the following body:
     """
     [
       "foo",
@@ -393,7 +393,7 @@ Feature: Stash
 
   Scenario: Updating an non-Existent Stash Using an Id with an Empty Hash
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -424,7 +424,7 @@ Feature: Stash
       "id": "yolo"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 405
     And   the response body should be:
     """
@@ -449,7 +449,7 @@ Feature: Stash
 
   Scenario: Updating an non-Existent Stash Using an Id with a Hash
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     {
       "foo": "bar"
@@ -489,7 +489,7 @@ Feature: Stash
       "id": "yolo"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     {
       "foo": "bar"
@@ -523,7 +523,7 @@ Feature: Stash
 
   Scenario: Updating an non-Existent Stash Using an Id with an Array
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     [
       "foo",
@@ -567,7 +567,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     [
       "foo",
@@ -606,7 +606,7 @@ Feature: Stash
 
   Scenario: Updating an non-Existent Stash Using an Id with a String
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     "HELLO"
     """
@@ -640,7 +640,7 @@ Feature: Stash
       "id": "yolo"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     "HELLO"
     """
@@ -668,7 +668,7 @@ Feature: Stash
 
   Scenario: Updating an non-Existent Stash Using an Id with a nil
     Given there are no matching Stashes in the database
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     "null"
     """
@@ -702,7 +702,7 @@ Feature: Stash
       "id": "yolo"
     }
     """
-    When  the client sends a PUT request to "/v2/organization/stash/topic/id" with the following body:
+    When  the client sends a PUT request to "/v3/organization/stash/topic/id" with the following body:
     """
     "null"
     """
@@ -730,7 +730,7 @@ Feature: Stash
 
   Scenario: Deleting a non-Existent Stash
     Given there are no matching Stashes in the database
-    When  the client sends a DELETE request to "/v2/organization/stash/topic" with no body
+    When  the client sends a DELETE request to "/v3/organization/stash/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -747,7 +747,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/stash/topic" with no body
+    When  the client sends a DELETE request to "/v3/organization/stash/topic" with no body
     Then  the response status should be 200
     And   the response body should be:
     """
@@ -759,7 +759,7 @@ Feature: Stash
 
   Scenario: Deleting a non-Existent Stash with an Id
     Given there are no matching Stashes in the database
-    When  the client sends a DELETE request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a DELETE request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 501
     And   the response body should be:
     """
@@ -784,7 +784,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a DELETE request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 501
     And   the response body should be:
     """
@@ -816,7 +816,7 @@ Feature: Stash
       "foo": "bar"
     }
     """
-    When  the client sends a DELETE request to "/v2/organization/stash/topic/id" with no body
+    When  the client sends a DELETE request to "/v3/organization/stash/topic/id" with no body
     Then  the response status should be 501
     And   the response body should be:
     """
