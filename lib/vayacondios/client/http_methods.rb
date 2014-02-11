@@ -5,6 +5,10 @@ module Vayacondios
       # Must respond to organization for this to work
       File.join(*[organization.to_s, handler, topic, id].compact)
     end
+
+    def setup_connection options
+      @connection = Vayacondios::Client.new_connection(options)
+    end
     
     def http_connection
       @connection ||= Vayacondios::Client.new_connection
