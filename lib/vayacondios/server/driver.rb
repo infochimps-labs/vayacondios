@@ -22,10 +22,6 @@ module Vayacondios::Server
         drivers[handle.to_sym]
       end
 
-      def names
-        drivers.keys
-      end
-
       def included base
         base.class_eval{ attr_reader :location, :log } if base.is_a? Class
       end
@@ -65,11 +61,6 @@ module Vayacondios::Server
 
     def set_log device
       @log = device
-    end
-
-    # for testing only
-    def unset_location
-      @location = nil
     end
   end
 end
