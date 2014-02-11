@@ -6,7 +6,7 @@ module Vayacondios
   GEM_VERSION            = '0.3.0'
 
   # Default port to find/connect to for the server
-  DEFAULT_SERVER_PORT    = 9000
+  DEFAULT_SERVER_PORT    = 3467
 
   # Default address to bind/connect to for the server
   DEFAULT_SERVER_ADDRESS = 'localhost'
