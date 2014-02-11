@@ -113,14 +113,5 @@ module Vayacondios::Server
       log.debug "      Result: #{res}"
       nil
     end
-
-    # for testing only
-    def reset!
-      connection.drop
-    end
-
-    def count
-      connection.count
-    end
   end
 end
