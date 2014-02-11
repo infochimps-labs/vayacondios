@@ -17,3 +17,6 @@ module Vayacondios
     File.expand_path('../..', __FILE__)
   end
 end
+
+# Alias for Vayacondios
+Vcd = Vayacondios
