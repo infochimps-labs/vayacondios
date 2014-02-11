@@ -1,4 +1,5 @@
 require 'vayacondios-server'
+require 'vayacondios/server/api_options'
 
 module Vayacondios::Server
 
@@ -36,48 +37,7 @@ module Vayacondios::Server
   # source distribution at `config/vcd-server.rb`.
   # 
   class Api < Goliath::API
-
-    # Defines options and usage information.
-    def options_parser opts, options
-      opts.banner = <<-BANNER.gsub(/^ {8}/, '').strip
-        usage: vcd-server [--param=value|--param|-p value|-p]
-
-        Vayacondios server lets any system that can speak JSON over HTTP read
-        and write configuration and events.
-
-        It provides the following HTTP endpoints, all of which assume a
-        JSON-encoded request body.
-
-        Events:
-          GET    /v2/ORG/event/TOPIC/ID
-          POST   /v2/ORG/event/TOPIC[/ID]      (announce)
-          GET    /v2/ORG/events/TOPIC          (events)
-
-        Stashes:
-          GET    /v2/ORG/stash/TOPIC[/ID]      (get)
-          PUT    /v2/ORG/stash/TOPIC[/ID]      (set)
-          POST   /v2/ORG/stash/TOPIC[/ID]      (set!)
-          DELETE /v2/ORG/stash/TOPIC[/ID]      (delete)
-          GET    /v2/ORG/stashes               (stashes)
-          PUT    /v2/ORG/stashes               (set_many)
-          POST   /v2/ORG/stashes               (set_many!)
-          DELETE /v2/ORG/stashes               (delete_many)
-      BANNER
-
-      opts.separator ''
-      opts.separator 'Database options:'
-
-      options[:database] ||= {}
-      db_options = options[:database]
-      defaults = DbConfig.defaults[:development]
-      opts.on('-d', '--database.driver NAME', "Database driver (default: #{defaults[:driver]})")   { |val| db_options[:driver] = val }
-      opts.on('-h', '--database.host HOST', "Database host (default: #{defaults[:host]})")         { |val| db_options[:host] = val }
-      opts.on('-o', '--database.port PORT', Integer, "Database port (default: #{defaults[:port]})"){ |val| db_options[:port] = val }
-      opts.on('-D', '--database.name NAME', "Database name (default: #{defaults[:name]})")         { |val| db_options[:name] = val }
-      opts.on('-n', '--database.connections NUM', Integer, "Number of database connections to make (default: #{defaults[:connections]}).  Only used in 'production' environment"){ |val| db_options[:connections] = val }
-
-      options[:config] ||= File.expand_path('../../../../config/vcd-server.rb', __FILE__)
-    end
+    include ApiOptions
 
     use Goliath::Rack::Heartbeat
     use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::GEM_VERSION, api: 'Vayacondios'
@@ -132,6 +92,7 @@ module Vayacondios::Server
       return unless env[:subscription]
       env.delete(:subscription).close_stream!
     end
+
     # Deliver a response for the request.
     #
     # Uses the method set by Infochimps::Rack::ControlMethods to
@@ -154,8 +115,8 @@ module Vayacondios::Server
     rescue Document::Error => e
       return [400, {}, { error: e.message }]
     rescue => e
-      env.logger.error "#{e.class} -- #{e.message}"
-      e.backtrace.each{ |line| env.logger.error line }
+      logger.error "#{e.class} -- #{e.message}"
+      e.backtrace.each{ |line| logger.error line }
       return [500, {}, { error: "#{e.class} -- #{e.message}" }]
     end
   end
