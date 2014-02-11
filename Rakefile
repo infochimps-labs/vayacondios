@@ -22,6 +22,33 @@ task :coverage do
   Rake::Task[:spec].invoke
 end
 
+def with_background_process(cmd, options = {}, &blk)
+  pr = spawn cmd
+  puts "waiting for command #{cmd} to execute fully"
+  sleep(options[:wait]) if options[:wait]
+  blk.call
+ensure 
+  Process.kill('KILL', pr)
+  Process.wait pr
+end
+
+desc 'Run spec coverage with mongo'
+task :mongo do
+  with_background_process('mongod') do
+    ENV['WITH_MONGO'] = 'true'
+    Rake::Task[:spec].invoke
+  end
+end
+
+desc 'Run integration tests'
+task :integration do
+  with_background_process('mongod') do
+    with_background_process('bin/vcd-server -e test', wait: 2) do
+      Rake::Task[:features].invoke
+    end
+  end
+end
+
 require 'cucumber/rake/task'
 Cucumber::Rake::Task.new(:features)
 
