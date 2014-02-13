@@ -20,7 +20,7 @@ module Vayacondios::Server
 
     def update_cursor latest
       cursor.filter.delete(:_t)
-      cursor.search(after: latest)
+      cursor.prepare_search(after: latest)
     end
     
     def stream_events
