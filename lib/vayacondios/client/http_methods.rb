@@ -64,8 +64,8 @@ module Vayacondios::Client
     include Connection
 
     # Delete one stash
-    def unset topic
-      http_connection.delete url('stash', topic)
+    def unset(topic, id = nil)
+      http_connection.delete url('stash', topic, id)
     end
 
     # Delete stashes by search
@@ -75,14 +75,11 @@ module Vayacondios::Client
       end
     end
 
-    # Delete a single event
-    def remove_event(topic, id)
-      http_connection.delete url('event', topic, id)
-    end
-
-    # Delete all events by topic
-    def clear_events topic
-      http_connection.delete url('events', topic)
+    # Delete all events by topic and query
+    def clear_events(topic, query = {})
+      http_connection.delete url('events', topic) do |req|
+        req.body = query
+      end
     end
   end
 end
