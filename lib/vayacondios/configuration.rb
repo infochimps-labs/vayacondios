@@ -5,7 +5,7 @@ module Vayacondios
 
     def initialize(base_fname = nil)
       @base_filename = base_fname || 'vayacondios.yml'
-      @load_order    = %w[ defaults global project ]
+      @load_order    = %w[ global project ]
       @settings      = Configliere::Param.new
     end
 
@@ -27,24 +27,21 @@ module Vayacondios
     end
     
     def resolved?
-      @resolved
+      !!@resolved
     end
     
     def resolved_settings
-      resolve! unless resolved?
-      @resolved_settings
+      resolve!
+      @resolved_settings.dup
     end
     
     def [] handle
       resolved_settings[handle.to_sym]
     end
-    
-    def to_s
-      resolved_settings.to_s
-    end
  
     def apply_all
-      load_order.dup.push(:overlay).each do |scope|
+      scopes = load_order.dup.unshift(:defaults).push(:overlay)
+      scopes.each do |scope|
         conf = send scope
         if conf.is_a? String
           @settings.read_yaml File.read(conf) if File.readable?(conf)
@@ -55,9 +52,11 @@ module Vayacondios
     end
     
     def resolve!
-      apply_all
-      @resolved_settings = @settings.to_hash.symbolize_keys
-      @resolved = true
+      unless resolved?
+        apply_all
+        @resolved_settings = @settings.to_hash.symbolize_keys
+        @resolved = true
+      end
     end
 
   end
