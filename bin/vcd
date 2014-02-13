@@ -1,5 +1,10 @@
 #!/usr/bin/env ruby
 
-require 'vayacondios-client'
+vayacondios_gemfile = File.expand_path('../../Gemfile', File.realdirpath(__FILE__))
+ENV['BUNDLE_GEMFILE'] = vayacondios_gemfile
+
+require 'bundler'
+Bundler.setup(:default)
+
 require 'vayacondios/client/cli'
-Vayacondios::CLI.run
+Vayacondios::Client::CLI.run
