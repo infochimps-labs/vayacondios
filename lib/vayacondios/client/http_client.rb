@@ -1,14 +1,12 @@
-module Vayacondios
+module Vayacondios::Client
   class HttpClient
-    include HttpReadMethods
-    include HttpWriteMethods
-    include HttpAdminMethods
+    include HttpRead, HttpWrite, HttpAdmin
 
     attr_reader :organization
 
     def initialize(options = {})
       @organization = options.delete(:organization)
-      setup_connection(options) unless options.empty?
+      configure_connection(options) unless options.empty?
     end
 
   end
