@@ -1,23 +1,6 @@
-module Vayacondios
-  module BaseHttp
-
-    def url(handler, topic = nil, id = nil)
-      # Must respond to organization for this to work
-      File.join(*[organization.to_s, handler, topic, id].compact)
-    end
-
-    def setup_connection options
-      @connection = Vayacondios::Client.new_connection(options)
-    end
-    
-    def http_connection
-      @connection ||= Vayacondios::Client.new_connection
-    end
-
-  end
-
-  module HttpReadMethods
-    include BaseHttp
+module Vayacondios::Client
+  module HttpRead
+    include Connection
 
     # Retrieve one stash
     def get(topic, id = nil)
@@ -37,10 +20,29 @@ module Vayacondios
         req.body = query
       end
     end
+
+    # Stream events
+    # only works with net/http
+    def stream(topic, query = {}, &on_event)
+      uri = http_connection.url_prefix
+      Net::HTTP.start(uri.host, uri.port) do |http|
+        path = File.join(uri.request_uri, url('stream', topic))
+        request = Net::HTTP::Get.new(path)
+        http.request(request) do |response|
+          buffer = ''
+          response.read_body do |chunk|
+            buffer += chunk
+            while line = buffer.slice!(/^[^\n].*\n/)
+              on_event.call MultiJson.load(line.strip)
+            end
+          end
+        end
+      end
+    end
   end
 
-  module HttpWriteMethods
-    include BaseHttp
+  module HttpWrite
+    include Connection
 
     # Create a stash
     def set(topic, id = nil, stash = {})
@@ -58,8 +60,8 @@ module Vayacondios
     end
   end
 
-  module HttpAdminMethods
-    include BaseHttp
+  module HttpAdmin
+    include Connection
 
     # Delete one stash
     def unset topic
@@ -71,6 +73,16 @@ module Vayacondios
       http_connection.delete url('stashes') do |req|
         req.body = query
       end
+    end
+
+    # Delete a single event
+    def remove_event(topic, id)
+      http_connection.delete url('event', topic, id)
+    end
+
+    # Delete all events by topic
+    def clear_events topic
+      http_connection.delete url('events', topic)
     end
   end
 end
