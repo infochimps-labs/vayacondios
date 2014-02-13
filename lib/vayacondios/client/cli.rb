@@ -1,5 +1,5 @@
 require 'configliere'
-module Vayacondios
+module Vayacondios::Client
 
   # Implements a program `vcd` which makes it easy to interact with
   # Vayacondios from the command-line or from scripts.

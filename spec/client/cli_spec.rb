@@ -1,13 +1,13 @@
 require 'spec_helper'
 require 'vayacondios/client/cli'
 
-describe Vayacondios::CLI, events: true, stashes: true do
+describe Vayacondios::Client::CLI, events: true, stashes: true do
 
   let(:topic) { 'topic' }
   let(:id)    { 'id'    }
 
-  let(:client) { double("Vayacondios::HttpClient", host: 'localhost', port: 9000) }
-  let(:cli)    { Vayacondios::CLI.new }
+  let(:client) { double("Vayacondios::Client::HttpClient", host: 'localhost', port: 9000) }
+  let(:cli)    { described_class.new }
 
   before do
     cli.stub(:client).and_return(client)
@@ -66,7 +66,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
     before { ARGV.replace(['foobar']) }
     it "raises an error" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error)
     end
   end
   
@@ -75,14 +75,14 @@ describe Vayacondios::CLI, events: true, stashes: true do
 
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with a topic" do
       before { ARGV << topic }
       it "raises an error without an event, --file, or STDIN" do
         cli.boot
-        expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /event/)
+        expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /event/)
       end
 
       context "and an inline event" do
@@ -109,7 +109,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
     before { ARGV.replace(['events']) }
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with topic" do
@@ -136,7 +136,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
 
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with a topic" do
@@ -179,14 +179,14 @@ describe Vayacondios::CLI, events: true, stashes: true do
 
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with a topic" do
       before { ARGV << topic }
       it "raises an error without a document, --file, or STDIN" do
         cli.boot
-        expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /document/)
+        expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /document/)
       end
 
       context "and an ID" do
@@ -220,7 +220,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
     before { ARGV.replace(["set_many"]) }
     it "raises an error without a document, --file or STDIN" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error)
     end
     context "with input" do
       before { ARGV << MultiJson.dump([stash_query, stash_update]) }
@@ -237,14 +237,14 @@ describe Vayacondios::CLI, events: true, stashes: true do
 
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with a topic" do
       before { ARGV << topic }
       it "raises an error without a document, --file, or STDIN" do
         cli.boot
-        expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /document/)
+        expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /document/)
       end
 
       context "and an ID" do
@@ -278,7 +278,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
     before { ARGV.replace(["set_many!"]) }
     it "raises an error without a document, --file or STDIN" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error)
     end
     context "with input" do
       before { ARGV << MultiJson.dump([stash_query, stash_replacement]) }
@@ -295,7 +295,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
 
     it "raises an error without a topic" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error, /topic/)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error, /topic/)
     end
 
     context "with a topic" do
@@ -320,7 +320,7 @@ describe Vayacondios::CLI, events: true, stashes: true do
     before { ARGV.replace(["delete_many"]) }
     it "raises an error without a document, --file or STDIN" do
       cli.boot
-      expect { cli.run }.to raise_error(Vayacondios::CLI::Error)
+      expect { cli.run }.to raise_error(Vayacondios::Client::CLI::Error)
     end
     context "with input" do
       before { ARGV << json_stash_query }

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Vayacondios::HttpClient do
+describe Vayacondios::Client::HttpClient do
 
   let(:http_connection){ double :http }
   let(:hash_event)     { { foo: 'bar' } }
