@@ -10,6 +10,7 @@ describe Vayacondios::Client::CLI, events: true, stashes: true do
 
   before(:each) do
     cli.stub(:client).and_return(client)
+    cli.stub(:display)
   end
 
   describe '#boot' do

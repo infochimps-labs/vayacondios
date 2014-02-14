@@ -148,7 +148,7 @@ module Vayacondios::Client
     # @raise [Error] if the desired command is unknown
     def run
       command = cmdline.rest.shift
-      cmdline.dump_help if command.nil?
+      return cmdline.dump_help if command.nil?
       if available_commands.include? command
         send command
       else
@@ -414,9 +414,9 @@ module Vayacondios::Client
     # @param [Hash, Array, String, Numeric, nil] doc any of the core JSON types
     def handle_response res
       if res.success?
-        puts MultiJson.dump(res.body, pretty: cmdline.pretty)
+        display MultiJson.dump(res.body, pretty: cmdline.pretty)
       else
-        puts res.body['error']
+        display res.body['error']
       end
     end
 
@@ -424,6 +424,9 @@ module Vayacondios::Client
     # == Log ==
     #
 
+    def display str
+      puts str
+    end
     # Where to send log output.
     #
     # @return [IO]
