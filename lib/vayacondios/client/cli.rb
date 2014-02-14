@@ -148,6 +148,7 @@ module Vayacondios::Client
     # @raise [Error] if the desired command is unknown
     def run
       command = cmdline.rest.shift
+      cmdline.dump_help if command.nil?
       if available_commands.include? command
         send command
       else
@@ -276,8 +277,8 @@ module Vayacondios::Client
     # @raise [Error] if no topic was given
     def set!
       self.topic    = cmdline.rest.shift or raise Error.new('Must provide a topic when setting a stash')
-      self.id       = cmdline.rest.shift
       self.document = cmdline.rest.shift
+      self.id       = cmdline.rest.shift
       raise Error.new("Must provide a document to stash via the third command-line argument, the --file argument, or STDIN.") unless input?
       inputs do |doc|
         handle_response client.set!(topic_for(doc), id_for(doc), doc)
