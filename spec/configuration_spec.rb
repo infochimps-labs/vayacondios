@@ -38,10 +38,4 @@ describe Vayacondios::Configuration do
       subject[:foo].should eq('bar')
     end
   end
-
-  context '#to_s' do
-    it 'displays the resolved settings' do
-      subject.to_s.should match('{}')
-    end
-  end
 end
