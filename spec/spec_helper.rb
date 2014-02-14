@@ -5,7 +5,10 @@ require 'mongo'
 
 if ENV['VAYACONDIOS_COV']
   require 'simplecov'
-  SimpleCov.start
+  SimpleCov.start do
+    add_group 'Library', 'lib/'
+    add_group 'Test',    '(spec|features)/'
+  end
 end
 
 WITH_MONGO = ENV['WITH_MONGO']
