@@ -1,5 +1,4 @@
 require 'vayacondios-server'
-require 'vayacondios/server/api_options'
 
 module Vayacondios::Server
 
@@ -35,16 +34,19 @@ module Vayacondios::Server
   # test/development but using a pool of shared connections in
   # production mode.  The default file is located in the Vayacondios
   # source distribution at `config/vcd-server.rb`.
-  # 
+  #
   class Api < Goliath::API
     include ApiOptions
 
+    plugin Goliath::Chimp::Plugin::ActivityMonitor, window: 30
+
     use Goliath::Rack::Heartbeat
-    use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::GEM_VERSION, api: 'Vayacondios'
+    use Goliath::Chimp::Rack::Formatters::JSON
     use Goliath::Chimp::Rack::ForceContentType,           'application/json'
-    use Goliath::Rack::Formatters::JSON
     use Goliath::Rack::Render
     use Goliath::Rack::Params
+    use Goliath::Chimp::Rack::ApiVersion,                 Vayacondios::GEM_VERSION, api: 'Vayacondios'
+    use Goliath::Chimp::Rack::ServerMetrics,              env_key: { 'routes' => :type }, default: 'other'
     use Goliath::Rack::Validation::RequestMethod,         %w[ GET POST PUT PATCH DELETE ]
     use Goliath::Chimp::Rack::ControlMethods,             'POST'   => :create,
                                                           'GET'    => :retrieve,
