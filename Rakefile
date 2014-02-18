@@ -34,19 +34,19 @@ end
 
 desc 'Run spec coverage with mongo'
 task :mongo do
-  with_background_process('mongod') do
-    ENV['WITH_MONGO'] = 'true'
-    Rake::Task[:spec].invoke
-  end
+  # with_background_process('mongod') do
+  ENV['WITH_MONGO'] = 'true'
+  Rake::Task[:spec].invoke
+  # end
 end
 
 desc 'Run integration tests'
 task :integration do
-  with_background_process('mongod') do
-    with_background_process('bin/vcd-server -e test', wait: 2) do
-      Rake::Task[:features].invoke
-    end
+  # with_background_process('mongod') do
+  with_background_process('bin/vcd-server -e test', wait: 2) do
+    Rake::Task[:features].invoke
   end
+  # end
 end
 
 require 'cucumber/rake/task'

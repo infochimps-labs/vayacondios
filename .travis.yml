@@ -7,5 +7,7 @@ rvm:
 
 bundler_args: --without docs support
 
+services: mongodb
+
 notifications:
   email: false
