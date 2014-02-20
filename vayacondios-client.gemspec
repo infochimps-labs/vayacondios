@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# coding: UTF-8
 
 $:.push File.expand_path('../lib', __FILE__)
 require 'vayacondios'
@@ -20,6 +20,6 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency('configliere')
   gem.add_dependency('multi_json')
-  gem.add_dependency('faraday', '= 0.8.9')
-  gem.add_dependency('faraday_middleware')
+  gem.add_dependency('faraday',            '~> 0.8.9')
+  gem.add_dependency('faraday_middleware', '~> 0.9')
 end
