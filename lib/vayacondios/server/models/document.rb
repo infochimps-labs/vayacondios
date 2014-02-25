@@ -30,7 +30,7 @@ module Vayacondios::Server
     def format_response result
       from_document(result.symbolize_keys.compact).external_document
     end
-  
+
     # A class for errors that arise within documents due to internal or
     # IO errors.
     Error = Class.new(StandardError)
@@ -54,7 +54,7 @@ module Vayacondios::Server
         params.symbolize_keys!
         opts = {}
         [:limit, :order, :sort, :fields].each{ |opt| opts[opt] = params.delete opt }
-        opts.merge default_query_options
+        default_query_options.dup.merge(opts.compact)
       end
 
       def search(params, query, &driver)
@@ -63,7 +63,7 @@ module Vayacondios::Server
         result  = driver.call(action, action.filter, options)
         result.map{ |res| new.format_response res }
       end
-      
+
       def create(params, document, &driver)
         action = receive(params).prepare_create(document)
         result = driver.call(action)
@@ -76,7 +76,7 @@ module Vayacondios::Server
         return nil if result.nil?
         action.format_response result
       end
-      
+
       def destroy(params, document, &driver)
         action = receive(params).prepare_destroy(document.symbolize_keys)
         result = driver.call(action, action.filter)
