@@ -10,7 +10,7 @@
 # POST /v2/coca_cola/event/ad_campaigns
 # { "impresions": 23829, "errors": 29 }
 # ```
-# 
+#
 # would result in a document in the `coca_cola.ad_campaigns.events`
 # collection with the following structure:
 #
@@ -53,9 +53,9 @@ module Vayacondios::Server
 
     # The default number of events returned when searching.
     LIMIT  = 50
-    
+
     # The default sort order when searching
-    ORDER  = 'descending'
+    ORDER  = 'desc'
 
     # The default sort field when searching.
     SORT   = 'time'
@@ -65,7 +65,21 @@ module Vayacondios::Server
     WINDOW = 3600
 
     def self.default_query_options
-      { limit: LIMIT, order: ORDER, sort: SORT } 
+      { limit: LIMIT, order: ORDER, sort: SORT }
+    end
+
+    def self.extract_query_options! opts
+      query = super
+      if query[:sort] == ['time']
+        query[:sort] = ['_t']
+      elsif query[:sort].present?
+        query[:sort].unshift '_d'
+      end
+      query[:fields].each{|field|
+        field.replace(['_t']) if field == ['time']
+        field.unshift('_d') unless %w[_id _t].include?(field.first)
+      } if query[:fields].present?
+      query
     end
 
     field :time, Time   # assigned or Time.now.utc
@@ -84,14 +98,14 @@ module Vayacondios::Server
       @time = format_time to_timestamp(t)
     end
 
-    # Parses an object into a timestamp.  
+    # Parses an object into a timestamp.
     #
     # @param [String, Numeric, Time, nil] obj
     # @param [Time] default the time value to return if none could be found in the `obj`
     # @return [Time]
     def to_timestamp(obj, default = Time.now)
       case obj
-      when String  then Time.parse(obj)        
+      when String  then Time.parse(obj)
       when Date    then obj.to_time
       when Time    then obj
       when Numeric then Time.at(obj)
@@ -130,7 +144,7 @@ module Vayacondios::Server
 
     # An event as presented to a user
     def external_document
-      { id: id, time: time.iso8601(3) }.merge(body)
+      { id: id, time: (time ? time.iso8601(3) : nil) }.merge(body).compact
     end
 
     # Returns a Hash that can be used for selection criteria in a query
@@ -193,6 +207,6 @@ module Vayacondios::Server
     def prepare_destroy query
       receive!(filter: event_filter(query))
       self
-    end  
+    end
   end
 end

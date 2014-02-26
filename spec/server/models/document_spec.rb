@@ -2,7 +2,13 @@ require 'spec_helper'
 
 describe Vayacondios::Server::Document do
 
-  let(:params){ { organization: 'organization', topic: 'topic', limit: 3, order: 'ascending' } }
+  let(:params){ {
+    organization: 'organization',
+    topic:        'topic',
+    order:        'ascending',
+    sort:         'hostname.internal',
+    fields:       ['id', 'hostname.internal']
+  } }
 
   subject(:document){ described_class.receive(params) }
 
@@ -34,14 +40,15 @@ describe Vayacondios::Server::Document do
 
     it 'uses defaults' do
       options.should have_key :sort
-      options[:sort].should eq 'time'
+      options[:limit].should eq 5
     end
 
     it 'uses params when provided' do
       options.should have_key :limit
       options.should have_key :order
 
-      options[:limit].should eq 3
+      options[:sort].should eq ['hostname', 'internal']
+      options[:fields].should eq [['_id'], ['hostname', 'internal']]
       options[:order].should eq 'ascending'
     end
   end

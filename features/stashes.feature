@@ -49,21 +49,30 @@ Feature: Stashes
     """
     {
       "_id": "topic",
-      "root": { 
+      "root": {
         "b": 1
+      }
+    }
+    """
+    And the following Stash exists in the database:
+    """
+    {
+      "_id": "topic",
+      "root": {
+        "b": 5
       }
     }
     """
     When  the client sends a GET request to "/v3/organization/stashes" with the following body:
     """
-    { 
-      "root.b": 1 
+    {
+      "root.b": 1
     }
     """
     Then  the response status should be 200
     And   the response body should be:
     """
-    [ 
+    [
       {
         "topic": "topic",
         "root": {
@@ -88,7 +97,7 @@ Feature: Stashes
     """
     When  the client sends a GET request to "/v3/organization/stashes" with the following body:
     """
-    { 
+    {
       "root.b": 1,
       "fields": ["root.a"]
     }
@@ -104,6 +113,98 @@ Feature: Stashes
             "foo": "bar"
           }
         }
+      }
+    ]
+    """
+
+  Scenario: Retrieving Stashes using Sorting
+    Given the following Stash exists in the database:
+    """
+    {
+      "_id": "topic1",
+      "root": {
+        "a": {
+          "foo": 3
+        },
+        "b": 1
+      }
+    }
+    """
+    And the following Stash exists in the database:
+    """
+    {
+      "_id": "topic2",
+      "root": {
+        "a": {
+          "foo": 2
+        },
+        "b": 1
+      }
+    }
+    """
+    When  the client sends a GET request to "/v3/organization/stashes" with the following body:
+    """
+    {
+      "root.b": 1,
+      "sort": "root.a.foo",
+      "order": "asc"
+    }
+    """
+    Then  the response status should be 200
+    And   the response body should be:
+    """
+    [
+      {
+        "topic": "topic2",
+        "root": {
+          "a": {
+            "foo": 2
+          },
+          "b": 1
+        }
+      },
+      {
+        "topic": "topic1",
+        "root": {
+          "a": {
+            "foo": 3
+          },
+          "b": 1
+        }
+      }
+    ]
+    """
+
+  Scenario: Retrieving Stashes using Limits
+    Given the following Stash exists in the database:
+    """
+    {
+      "_id": "topic1",
+      "b": 1
+    }
+    """
+    And the following Stash exists in the database:
+    """
+    {
+      "_id": "topic2",
+      "b": 1
+    }
+    """
+    When  the client sends a GET request to "/v3/organization/stashes" with the following body:
+    """
+    {
+      "b": 1,
+      "limit": 1,
+      "order": "desc"
+    }
+    """
+    Then  the response status should be 200
+    And   the response body should be:
+    """
+    [
+      {
+        "topic": "topic2",
+        "b": 1
       }
     ]
     """

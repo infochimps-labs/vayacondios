@@ -50,10 +50,8 @@ module Vayacondios::Server
       sel = { }.tap do |sel|
         time = query.delete(:_t)
         sel[:_t] = time.inject({}){ |t, (k,v)| t[('$' + k.to_s).to_sym] = v ; t } if time
-        data = query.delete(:_d)
-        sel.merge! to_dotted_hash(_d: data)
-      end
-      query.merge(sel).compact_blank
+        sel.merge! to_dotted_hash(query)
+      end.compact_blank
     end
 
     def to_dotted_hash(hsh, key_string = '')
@@ -66,14 +64,19 @@ module Vayacondios::Server
         end
       end
     end
-    
+
     def projector query
-      if query[:sort] == 'time'
-        query[:sort] = '_t'
-      elsif query[:sort].present?
-        query[:sort] = '_d.' + query[:sort]
+      order = query.delete(:order)
+      if order.to_s.match(/^(a|de)sc$/i)
+        order = order.to_sym
+      else
+        raise Error.new("Search order must be 'asc' or 'desc'. Invalid search order: #{order}")
       end
-      query[:_reverse] if query.delete(:order) == 'descending'
+
+      fields = query[:fields]
+      fields.map!{|field| field.join('.') } if fields.is_a? Array
+
+      query[:sort] = [query[:sort].join('.'), order]
       query
     end
 

@@ -54,7 +54,15 @@ module Vayacondios::Server
         params.symbolize_keys!
         opts = {}
         [:limit, :order, :sort, :fields].each{ |opt| opts[opt] = params.delete opt }
-        default_query_options.dup.merge(opts.compact)
+        default_query_options.dup.merge(opts.compact).tap do |opts|
+          opts[:sort]   = opts[:sort].to_s.split('.')
+          if opts[:fields].is_a? Array
+            opts[:fields].map!{|field|
+              field = '_id' if field == 'id'
+              field.split('.')
+            }
+          end
+        end
       end
 
       def search(params, query, &driver)

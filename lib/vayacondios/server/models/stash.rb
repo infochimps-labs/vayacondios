@@ -25,15 +25,15 @@ module Vayacondios::Server
     LIMIT = 50
 
     # The default sort order when searching.
-    SORT  = 'ascending'
-    ORDER = '_id'
+    SORT  = '_id'
+    ORDER = 'asc'
 
     # Returned as an acknowledgement of the request when there is no
     # better option (#destroy, #update_many, &c.)
     # OK = {ok: true}
 
     def self.default_query_options
-      { limit: LIMIT, order: ORDER, sort: SORT } 
+      { limit: LIMIT, order: ORDER, sort: SORT }
     end
 
     # The name of the collection this stash will store its data in.
@@ -52,16 +52,16 @@ module Vayacondios::Server
         d[:topic] = doc.delete(:_id)
         doc = nil if doc.empty?
         if body.nil?
-          new_body = doc 
+          new_body = doc
         else
           new_body = body.merge(doc || {})
-        end     
+        end
         d[:body]  =  new_body
       end
       receive! d
       self
     end
-    
+
     def external_document
       { topic: topic }.merge(body || {})
     end
@@ -76,7 +76,7 @@ module Vayacondios::Server
       if document.is_a? Hash
         document.symbolize_keys!
         raise Error.new ':topic is a reserved key and cannot be used in a stash document' if document.has_key?(:topic)
-      end    
+      end
       if id.blank?
         raise Error.new 'If not including an Id, the document must be a Hash' unless document.is_a? Hash
         receive!(body: document)
