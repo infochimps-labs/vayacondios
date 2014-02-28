@@ -2,6 +2,8 @@ source 'https://rubygems.org'
 
 # em-mongo is too loose with its dependencies; 2.0.0 bson breaks vcd
 gem 'bson', '1.9.2'
+# cookiejar 0.3.1 has busted file permissions WTF
+gem 'cookiejar', '0.3.0'
 
 gemspec name: 'vayacondios-server'
 gemspec name: 'vayacondios-client'
