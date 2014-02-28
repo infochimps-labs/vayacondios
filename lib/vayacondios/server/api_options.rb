@@ -31,7 +31,7 @@ module Vayacondios::Server
 
       options[:database] = {}
       db_options = options[:database]
-      defaults = DbConfig.defaults[:development]
+      defaults = DbConfig.defaults[Goliath.env]
       opts.on('-d', '--database.driver NAME', "Database driver (default: #{defaults[:driver]})") do |name|
         db_options[:driver] = name
       end
