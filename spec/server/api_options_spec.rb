@@ -23,7 +23,7 @@ describe Vayacondios::Server::ApiOptions do
     ARGV.replace %w[-d foo -h foo.com -D bar -o 1234 -n 10]
     api.options_parser(parser, settings)
     parser.parse!
-    settings[:database].should eq(driver:      'foo',
+    settings[:test][:database].should eq(driver:      'foo',
                                   connections: 10,
                                   host:        'foo.com',
                                   name:        'bar',

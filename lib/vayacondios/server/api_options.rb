@@ -29,9 +29,11 @@ module Vayacondios::Server
       opts.separator ''
       opts.separator 'Database options:'
 
-      options[:database] = {}
-      db_options = options[:database]
-      defaults = DbConfig.defaults[Goliath.env]
+      options[Goliath.env] ||= {}
+      options[Goliath.env][:database] ||= {}
+      db_options = options[Goliath.env][:database]
+
+      defaults = DbConfig.defaults[Goliath.env][:database]
       opts.on('-d', '--database.driver NAME', "Database driver (default: #{defaults[:driver]})") do |name|
         db_options[:driver] = name
       end

@@ -3,7 +3,8 @@ module Vayacondios::Server
 
     def defaults
       %w[development test production].inject({}) do |default_conf, type|
-        default_conf[type.to_sym] = {
+        default_conf[type.to_sym] = {}
+        default_conf[type.to_sym][:database] = {
           driver:      'mongo',
           host:        'localhost',
           port:        27017,
