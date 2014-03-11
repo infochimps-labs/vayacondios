@@ -3,7 +3,7 @@ module Vayacondios
   API_VERSION            = 'v3'
 
   # Gem version for both client and server
-  GEM_VERSION            = '0.3.1'
+  GEM_VERSION            = '0.3.2'
 
   # Default port to find/connect to for the server
   DEFAULT_SERVER_PORT    = 3467
