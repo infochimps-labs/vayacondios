@@ -58,12 +58,18 @@ describe Vayacondios::Server::MongoDriver, if: WITH_MONGO do
 
   context '#search' do
     after{ clean 'organization.stash' }
+
+    it 'raises an error if order is specified incorrectly' do
+      using('organization.stash') do |driver| 
+        expect{ driver.search({}, { foo: 'bar' }, { order: 'wrong' }) }.to raise_error(Vayacondios::Server::Driver::Error)
+      end
+    end
     
     it 'returns an array of results' do
       collection('organization.stash').insert(_id: 'topic', foo: 'bar')
       result = nil
       using('organization.stash') do |driver| 
-        result = driver.search({}, { foo: 'bar' }, {})
+        result = driver.search({}, { foo: 'bar' }, { order: 'asc', sort: ['_id'] })
       end
       result.should eq([{ _id: 'topic', foo: 'bar' }])      
     end

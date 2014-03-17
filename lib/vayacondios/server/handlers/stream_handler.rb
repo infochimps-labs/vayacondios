@@ -1,7 +1,7 @@
 module Vayacondios::Server
   class StreamHandler < EventsHandler
 
-    attr_reader :cursor, :timer, :on_data, :options
+    attr_reader :cursor, :timer, :on_data
 
     def retrieve(params, query)
       @timer = EM::Synchrony.add_periodic_timer(1){ stream_events }
@@ -19,6 +19,10 @@ module Vayacondios::Server
       timer.cancel
     end
 
+    def projection_options
+      @options.dup
+    end
+
     def update_cursor latest
       cursor.filter.delete(:_t)
       cursor.prepare_search(after: latest)
@@ -27,7 +31,7 @@ module Vayacondios::Server
     def stream_events
       log.debug 'Streaming events'
       log.debug "  Stream cursor is #{cursor.filter}"
-      available = database.call(:search, cursor, cursor.filter.dup, options)
+      available = database.call(:search, cursor, cursor.filter.dup, projection_options)
       unless available.empty?
         available.each do |result|
           event = Event.new.format_response(result)
