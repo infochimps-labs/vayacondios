@@ -1,10 +1,11 @@
 module Vayacondios::Server
   class StreamHandler < EventsHandler
 
-    attr_reader :cursor, :timer, :on_data
+    attr_reader :cursor, :timer, :on_data, :options
 
     def retrieve(params, query)
       @timer = EM::Synchrony.add_periodic_timer(1){ stream_events }
+      @options = Event.extract_query_options! query
       @cursor = Event.receive(params).prepare_search(query)
       Goliath::Response::STREAMING
     end
@@ -22,11 +23,11 @@ module Vayacondios::Server
       cursor.filter.delete(:_t)
       cursor.prepare_search(after: latest)
     end
-    
+
     def stream_events
       log.debug 'Streaming events'
       log.debug "  Stream cursor is #{cursor.filter}"
-      available = database.call(:search, cursor, cursor.filter.dup, {})
+      available = database.call(:search, cursor, cursor.filter.dup, options)
       unless available.empty?
         available.each do |result|
           event = Event.new.format_response(result)
