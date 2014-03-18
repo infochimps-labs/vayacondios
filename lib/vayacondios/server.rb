@@ -14,6 +14,7 @@ require 'gorillib/model'
 require 'gorillib/string/constantize'
 require 'gorillib/string/inflections'
 require 'multi_json'
+require 'json'
 
 require 'vayacondios'
 require 'vayacondios/configuration'
