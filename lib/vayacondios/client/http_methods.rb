@@ -21,7 +21,7 @@ module Vayacondios::Client
       end
     end
 
- # Stream events
+    # Stream events
     # only when in an eventmachine reactor
     def evented_stream(topic, query = {}, &on_event)
       uri = http_connection.url_prefix
@@ -29,12 +29,12 @@ module Vayacondios::Client
       http = EM::HttpRequest.new(uri, query: query.merge(order: 'asc')).aget
       buffer = ''
       http.stream do |chunk|
-        puts "got chunk #{chunk}"
         buffer += chunk
         while line = buffer.slice!(/^[^\n].*\n/)
           on_event.call MultiJson.load(line.strip)
         end
       end
+      http
     end
 
     # Stream events
