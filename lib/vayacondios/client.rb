@@ -1,4 +1,5 @@
 require 'configliere'
+require 'em-synchrony/em-http'
 require 'faraday'
 require 'faraday_middleware'
 require 'gorillib'
@@ -6,6 +7,7 @@ require 'gorillib/metaprogramming/class_attribute'
 require 'gorillib/string/inflections'
 require 'logger'
 require 'multi_json'
+require 'json'
 
 require 'vayacondios'
 require 'vayacondios/configuration'
